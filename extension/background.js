@@ -22,6 +22,9 @@ const DEFAULTS = {
 	cursor: 0,
 	sites: [], // origins where the learner switched Lens on
 	pauseOnHover: true,
+	glossLang: 'ar', // 'ar' Arabic meanings, 'en' English definitions
+	colorPages: true, // colour words on websites
+	sidebar: true, // full transcript next to YouTube videos
 	progress: null,
 	local: { day: '', words: 0, sentences: 0 }
 };
@@ -181,6 +184,8 @@ async function saveSentence(d) {
 		url: d.url || '',
 		title: d.title || '',
 		videoId: d.videoId || '',
+		kind: ['sentence', 'phrase', 'grammar'].includes(d.kind) ? d.kind : 'sentence',
+		tag: String(d.tag || '').slice(0, 60),
 		startMs: Math.round(d.startMs || 0),
 		endMs: Math.round(d.endMs || 0),
 		createdOn: today(),
@@ -214,6 +219,14 @@ async function saveSentence(d) {
 			.catch(() => {});
 	}
 	return x;
+}
+
+/** A phrasal verb, idiom or collocation the learner picked out: it becomes a 'learning' item and a review card. */
+async function saveExpression(d) {
+	const phrase = String(d.phrase || '').toLowerCase().replace(/[’]/g, "'").replace(/[^a-z' -]+/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 64);
+	if (phrase.split(' ').length < 2) throw new Error('اختر كلمتين على الأقل.');
+	await mark(phrase, 'learning');
+	return saveSentence(Object.assign({}, d, { text: d.sentence || d.phrase, focus: phrase, kind: d.kind || 'phrase' }));
 }
 
 async function lookup(word) {
@@ -284,7 +297,7 @@ chrome.runtime.onStartup.addListener(() => {
 
 const handlers = {
 	state: async () => {
-		const s = await get(['token', 'me', 'level', 'progress', 'local', 'sites', 'pauseOnHover']);
+		const s = await get(['token', 'me', 'level', 'progress', 'local', 'sites', 'pauseOnHover', 'glossLang', 'colorPages', 'sidebar']);
 		if (s.token && !s.me) {
 			try {
 				s.me = await api('/me');
@@ -295,7 +308,7 @@ const handlers = {
 			}
 		}
 		const local = s.local.day === today() ? s.local : { words: 0, sentences: 0 };
-		return { signedIn: !!s.token, me: s.me, level: s.level, progress: s.progress, local, sites: s.sites, pauseOnHover: s.pauseOnHover };
+		return { signedIn: !!s.token, me: s.me, level: s.level, progress: s.progress, local, sites: s.sites, pauseOnHover: s.pauseOnHover, glossLang: s.glossLang, colorPages: s.colorPages, sidebar: s.sidebar };
 	},
 	login: () => login(),
 	logout: () => logout(),
@@ -307,10 +320,19 @@ const handlers = {
 		return level;
 	},
 	setPause: async ({ on }) => set({ pauseOnHover: !!on }),
+	setPref: async ({ key, value }) => {
+		if (key === 'glossLang') return set({ glossLang: value === 'en' ? 'en' : 'ar' });
+		if (key === 'colorPages' || key === 'sidebar') return set({ [key]: !!value });
+		return null;
+	},
+	saveExpression: (d) => saveExpression(d),
 	lookup: ({ word }) => lookup(word),
 	analyze: ({ texts }) => analyze(texts),
 	mark: ({ lemma, status }) => mark(lemma, status),
-	explain: ({ word, sentence }) => api('/explain', { word, sentence }),
+	explain: async ({ word, sentence, lang }) => {
+		const { glossLang } = await get('glossLang');
+		return api('/explain', { word, sentence, lang: lang || glossLang });
+	},
 	saveSentence: (d) => saveSentence(d),
 	enableSite: ({ origin, tabId }) => enableSite(origin, tabId),
 	disableSite: ({ origin }) => disableSite(origin)

@@ -36,4 +36,5 @@ node build-lexicon.js
 - CEFR-J Wordlist Version 1.5. Compiled by Yukio Tono, Tokyo University of Foreign Studies. http://www.cefr-j.org/ (free for research and commercial use with citation).
 - Octanove Vocabulary Profile C1/C2 1.0, Octanove Labs, CC BY-SA 4.0 (`tools/data/octanove-vocabulary-profile-c1c2-1.0.csv`).
 - Arabic glossary: written for Sawa English, drafted with AI.
+- English definitions and examples: WordNet 3.0, Copyright 2006 by Princeton University. All rights reserved. Used under the WordNet License (https://wordnet.princeton.edu/license-and-commercial-use).
 - Word forms built with compromise (MIT).

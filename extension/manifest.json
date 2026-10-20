@@ -2,7 +2,7 @@
 	"manifest_version": 3,
 	"name": "Language Lens – Sawa English",
 	"short_name": "Language Lens",
-	"version": "0.1.0",
+	"version": "0.2.0",
 	"description": "Learn English from YouTube and the web: Arabic meanings on hover, your known words, video difficulty, and sentence flashcards. For Sawa English members.",
 	"minimum_chrome_version": "116",
 	"permissions": ["storage", "identity", "scripting", "alarms", "activeTab"],

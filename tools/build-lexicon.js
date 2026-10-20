@@ -25,6 +25,42 @@ for (const f of fs.readdirSync(here('gloss')).filter((f) => /^out-.*\.tsv$/.test
 	}
 }
 
+// English definitions and one example from WordNet (first two senses, most common first).
+const WN = path.join(__dirname, 'node_modules/wordnet-db/dict');
+const WNPOS = { noun: 'noun', verb: 'verb', adjective: 'adj', adverb: 'adv' };
+const wnIndex = {}, wnData = {};
+for (const p of Object.values(WNPOS)) {
+	wnIndex[p] = {};
+	for (const line of fs.readFileSync(path.join(WN, 'index.' + p), 'utf8').split(/\r?\n/)) {
+		if (!line || line[0] === ' ') continue;
+		const c = line.split(' ');
+		const nOff = +c[2], pCnt = +c[3];
+		wnIndex[p][c[0]] = c.slice(4 + pCnt + 2, 4 + pCnt + 2 + nOff);
+	}
+	wnData[p] = fs.readFileSync(path.join(WN, 'data.' + p));
+}
+function wordnet(head, pos) {
+	const p = WNPOS[pos];
+	if (!p) return ['', ''];
+	const offs = wnIndex[p][head.toLowerCase().replace(/ /g, '_')];
+	if (!offs) return ['', ''];
+	const defs = [];
+	let ex = '';
+	for (const o of offs.slice(0, 2)) {
+		const start = +o;
+		const end = wnData[p].indexOf(10, start);
+		const line = wnData[p].slice(start, end).toString('utf8');
+		const g = line.slice(line.indexOf('|') + 1).trim();
+		const parts = g.split(/;\s*(?=")/);
+		defs.push(parts[0].replace(/;\s*$/, '').trim());
+		if (!ex) {
+			const m = g.match(/"([^"]+)"/);
+			if (m && m[1].toLowerCase().indexOf(head.toLowerCase().split(' ')[0].slice(0, 4)) >= 0) ex = m[1];
+		}
+	}
+	return [defs.join(' · '), ex];
+}
+
 const rows = [...csv('data/cefrj-vocabulary-profile-1.5.csv'), ...csv('data/octanove-vocabulary-profile-c1c2-1.0.csv')];
 const entries = [];
 const lemmas = {};
@@ -34,7 +70,8 @@ for (const r of rows) {
 	if (seen.has(key)) continue;
 	seen.add(key);
 	const idx = entries.length;
-	entries.push([r.head, r.pos, r.level, gloss[key] || '']);
+	const wn = wordnet(r.head.split('/')[0], r.pos);
+	entries.push([r.head, r.pos, r.level, gloss[key] || '', wn[0], wn[1]]);
 	// "a.m./A.M./am/AM" -> each spelling is a lemma key
 	for (const v of r.head.split('/')) {
 		const k = v.trim().toLowerCase();
@@ -89,4 +126,5 @@ const dest = here('../extension/data/lexicon.json');
 fs.mkdirSync(path.dirname(dest), { recursive: true });
 fs.writeFileSync(dest, JSON.stringify(out));
 const glossed = entries.filter((e) => e[3]).length;
+console.log('english definitions', entries.filter((e) => e[4]).length, 'examples', entries.filter((e) => e[5]).length);
 console.log(`entries ${entries.length}, lemmas ${Object.keys(lemmas).length}, forms ${Object.keys(forms).length}, glossed ${glossed}, ${(fs.statSync(dest).size / 1024).toFixed(0)} KB`);

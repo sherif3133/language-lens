@@ -92,6 +92,15 @@ async function render() {
 		: '<p class="muted">افتح يوتيوب أو أي موقع فيه نص إنجليزي.</p>'}
 			<p class="err" id="err" hidden></p>
 		</div>
+		<div class="sec">
+			<div class="label">المعنى</div>
+			<div class="seg2"><button data-g="ar" aria-pressed="${st.glossLang !== 'en'}">بالعربية</button><button data-g="en" aria-pressed="${st.glossLang === 'en'}">English → English</button></div>
+			<div class="row" style="margin-top:12px"><div><b>النص الكامل بجانب يوتيوب</b><div class="muted" style="font-size:12.5px">جمل كاملة بتوقيتها. اضغط على جملة لتشغيلها.</div></div>
+				<label class="switch"><input type="checkbox" id="sidebar" ${st.sidebar !== false ? 'checked' : ''}><span></span></label></div>
+			<div class="row" style="margin-top:12px"><div><b>تلوين الكلمات في المواقع</b><div class="muted" style="font-size:12.5px">على المواقع التي شغّلت عليها Language Lens.</div></div>
+				<label class="switch"><input type="checkbox" id="colors" ${st.colorPages !== false ? 'checked' : ''}><span></span></label></div>
+			<div class="legend"><span><i class="sw next"></i>تستحق المراجعة (المستوى التالي)</span><span><i class="sw hard"></i>فوق مستواك أو نادرة</span><span><i class="sw learning"></i>أتعلّمها</span></div>
+		</div>
 		<div class="sec links">
 			<a href="${esc(me.tracker || 'https://sawaenglish.com/tracker/')}" target="_blank" rel="noopener">المتابعة والبطاقات</a>
 			<button class="out" id="logout">خروج</button>
@@ -103,6 +112,14 @@ async function render() {
 			render();
 		};
 	});
+	document.querySelectorAll('.seg2 button').forEach((b) => {
+		b.onclick = async () => {
+			await send('setPref', { key: 'glossLang', value: b.dataset.g });
+			render();
+		};
+	});
+	$('#sidebar').onchange = (e) => send('setPref', { key: 'sidebar', value: e.target.checked });
+	$('#colors').onchange = (e) => send('setPref', { key: 'colorPages', value: e.target.checked });
 	const pause = $('#pause');
 	if (pause) pause.onchange = () => send('setPause', { on: pause.checked });
 	const site = $('#site');

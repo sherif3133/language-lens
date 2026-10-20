@@ -39,3 +39,12 @@ p { margin: 0; }
 .links { display: flex; justify-content: space-between; font-size: 13px; }
 .links a, .links button { color: #0F0F10; background: none; border: 0; padding: 0; font: inherit; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
 .links .out { color: #8A8584; }
+.seg2 { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
+.seg2 button { font: 600 13px/1 'IBM Plex Sans Arabic', sans-serif; border: 1px solid #E6E3DF; background: #fff; border-radius: 8px; padding: 10px 0; cursor: pointer; }
+.seg2 button[aria-pressed="true"] { background: #0F0F10; color: #fff; border-color: #0F0F10; }
+.legend { display: grid; gap: 4px; margin-top: 12px; font-size: 12px; color: #4A4847; }
+.legend span { display: flex; align-items: center; gap: 8px; }
+.sw { display: inline-block; width: 22px; height: 11px; flex: none; }
+.sw.next { border-bottom: 3px solid #15803D; }
+.sw.hard { border-bottom: 3px solid #E3262B; }
+.sw.learning { background: #FDE68A; outline: 1px solid #B45309; }

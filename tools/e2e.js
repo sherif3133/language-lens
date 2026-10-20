@@ -85,10 +85,43 @@ async function connectManual() {
 		process.exit(1);
 	}
 
+	// Transcript sidebar
+	await wait(1500);
+	const side = await page.evaluate(() => {
+		const h = document.querySelector('sawa-lens-side');
+		if (!h) return null;
+		const r = h.shadowRoot, rows = [...r.querySelectorAll('.s')];
+		const cls = {};
+		r.querySelectorAll('.wd').forEach((w) => { const c = w.className.replace('wd ', ''); cls[c] = (cls[c] || 0) + 1; });
+		return { rows: rows.length, first: rows.slice(0, 4).map((x) => x.querySelector('.tm').textContent + ' ' + x.querySelector('.tx').textContent), classes: cls, inRight: !!h.closest('#secondary') };
+	});
+	log('sidebar:', JSON.stringify(side));
+	await page.evaluate(() => document.querySelector('sawa-lens-side').scrollIntoView({ block: 'start' }));
+	await page.screenshot({ path: path.join(out, 'yt-sidebar.png') });
+	// Click the 6th sentence: the video should jump there
+	const jump = await page.evaluate(async () => {
+		const r = document.querySelector('sawa-lens-side').shadowRoot;
+		const row = r.querySelectorAll('.s')[5];
+		row.querySelector('.tm').click();
+		await new Promise((x) => setTimeout(x, 800));
+		return { label: row.querySelector('.tm').textContent, t: document.querySelector('#movie_player video').currentTime.toFixed(1) };
+	});
+	log('clicked sentence at', jump.label, '→ video at', jump.t + 's');
+	// "Play only this sentence" stops at its end
+	const once = await page.evaluate(async () => {
+		const r = document.querySelector('sawa-lens-side').shadowRoot;
+		const row = r.querySelectorAll('.s')[2];
+		row.querySelector('.rep').click();
+		await new Promise((x) => setTimeout(x, 9000));
+		const v = document.querySelector('#movie_player video');
+		return { paused: v.paused, t: v.currentTime.toFixed(1), label: row.querySelector('.tm').textContent };
+	});
+	log('play-once from', once.label, '→ paused:', once.paused, 'at', once.t + 's');
+
 	// Hover the first "new" word (or any word)
 	const pt = await page.evaluate(() => {
 		const r = document.querySelector('sawa-lens-yt').shadowRoot;
-		const w = r.querySelector('.wd.new') || r.querySelector('.wd');
+		const w = r.querySelector('.wd.hard') || r.querySelector('.wd.next') || r.querySelector('.wd');
 		const b = w.getBoundingClientRect();
 		return { x: b.left + b.width / 2, y: b.top + b.height / 2, word: w.textContent };
 	});
@@ -99,6 +132,14 @@ async function connectManual() {
 	log('hovered:', pt.word, '| video paused:', paused);
 	log('card:', card.replace(/\s+/g, ' ').slice(0, 200));
 	await page.screenshot({ path: path.join(out, 'yt-card.png') });
+
+	// English → English
+	await page.evaluate(() => document.querySelector('sawa-lens-card').shadowRoot.querySelector('button[data-a="lang-en"]').click());
+	await wait(600);
+	log('card (EN):', (await page.evaluate(() => document.querySelector('sawa-lens-card').shadowRoot.querySelector('.card').innerText)).replace(/\s+/g, ' ').slice(0, 220));
+	await page.screenshot({ path: path.join(out, 'yt-card-en.png') });
+	await page.evaluate(() => document.querySelector('sawa-lens-card').shadowRoot.querySelector('button[data-a="lang-ar"]').click());
+	await wait(300);
 
 	// Mark it known + save the sentence from the card
 	await page.evaluate(() => { const r = document.querySelector('sawa-lens-card').shadowRoot; r.querySelector('button[data-a="learning"]').click(); });
@@ -114,6 +155,33 @@ async function connectManual() {
 	await page.evaluate(() => document.querySelector('sawa-lens-yt').shadowRoot.querySelector('.chip').click());
 	await wait(500);
 	await page.screenshot({ path: path.join(out, 'yt-panel.png') });
+
+	// Select two words in the sidebar → save as an expression
+	const selRes = await page.evaluate(async () => {
+		const h = document.querySelector('sawa-lens-side'), r = h.shadowRoot;
+		const tx = [...r.querySelectorAll('.tx')].find((x) => x.querySelectorAll('.wd').length > 6);
+		const ws = tx.querySelectorAll('.wd');
+		const range = document.createRange();
+		range.setStartBefore(ws[2]);
+		range.setEndAfter(ws[3]);
+		const sel = window.getSelection();
+		sel.removeAllRanges();
+		sel.addRange(range);
+		tx.dispatchEvent(new MouseEvent('mouseup', { bubbles: true, composed: true }));
+		await new Promise((x) => setTimeout(x, 400));
+		const pop = document.querySelector('sawa-lens-select');
+		const p = pop && pop.shadowRoot.querySelector('.pop.on');
+		if (!p) return { opened: false, text: range.toString() };
+		p.querySelector('button[data-a="expr"]').click();
+		await new Promise((x) => setTimeout(x, 200));
+		p.querySelector('button[data-k="collocation"]').click();
+		await new Promise((x) => setTimeout(x, 800));
+		return { opened: true, text: range.toString(), msg: p.innerText.replace(/\s+/g, ' ').slice(-60) };
+	});
+	log('expression:', JSON.stringify(selRes));
+	await wait(1500);
+	const learningNow = await page.evaluate(() => [...document.querySelector('sawa-lens-side').shadowRoot.querySelectorAll('.wd.learning')].map((w) => w.textContent).slice(0, 8));
+	log('learning words now highlighted:', JSON.stringify(learningNow));
 
 	// Force a sync and check the server
 	const res = await sw.evaluate(() => new Promise((r) => chrome.runtime.sendMessage({ type: 'sync' }, r)));

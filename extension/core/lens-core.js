@@ -78,7 +78,7 @@
 		var lex = this.lex;
 		return (lex.lemmas[lemma] || []).map(function (i) {
 			var e = lex.entries[i];
-			return { head: e[0], pos: e[1], level: e[2], levelName: LEVELS[e[2] - 1], ar: e[3] };
+			return { head: e[0], pos: e[1], level: e[2], levelName: LEVELS[e[2] - 1], ar: e[3], en: e[4] || '', ex: e[5] || '' };
 		});
 	};
 
@@ -95,36 +95,66 @@
 	 * user = { level: 1..6, words: { lemma: 'known' | 'learning' } }
 	 * known    marked known, or at/below the learner's level and not marked
 	 * learning marked as being learned (saved, or "I don't know this")
-	 * new      above the learner's level, never marked
+	 * next     one level above the learner: worth checking
+	 * hard     two or more levels above, or not in the list at all (rare words)
 	 */
 	Lens.prototype.status = function (lemma, user) {
 		var mark = user.words && user.words[lemma];
 		if (mark === 'known' || mark === 'learning') return mark;
-		var lv = this.level(lemma);
-		if (lv && lv <= (user.level || 2)) return 'known';
-		return 'new';
+		var lv = this.level(lemma), me = user.level || 2;
+		if (lv && lv <= me) return 'known';
+		if (lv && lv === me + 1) return 'next';
+		return 'hard';
+	};
+
+	/** The learner's own saved expressions ("give up on", "break the ice"), longest first. */
+	Lens.prototype._userPhrases = function (user) {
+		var w = user.words || {}, key = Object.keys(w).filter(function (k) { return k.indexOf(' ') > 0; }).sort().join('|');
+		if (this._phraseKey === key) return this._phrases;
+		var map = {}, max = 0;
+		key.split('|').forEach(function (p) {
+			if (!p) return;
+			map[p] = true;
+			max = Math.max(max, p.split(' ').length);
+		});
+		this._phraseKey = key;
+		this._phrases = { map: map, max: Math.min(max, 8) };
+		return this._phrases;
 	};
 
 	/**
-	 * Analyse a text: every word with its lemma, level and status, phrases ("according to") joined.
+	 * Analyse a text: every word with its lemma, level and status.
+	 * Phrases are joined: the learner's saved expressions first, then list phrases ("according to").
 	 * Names (capitalised, not at sentence start, not in the list) and very short unknowns are skipped.
 	 */
 	Lens.prototype.analyze = function (text, user) {
 		var toks = this.tokenize(text), out = [], i = 0;
+		var up = this._userPhrases(user), self = this;
+		var lem1 = function (s) { return self.lemmas(s)[0] || s.toLowerCase(); };
 		while (i < toks.length) {
 			var t = toks[i], hit = null;
-			// Longest phrase first: 3 then 2 words, only if separated by plain spaces.
-			for (var n = 3; n >= 2 && !hit; n--) {
+			// Longest phrase first, only if the words are separated by plain spaces.
+			for (var n = Math.max(3, up.max); n >= 2 && !hit; n--) {
 				if (i + n > toks.length) continue;
-				var ok = true, parts = [];
+				var ok = true, parts = [], lparts = [];
 				for (var k = 0; k < n; k++) {
-					if (k && !/^\s+$/.test(text.slice(toks[i + k - 1].end, toks[i + k].start))) ok = false;
-					parts.push(toks[i + k].text.toLowerCase());
+					if (k && !/^[\s,]+$/.test(text.slice(toks[i + k - 1].end, toks[i + k].start))) ok = false;
+					parts.push(toks[i + k].text.toLowerCase().replace(/’/g, "'"));
 				}
 				if (!ok) continue;
 				var phrase = parts.join(' ');
-				var cands = [phrase].concat(this.lex.forms[phrase] || []).filter(this.has, this);
-				if (cands.length) hit = { n: n, lemma: cands[0] };
+				if (n <= up.max) {
+					// Match the saved expression as written, or with the first word in any form ("gave up" = "give up").
+					if (up.map[phrase]) hit = { n: n, lemma: phrase };
+					else {
+						lparts = [lem1(parts[0])].concat(parts.slice(1));
+						if (up.map[lparts.join(' ')]) hit = { n: n, lemma: lparts.join(' ') };
+					}
+				}
+				if (!hit && n <= 3) {
+					var cands = [phrase].concat(this.lex.forms[phrase] || []).filter(this.has, this);
+					if (cands.length) hit = { n: n, lemma: cands[0] };
+				}
 			}
 			if (hit) {
 				out.push(this._tok(text, toks[i].start, toks[i + hit.n - 1].end, hit.lemma, user, false));
@@ -147,7 +177,10 @@
 		var st;
 		if (isName) st = 'name';
 		else if (lemma) st = this.status(lemma, user);
-		else st = user.words && user.words[surface.toLowerCase()] === 'known' ? 'known' : surface.length <= 2 ? 'known' : 'new';
+		else {
+			var m = user.words && user.words[surface.toLowerCase()];
+			st = m === 'known' || m === 'learning' ? m : surface.length <= 2 ? 'known' : 'hard';
+		}
 		return { text: surface, start: start, end: end, lemma: lemma || surface.toLowerCase(), level: lv, status: st, listed: !!lemma };
 	};
 
