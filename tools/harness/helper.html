@@ -1,0 +1,11 @@
+<!doctype html><meta charset="utf-8"><title>Lens test helper</title>
+<p>Language Lens test helper. Keep this window open.</p>
+<script>
+window.addEventListener('message', async (e) => {
+	if (!e.data || !e.data.lensReq) return;
+	const files = {};
+	for (const p of e.data.lensReq) files[p] = await (await fetch('/' + p)).text();
+	e.source.postMessage({ lensFiles: files }, '*');
+});
+if (window.opener) window.opener.postMessage({ lensHelperReady: true }, '*');
+</script>
