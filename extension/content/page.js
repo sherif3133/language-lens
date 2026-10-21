@@ -70,6 +70,15 @@
 		return U.sentenceAt(block.textContent || '', pre.toString().length).replace(/\s+/g, ' ').slice(0, 600);
 	}
 
+	/** A capitalised word in the middle of a sentence is a name (people, places, brands): no card for it. */
+	function looksLikeName(node, start, word) {
+		if (!/^[A-Z][a-z'’]/.test(word) || word === 'I' || /^I['’]/.test(word)) return false;
+		var before = (node.data || '').slice(0, start).replace(/\s+$/, '');
+		if (!before || /[.!?:"“(\[\-–—]$/.test(before)) return false; // start of a sentence or a line
+		var ws = (node.data || '').match(/[A-Za-z'’]+/g) || [], caps = ws.filter(function (w) { return /^[A-Z]/.test(w); }).length;
+		return !(ws.length >= 3 && caps / ws.length > 0.6); // headlines In Title Case are not names
+	}
+
 	var timer = null, lastKey = '', mode = 'hover';
 	chrome.storage.local.get('hoverMode', function (o) { mode = o.hoverMode || 'hover'; });
 
@@ -86,6 +95,7 @@
 				lastKey = '';
 				return;
 			}
+			if (looksLikeName(hit.node, hit.start, hit.word)) { if (Card.isOpen()) Card.hideSoon(300); lastKey = ''; return; } // names are not translated
 			var key = hit.word + '@' + Math.round(hit.rect.left) + ',' + Math.round(hit.rect.top);
 			if (key === lastKey && Card.isOpen()) return;
 			lastKey = key;

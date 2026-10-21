@@ -129,6 +129,8 @@
 	 */
 	Lens.prototype.analyze = function (text, user) {
 		var toks = this.tokenize(text), out = [], i = 0;
+		// Headlines In Title Case are not full of names: there, only unknown capitalised words count as names.
+		var capsN = toks.filter(function (t) { return /^[A-Z][a-z]/.test(t.text); }).length, titleCase = toks.length >= 3 && capsN / toks.length > 0.6;
 		var up = this._userPhrases(user), self = this;
 		var lem1 = function (s) { return self.lemmas(s)[0] || s.toLowerCase(); };
 		while (i < toks.length) {
@@ -164,7 +166,9 @@
 			var lem = this.lemmas(t.text)[0] || '';
 			var prev = text.slice(Math.max(0, t.start - 3), t.start);
 			var sentenceStart = i === 0 || /[.!?:"“]\s*$/.test(prev);
-			var isName = !lem && /^[A-Z]/.test(t.text) && !sentenceStart;
+			// Names are not translated: a capitalised word in the middle of a sentence (Rose, Mark, Will, Turkey…).
+			var capital = /^[A-Z][a-z'’]/.test(t.text) && t.text !== 'I' && !/^I['’]/.test(t.text);
+			var isName = capital && !sentenceStart && (!titleCase || !lem);
 			out.push(this._tok(text, t.start, t.end, lem, user, isName));
 			i++;
 		}

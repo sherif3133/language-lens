@@ -457,7 +457,46 @@ chrome.runtime.onStartup.addListener(() => {
 
 /* ------------------------------------------------------------ messages */
 
+/* ------------------------------------------------------------ proofreading what the learner types */
+/** The most likely right word one typing slip away (a letter missing, extra, swapped or wrong). */
+function spellSuggest(L, w) {
+	const a = 'abcdefghijklmnopqrstuvwxyz', c = new Set();
+	for (let i = 0; i <= w.length; i++) {
+		if (i < w.length) c.add(w.slice(0, i) + w.slice(i + 1));
+		if (i < w.length - 1) c.add(w.slice(0, i) + w[i + 1] + w[i] + w.slice(i + 2));
+		for (const ch of a) { if (i < w.length) c.add(w.slice(0, i) + ch + w.slice(i + 1)); c.add(w.slice(0, i) + ch + w.slice(i)); }
+	}
+	let best = '', bestLv = 99;
+	for (const x of c) { if (x.length < 2 || !L.lemmas(x).length) continue; const lv = L.level(L.lemmas(x)[0]) || 7; if (lv < bestLv) { best = x; bestLv = lv; } }
+	return best;
+}
+const proofCache = new Map();
+async function proofText(text, grammar) {
+	const L = await loadLens(), spell = [], re = /[A-Za-z]+(?:['’][A-Za-z]+)?/g;
+	let m;
+	while ((m = re.exec(text))) {
+		const w = m[0], before = text.slice(0, m.index).replace(/\s+$/, ''), start = !before || /[.!?:\n]$/.test(before);
+		if (w.length < 3 || /['’]/.test(w) || /[A-Z]/.test(w.slice(1)) || (/^[A-Z]/.test(w) && !start)) continue; // names, contractions, ACRONYMS
+		const lw = w.toLowerCase();
+		if (L.lemmas(lw).length || L.has(lw)) continue;
+		const sug = spellSuggest(L, lw);
+		if (sug) spell.push({ start: m.index, end: m.index + w.length, wrong: w, right: /^[A-Z]/.test(w) ? sug[0].toUpperCase() + sug.slice(1) : sug });
+	}
+	let gram = [];
+	if (grammar && text.trim().split(/\s+/).length >= 4) {
+		if (!proofCache.has(text)) {
+			const r = await api('/proof', { text }).catch(() => ({ errors: null })); // offline or signed out: spelling still works
+			if (!r.errors) return { spell, gram: [] };
+			proofCache.set(text, r.errors || []);
+			if (proofCache.size > 40) proofCache.delete(proofCache.keys().next().value);
+		}
+		gram = proofCache.get(text).filter((e) => !spell.some((s) => s.wrong === e.wrong));
+	}
+	return { spell, gram };
+}
+
 const handlers = {
+	proof: ({ text, grammar }) => proofText(String(text || '').slice(0, 2000), !!grammar),
 	state: async () => {
 		const s = await get(['token', 'me', 'level', 'progress', 'local', 'sites', 'pauseOnHover', 'glossLang', 'colorPages', 'sidebar', 'focus', 'showIPA', 'showTrans', 'blurCaptions', 'blurTrans', 'maskSwears', 'wordQuiz']);
 		if (s.token && !s.me) {
