@@ -59,6 +59,10 @@ async function connectManual() {
 	const page = await browser.newPage();
 	page.on('console', (m) => { if (/lens|Lens|error/i.test(m.text())) log('console:', m.text().slice(0, 200)); });
 	page.on('pageerror', (e) => log('pageerror:', String(e).slice(0, 200)));
+	// Test browsers get endless ads: block the ad servers.
+	const cdp = await page.target().createCDPSession();
+	await cdp.send('Network.enable');
+	await cdp.send('Network.setBlockedURLs', { urls: ['*doubleclick.net*', '*googleads*', '*/pagead/*', '*googlesyndication*', '*/api/stats/ads*', '*/get_midroll_*', '*youtube.com/ad_*'] });
 	await page.goto('https://www.youtube.com/watch?v=iG9CE55wbtY', { waitUntil: 'domcontentloaded' });
 	try {
 		const consent = await page.$('button[aria-label*="Accept"], form[action*="consent"] button');
@@ -70,10 +74,15 @@ async function connectManual() {
 	let ok = false;
 	for (let i = 0; i < 90 && !ok; i++) {
 		await wait(1000);
-		ok = await page.evaluate(() => {
-			const h = document.querySelector('sawa-lens-yt');
-			return !!(h && h.shadowRoot && h.shadowRoot.querySelector('.wd'));
-		});
+		try {
+			await page.evaluate(() => { const b = document.querySelector('.ytp-skip-ad-button, .ytp-ad-skip-button-modern, .ytp-ad-skip-button'); if (b) b.click(); });
+			ok = await page.evaluate(() => {
+				const h = document.querySelector('sawa-lens-yt');
+				return !!(h && h.shadowRoot && h.shadowRoot.querySelector('.wd'));
+			});
+		} catch (e) {
+			/* YouTube navigated (ad or redirect): keep waiting */
+		}
 	}
 	log('caption words shown:', ok);
 	const chip = await page.evaluate(() => { const h = document.querySelector('sawa-lens-yt'); const c = h && h.shadowRoot.querySelector('.chip'); return c && !c.hidden ? c.textContent : ''; });
@@ -98,6 +107,41 @@ async function connectManual() {
 	log('sidebar:', JSON.stringify(side));
 	await page.evaluate(() => document.querySelector('sawa-lens-side').scrollIntoView({ block: 'start' }));
 	await page.screenshot({ path: path.join(out, 'yt-sidebar.png') });
+	// Grammar focus: past simple, then hover a highlighted verb
+	await sw.evaluate(() => chrome.storage.local.set({ focus: 'past' }));
+	await wait(2500);
+	const fx = await page.evaluate(() => {
+		const r = document.querySelector('sawa-lens-side').shadowRoot;
+		const fxs = [...r.querySelectorAll('.fx')];
+		return { count: fxs.length, sample: fxs.slice(0, 8).map((x) => x.textContent), bar: r.querySelector('.fbar').innerText.replace(/\s+/g, ' '), sel: r.querySelector('.fsel').value };
+	});
+	log('focus past:', JSON.stringify(fx));
+	const vpt = await page.evaluate(() => {
+		const r = document.querySelector('sawa-lens-side').shadowRoot;
+		const w = r.querySelector('.fx .wd');
+		w.scrollIntoView({ block: 'center' });
+		const b = w.getBoundingClientRect();
+		return { x: b.left + b.width / 2, y: b.top + b.height / 2, word: w.textContent };
+	});
+	await wait(500);
+	await page.mouse.move(vpt.x, vpt.y);
+	await wait(1500);
+	log('hover verb', vpt.word, '→', (await page.evaluate(() => { const c = document.querySelector('sawa-lens-card').shadowRoot.querySelector('.card.on'); return c ? c.innerText : ''; })).replace(/\s+/g, ' ').slice(0, 200));
+	await page.screenshot({ path: path.join(out, 'yt-focus-past.png') });
+	await page.mouse.move(5, 300);
+	for (const f of ['conditional', 'continuous', 'relative']) {
+		await sw.evaluate((k) => chrome.storage.local.set({ focus: k }), f);
+		await wait(2000);
+		log('focus', f + ':', JSON.stringify(await page.evaluate(() => { const r = document.querySelector('sawa-lens-side').shadowRoot; return [...r.querySelectorAll('.fx')].slice(0, 4).map((x) => x.textContent.slice(0, 60)).concat(r.querySelector('.fcount').textContent); })));
+	}
+	// jump to next example
+	const before = await page.evaluate(() => document.querySelector('#movie_player video').currentTime);
+	await page.evaluate(() => document.querySelector('sawa-lens-side').shadowRoot.querySelector('[data-a=fnext]').click());
+	await wait(800);
+	log('jump to next relative clause:', before.toFixed(1), '→', (await page.evaluate(() => document.querySelector('#movie_player video').currentTime)).toFixed(1));
+	await sw.evaluate(() => chrome.storage.local.set({ focus: '' }));
+	await wait(800);
+
 	// Click the 6th sentence: the video should jump there
 	const jump = await page.evaluate(async () => {
 		const r = document.querySelector('sawa-lens-side').shadowRoot;

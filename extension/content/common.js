@@ -62,5 +62,41 @@
 
 	var LEVEL_NAMES = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'];
 
-	window.LensUI = { send: send, esc: esc, fonts: fonts, sentenceAt: sentenceAt, errText: errText, LEVEL_NAMES: LEVEL_NAMES };
+	/**
+	 * Text as HTML: every word a <span class="wd status" data-k>, and grammar-focus ranges wrapped in
+	 * <span class="fx" data-l="label">. toks: [{start,end,status}], spans: [{start,end,label}] (both optional).
+	 */
+	function markup(text, toks, spans) {
+		toks = toks || [];
+		spans = (spans || []).slice().sort(function (a, b) { return a.start - b.start; });
+		var cuts = { 0: 1 };
+		cuts[text.length] = 1;
+		toks.forEach(function (t) { cuts[t.start] = 1; cuts[t.end] = 1; });
+		spans.forEach(function (s) { cuts[s.start] = 1; cuts[s.end] = 1; });
+		var pts = Object.keys(cuts).map(Number).filter(function (p) { return p >= 0 && p <= text.length; }).sort(function (a, b) { return a - b; });
+		var html = '', ti = 0, si = 0, curT = -1, curS = -1;
+		for (var i = 0; i < pts.length - 1; i++) {
+			var a = pts[i], b = pts[i + 1];
+			while (ti < toks.length && toks[ti].end <= a) ti++;
+			while (si < spans.length && spans[si].end <= a) si++;
+			var tIn = ti < toks.length && toks[ti].start <= a && b <= toks[ti].end ? ti : -1;
+			var sIn = si < spans.length && spans[si].start <= a && b <= spans[si].end ? si : -1;
+			if (curT !== -1 && (tIn !== curT || sIn !== curS)) { html += '</span>'; curT = -1; }
+			if (sIn !== curS) {
+				if (curS !== -1) html += '</span>';
+				if (sIn !== -1) html += '<span class="fx" data-l="' + esc(spans[sIn].label) + '">';
+				curS = sIn;
+			}
+			if (tIn !== -1 && curT === -1) {
+				html += '<span class="wd ' + toks[tIn].status + '" data-k="' + tIn + '">';
+				curT = tIn;
+			}
+			html += esc(text.slice(a, b));
+		}
+		if (curT !== -1) html += '</span>';
+		if (curS !== -1) html += '</span>';
+		return html;
+	}
+
+	window.LensUI = { send: send, esc: esc, fonts: fonts, sentenceAt: sentenceAt, errText: errText, markup: markup, LEVEL_NAMES: LEVEL_NAMES };
 })();

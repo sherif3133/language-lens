@@ -48,3 +48,4 @@ p { margin: 0; }
 .sw.next { border-bottom: 3px solid #15803D; }
 .sw.hard { border-bottom: 3px solid #E3262B; }
 .sw.learning { background: #FDE68A; outline: 1px solid #B45309; }
+.fsel { width: 100%; font: 600 13px/1.3 'IBM Plex Sans Arabic', sans-serif; border: 1px solid #E6E3DF; border-radius: 8px; padding: 9px 10px; background: #fff; color: #0F0F10; }

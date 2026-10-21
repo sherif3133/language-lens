@@ -100,6 +100,9 @@ async function render() {
 			<div class="row" style="margin-top:12px"><div><b>تلوين الكلمات في المواقع</b><div class="muted" style="font-size:12.5px">على المواقع التي شغّلت عليها Language Lens.</div></div>
 				<label class="switch"><input type="checkbox" id="colors" ${st.colorPages !== false ? 'checked' : ''}><span></span></label></div>
 			<div class="legend"><span><i class="sw next"></i>تستحق المراجعة (المستوى التالي)</span><span><i class="sw hard"></i>فوق مستواك أو نادرة</span><span><i class="sw learning"></i>أتعلّمها</span></div>
+			<div class="label" style="margin-top:14px">ركّز على قاعدة</div>
+			<select id="focus" class="fsel"><option value="">— بدون —</option>${(st.focusList || []).map(([k, n]) => `<option value="${k}" ${st.focus === k ? 'selected' : ''}>${esc(n)}</option>`).join('')}</select>
+			<p class="hint">يُظهر القاعدة ملوّنة في يوتيوب والمواقع، مع تصريفات الأفعال عند المرور عليها.</p>
 		</div>
 		<div class="sec links">
 			<a href="${esc(me.tracker || 'https://sawaenglish.com/tracker/')}" target="_blank" rel="noopener">المتابعة والبطاقات</a>
@@ -120,6 +123,7 @@ async function render() {
 	});
 	$('#sidebar').onchange = (e) => send('setPref', { key: 'sidebar', value: e.target.checked });
 	$('#colors').onchange = (e) => send('setPref', { key: 'colorPages', value: e.target.checked });
+	$('#focus').onchange = (e) => send('setPref', { key: 'focus', value: e.target.value });
 	const pause = $('#pause');
 	if (pause) pause.onchange = () => send('setPause', { on: pause.checked });
 	const site = $('#site');

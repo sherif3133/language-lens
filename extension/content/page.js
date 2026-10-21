@@ -86,7 +86,7 @@
 			var key = hit.word + '@' + Math.round(hit.rect.left) + ',' + Math.round(hit.rect.top);
 			if (key === lastKey && Card.isOpen()) return;
 			lastKey = key;
-			Card.show({ word: hit.word, rect: hit.rect, sentence: sentenceAround(hit.node, hit.start), source: { url: location.href, title: document.title } });
+			Card.show({ word: hit.word, grammar: focusLabel(hit.node, hit.start), rect: hit.rect, sentence: sentenceAround(hit.node, hit.start), source: { url: location.href, title: document.title } });
 		}, mode === 'alt' ? 60 : 380);
 	}, { passive: true });
 
@@ -120,6 +120,8 @@
 		'.panel .en{direction:ltr;font-weight:600}.panel .ar{color:#4A4847;font-size:13px}' +
 		'.panel .lv{font-size:11px;border:1px solid #E6E3DF;border-radius:5px;padding:1px 5px;margin-inline-start:6px}' +
 		'.panel .k{font:600 12px/1 "IBM Plex Sans Arabic",sans-serif;border:1px solid #E6E3DF;background:#fff;border-radius:999px;padding:6px 9px;cursor:pointer}' +
+		'.focus{display:flex;align-items:center;gap:8px;margin:0 0 8px;font-size:12.5px}.focus label{font-weight:600;color:#4A4847;white-space:nowrap}.fsel{flex:1;font:600 13px/1.2 "IBM Plex Sans Arabic",sans-serif;border:1px solid #E6E3DF;border-radius:8px;padding:6px 8px;background:#fff;direction:rtl}' +
+		'.fbar{background:#F5F3FF;border:1px solid #DDD6FE;border-radius:8px;padding:8px 10px;font-size:12.5px;color:#4A4847;margin-bottom:10px}.fbar b{color:#0F0F10}' +
 		'.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:2147483645;font:600 14px/1.4 "IBM Plex Sans Arabic",sans-serif;background:#0F0F10;color:#fff;border-radius:10px;padding:9px 14px;direction:rtl;display:none}.toast.on{display:block}' +
 		'</style><button class="chip"></button><div class="panel"></div><div class="toast"></div>';
 	document.documentElement.appendChild(host);
@@ -136,7 +138,8 @@
 	var BAND = { easy: 'سهل', good: 'مناسب', hard: 'صعب', 'too-hard': 'صعب جدًا' };
 	var grade = null, gradeT = null, hidden = false, colors = true, lastGrade = 0;
 	var canHighlight = !!(window.CSS && CSS.highlights && window.Highlight);
-	chrome.storage.local.get(['colorPages'], function (o) { colors = o.colorPages !== false; });
+	var focus = '', focusInfo = null, focusMap = new WeakMap();
+	chrome.storage.local.get(['colorPages', 'focus'], function (o) { colors = o.colorPages !== false; focus = o.focus || ''; });
 
 	if (canHighlight && !document.getElementById('sawa-lens-hl')) {
 		var st = document.createElement('style');
@@ -144,7 +147,8 @@
 		st.textContent =
 			'::highlight(lens-next){text-decoration:underline 2px #15803D;text-underline-offset:3px}' +
 			'::highlight(lens-hard){text-decoration:underline 2px #E3262B;text-underline-offset:3px}' +
-			'::highlight(lens-learning){background-color:#FDE68A;color:#0F0F10}';
+			'::highlight(lens-learning){background-color:#FDE68A;color:#0F0F10}' +
+			'::highlight(lens-focus){background-color:#EDE9FE;color:#0F0F10}';
 		(document.head || document.documentElement).appendChild(st);
 	}
 
@@ -197,6 +201,7 @@
 			}
 			if (panel.classList.contains('on')) paint();
 			paintHighlights(nodes, r.lines);
+			paintFocus(nodes);
 		}, function () {
 			chip.classList.remove('on');
 		});
@@ -204,7 +209,7 @@
 
 	function clearHighlights() {
 		if (!canHighlight) return;
-		['lens-next', 'lens-hard', 'lens-learning'].forEach(function (k) { CSS.highlights.delete(k); });
+		['lens-next', 'lens-hard', 'lens-learning', 'lens-focus'].forEach(function (k) { CSS.highlights.delete(k); });
 	}
 
 	function paintHighlights(nodes, lines) {
@@ -230,9 +235,53 @@
 		});
 	}
 
+	/** Grammar focus: highlight the chosen structure and remember spans for the hover card. */
+	function paintFocus(nodes) {
+		focusMap = new WeakMap();
+		focusInfo = null;
+		if (!canHighlight) return;
+		CSS.highlights.delete('lens-focus');
+		if (!focus) return;
+		var f = focus;
+		U.send('grammar', { texts: nodes.map(function (n) { return n.data; }), focus: f }).then(function (r) {
+			if (f !== focus) return;
+			var ranges = [];
+			nodes.forEach(function (n, i) {
+				var sp = r.spans[i] || [];
+				if (!sp.length || !n.isConnected) return;
+				focusMap.set(n, sp);
+				sp.forEach(function (s) {
+					var rg = document.createRange();
+					try {
+						rg.setStart(n, s.start);
+						rg.setEnd(n, s.end);
+						ranges.push(rg);
+					} catch (e) {
+						/* text changed */
+					}
+				});
+			});
+			focusInfo = { name: r.name, rule: r.rule, count: r.count };
+			if (ranges.length) CSS.highlights.set('lens-focus', new Highlight(...ranges));
+			if (panel.classList.contains('on') && grade) paint();
+		}, function () {});
+	}
+
+	function focusLabel(node, offset) {
+		var sp = focusMap.get(node);
+		if (!sp) return '';
+		for (var i = 0; i < sp.length; i++) if (offset >= sp[i].start && offset < sp[i].end) return sp[i].label;
+		return '';
+	}
+
+	var focusList = null;
+	U.send('focusList').then(function (fl) { focusList = fl; }, function () {});
+
 	function paint() {
 		var u = U.esc, g = grade;
 		panel.innerHTML = '<h3>كلمات جديدة في هذه الصفحة</h3><div class="sub">تعرف <bdi>' + g.percent + '%</bdi> من الكلمات (مستواك ' + U.LEVEL_NAMES[(g.level || 2) - 1] + ').</div>' +
+			(focusList ? '<div class="focus"><label>ركّز على</label><select class="fsel"><option value="">— بدون —</option>' + focusList.map(function (f) { return '<option value="' + f.key + '"' + (f.key === focus ? ' selected' : '') + '>' + u(f.name) + '</option>'; }).join('') + '</select></div>' +
+				(focus && focusInfo ? '<div class="fbar"><b>' + u(focusInfo.name) + '</b> · ' + (focusInfo.count ? focusInfo.count + ' مثال' : 'لا توجد أمثلة') + '<div>' + u(focusInfo.rule) + '</div></div>' : '') : '') +
 			'<div class="legend"><span><i class="sw next"></i>تستحق المراجعة</span><span><i class="sw hard"></i>فوق مستواك أو نادرة</span><span><i class="sw learning"></i>أتعلّمها</span></div><ul>' +
 			g.top.slice(0, 20).map(function (w) {
 				return '<li><div><span class="en">' + u(w.lemma) + '</span>' + (w.level ? '<span class="lv">' + U.LEVEL_NAMES[w.level - 1] + '</span>' : '') + (w.ar ? '<div class="ar">' + u(w.ar) + '</div>' : '') + '</div><button class="k" data-l="' + u(w.lemma) + '">أعرفها</button></li>';
@@ -248,6 +297,9 @@
 		}
 		panel.classList.toggle('on');
 		if (panel.classList.contains('on') && grade) paint();
+	});
+	panel.addEventListener('change', function (e) {
+		if (e.target.classList.contains('fsel')) U.send('setPref', { key: 'focus', value: e.target.value }).catch(function () {});
 	});
 	panel.addEventListener('click', function (e) {
 		var b = e.target.closest('.k');
@@ -267,6 +319,11 @@
 			gradeT = setTimeout(regrade, 600);
 		}
 		if (ch.hoverMode) mode = ch.hoverMode.newValue || 'hover';
+		if (ch.focus) {
+			focus = ch.focus.newValue || '';
+			paintFocus(textNodes(mainEl()));
+			if (focus && !hidden && !chip.classList.contains('on')) regrade();
+		}
 	});
 	// Feeds and single-page sites change their text: re-grade after things settle.
 	new MutationObserver(function (muts) {

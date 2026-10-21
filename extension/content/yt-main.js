@@ -6,7 +6,7 @@
 	if (window.__sawaLensMain) return;
 	window.__sawaLensMain = true;
 
-	var lastPot = '', lastVideo = '', sentFor = '';
+	var lastPot = '', lastVideo = '', sentFor = '', primes = 0, lastPrimeFor = '';
 	// Beta diagnostics: window.__sawaLensLog in the console shows what happened on this page.
 	var logs = (window.__sawaLensLog = []);
 	function dbg(s) {
@@ -133,6 +133,17 @@
 			return;
 		}
 		try {
+			// Every few tries, switch captions off and on: the player then makes a fresh request
+			// (repeating the same track change does nothing once it's set).
+			primes = lastPrimeFor === t.videoId ? primes + 1 : 1;
+			lastPrimeFor = t.videoId;
+			if (primes % 3 === 0 && p.unloadModule) {
+				p.unloadModule('captions');
+				var cc0 = document.querySelector('.ytp-subtitles-button');
+				if (cc0 && cc0.getAttribute('aria-pressed') === 'true') cc0.click();
+				setTimeout(prime, 600);
+				return;
+			}
 			if (p.loadModule) p.loadModule('captions');
 			var best = bestEnglish(t.list) || t.list[0];
 			if (p.setOption) p.setOption('captions', 'track', { languageCode: best.languageCode, kind: best.kind });

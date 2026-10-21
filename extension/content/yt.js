@@ -23,6 +23,7 @@
 		':host(.colors) .wd.next{text-decoration:underline;text-decoration-color:#34D399;text-decoration-thickness:3px;text-underline-offset:6px}' +
 		':host(.colors) .wd.hard{text-decoration:underline;text-decoration-color:#FF6B6B;text-decoration-thickness:3px;text-underline-offset:6px}' +
 		':host(.colors) .wd.learning{background:#FDE68A;color:#0F0F10;box-shadow:0 0 0 2px #FDE68A}' +
+		'.fx{background:rgba(167,139,250,.55);box-shadow:0 0 0 2px rgba(167,139,250,.55);border-radius:4px}' +
 		'.tools{display:flex;justify-content:center;gap:6px;margin-top:6px;opacity:0;transition:opacity .15s;direction:rtl}' +
 		'.bar:hover .tools{opacity:1}' +
 		'.t{font:600 13px/1 ' + FONT + ';background:rgba(15,15,16,.86);color:#fff;border:1px solid rgba(255,255,255,.25);border-radius:999px;padding:7px 12px;cursor:pointer}' +
@@ -73,17 +74,26 @@
 		':host(.colors) .wd.learning{background:#FDE68A;box-shadow:0 0 0 1px #B45309}' +
 		'.empty{padding:16px;color:#8A8584;direction:rtl;text-align:right}' +
 		'.foot{padding:8px 12px;border-top:1px solid #E6E3DF;font-size:12px;color:#8A8584;direction:rtl}' +
-		':host(.min) .legend,:host(.min) .list,:host(.min) .foot{display:none}';
+		'.fx{background:#EDE9FE;box-shadow:0 0 0 1px #A78BFA;border-radius:3px}' +
+		'.focus{display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid #E6E3DF;direction:rtl;font-size:12.5px}' +
+		'.focus label{color:#4A4847;font-weight:600;white-space:nowrap}' +
+		'.fsel{flex:1;min-width:0;font:600 13px/1.2 ' + FONT + ';border:1px solid #E6E3DF;border-radius:8px;padding:6px 8px;background:#fff;color:#0F0F10;direction:rtl}' +
+		'.fbar{display:none;padding:8px 12px;border-bottom:1px solid #E6E3DF;background:#F5F3FF;direction:rtl;font-size:12.5px;color:#4A4847}' +
+		'.fbar.on{display:block}.fbar .rule{margin-top:2px}.fbar .row{display:flex;align-items:center;justify-content:space-between;gap:8px}' +
+		'.fbar b{color:#0F0F10}.fbar .sw2{display:inline-block;width:18px;height:10px;background:#EDE9FE;outline:1px solid #A78BFA;margin-inline-end:6px;vertical-align:0}' +
+		'.fnav{display:flex;gap:4px}.fnav button{font:600 12px/1 ' + FONT + ';border:1px solid #E6E3DF;background:#fff;border-radius:6px;padding:5px 9px;cursor:pointer}.fnav button:hover{border-color:#0F0F10}' +
+		':host(.min) .legend,:host(.min) .list,:host(.min) .foot,:host(.min) .focus,:host(.min) .fbar{display:none!important}';
 
 	var REPEAT = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17 2l3 3-3 3M4 11V9a4 4 0 0 1 4-4h12M7 22l-3-3 3-3M20 13v2a4 4 0 0 1-4 4H4"/></svg>';
 
 	var S = { videoId: '', cues: [], lines: null, sents: [], sentToks: null, grade: null, idx: -1, sIdx: -1, host: null, root: null, side: null, sRoot: null, video: null, pausedByUs: false, raf: 0, primed: '', stopAt: 0, follow: true, scrolledAt: 0 };
-	var prefs = { sidebar: true, colors: true, pauseOnHover: true, sideMin: false };
-	chrome.storage.local.get(['sidebar', 'lensColors', 'pauseOnHover', 'sideMin'], function (o) {
+	var prefs = { sidebar: true, colors: true, pauseOnHover: true, sideMin: false, focus: '' };
+	chrome.storage.local.get(['sidebar', 'lensColors', 'pauseOnHover', 'sideMin', 'focus'], function (o) {
 		prefs.sidebar = o.sidebar !== false;
 		prefs.colors = o.lensColors !== false;
 		prefs.pauseOnHover = o.pauseOnHover !== false;
 		prefs.sideMin = !!o.sideMin;
+		prefs.focus = o.focus || '';
 		applyPrefs();
 	});
 
@@ -110,7 +120,9 @@
 		S.kind = d.kind;
 		S.sents = sentences(cues, d.kind === 'asr');
 		mount();
+		S.fxCues = S.fxSents = null;
 		analyse();
+		runFocus();
 	});
 
 	function parse(body, asr) {
@@ -222,6 +234,10 @@
 		if (ch.lensColors) prefs.colors = ch.lensColors.newValue !== false;
 		if (ch.pauseOnHover) prefs.pauseOnHover = ch.pauseOnHover.newValue !== false;
 		if (ch.sideMin) prefs.sideMin = !!ch.sideMin.newValue;
+		if (ch.focus) {
+			prefs.focus = ch.focus.newValue || '';
+			runFocus();
+		}
 		if (ch.sidebar || ch.lensColors || ch.sideMin) applyPrefs();
 	});
 
@@ -238,15 +254,45 @@
 	}
 
 	/* ------------------------------------------------------------ word markup */
-	function markup(text, toks) {
-		if (!toks) return U.esc(text);
-		var html = '', pos = 0;
-		toks.forEach(function (t, k) {
-			html += U.esc(text.slice(pos, t.start));
-			html += '<span class="wd ' + t.status + '" data-k="' + k + '">' + U.esc(t.text) + '</span>';
-			pos = t.end;
-		});
-		return html + U.esc(text.slice(pos));
+	function markup(text, toks, spans) {
+		return U.markup(text, toks, spans);
+	}
+
+	/* ------------------------------------------------------------ grammar focus */
+	function runFocus() {
+		var vid = S.videoId, f = prefs.focus;
+		if (!f || !S.cues.length) {
+			S.fxCues = S.fxSents = null;
+			S.fxInfo = null;
+			paintSide();
+			S.idx = -1;
+			tick(true);
+			return;
+		}
+		Promise.all([
+			U.send('grammar', { texts: S.cues.map(function (c) { return c.text; }), focus: f }),
+			U.send('grammar', { texts: S.sents.map(function (s) { return s.text; }), focus: f })
+		]).then(function (r) {
+			if (vid !== S.videoId || f !== prefs.focus) return;
+			S.fxCues = r[0].spans;
+			S.fxSents = r[1].spans;
+			S.fxInfo = { name: r[1].name, rule: r[1].rule, count: r[1].count };
+			paintSide();
+			S.idx = -1;
+			tick(true);
+		}, function () {});
+	}
+
+	/** Jump to the previous/next sentence that has the focused structure. */
+	function jumpFocus(dir) {
+		if (!S.fxSents) return;
+		var from = S.sIdx < 0 ? (dir > 0 ? -1 : S.sents.length) : S.sIdx;
+		for (var i = from + dir; i >= 0 && i < S.sents.length; i += dir) {
+			if (S.fxSents[i] && S.fxSents[i].length) {
+				play(S.sents[i].start, 0);
+				return;
+			}
+		}
 	}
 
 	/* ------------------------------------------------------------ caption overlay */
@@ -328,7 +374,7 @@
 			line.innerHTML = '';
 			return;
 		}
-		line.innerHTML = markup(S.cues[i].text, S.lines ? S.lines[i] : null);
+		line.innerHTML = markup(S.cues[i].text, S.lines ? S.lines[i] : null, S.fxCues ? S.fxCues[i] : null);
 	}
 
 	/* ------------------------------------------------------------ transcript sidebar */
@@ -346,6 +392,8 @@
 			'<button class="ib" data-a="colors" title="تلوين الكلمات">الألوان</button>' +
 			'<button class="ib" data-a="min" title="تصغير">—</button></div></div>' +
 			'<div class="legend"><span><i class="sw known"></i>أعرفها</span><span><i class="sw next"></i>تستحق المراجعة</span><span><i class="sw hard"></i>فوق مستواك أو نادرة</span><span><i class="sw learning"></i>أتعلّمها</span></div>' +
+			'<div class="focus"><label for="fsel">ركّز على</label><select class="fsel" id="fsel"><option value="">— بدون —</option></select></div>' +
+			'<div class="fbar"><div class="row"><div><i class="sw2"></i><b class="fname"></b> · <span class="fcount"></span></div><div class="fnav"><button data-a="fprev" title="المثال السابق">▲</button><button data-a="fnext" title="المثال التالي">▼</button></div></div><div class="rule"></div></div>' +
 			'<div class="list"></div><div class="foot">اضغط على جملة لتشغيلها، أو ' + '↻' + ' لتشغيل الجملة وحدها. حدّد كلمات لحفظها كتعبير أو قاعدة.</div></div>';
 		col.insertBefore(S.side, col.firstChild);
 		S.sRoot.addEventListener('mouseover', function (e) { onOver(e, 'side'); });
@@ -355,8 +403,26 @@
 		var list = S.sRoot.querySelector('.list');
 		list.addEventListener('wheel', function () { S.scrolledAt = Date.now(); }, { passive: true });
 		list.addEventListener('touchmove', function () { S.scrolledAt = Date.now(); }, { passive: true });
+		var fsel = S.sRoot.querySelector('.fsel');
+		U.send('focusList').then(function (fl) {
+			fsel.innerHTML = '<option value="">— بدون —</option>' + fl.map(function (f) { return '<option value="' + f.key + '">' + U.esc(f.name) + '</option>'; }).join('');
+			fsel.value = prefs.focus || '';
+		}, function () {});
+		fsel.addEventListener('change', function () { U.send('setPref', { key: 'focus', value: fsel.value }).catch(function () {}); });
 		applyPrefs();
 		paintSide();
+	}
+
+	function paintFocusBar() {
+		if (!S.sRoot) return;
+		var bar = S.sRoot.querySelector('.fbar'), fsel = S.sRoot.querySelector('.fsel');
+		if (fsel && fsel.value !== (prefs.focus || '') && fsel.options.length > 1) fsel.value = prefs.focus || '';
+		bar.classList.toggle('on', !!(prefs.focus && S.fxInfo));
+		if (!S.fxInfo) return;
+		bar.querySelector('.fname').textContent = S.fxInfo.name;
+		var n = S.fxInfo.count, inS = S.fxSents ? S.fxSents.filter(function (x) { return x && x.length; }).length : 0;
+		bar.querySelector('.fcount').textContent = n ? n + ' مثال في ' + inS + ' جملة' : 'لا توجد أمثلة في هذا الفيديو';
+		bar.querySelector('.rule').textContent = S.fxInfo.rule;
 	}
 
 	function fmt(ms) {
@@ -369,12 +435,13 @@
 		var list = S.sRoot.querySelector('.list'), g = S.sRoot.querySelector('.g');
 		g.textContent = S.grade ? 'تعرف ' + S.grade.percent + '%' : '';
 		S.sRoot.querySelector('[data-a=follow]').classList.toggle('on', S.follow);
+		paintFocusBar();
 		if (!S.sents.length) {
 			list.innerHTML = '<div class="empty">' + (S.cues.length || !S.videoId ? 'جارٍ تجهيز النص…' : 'هذا الفيديو لا يحتوي على نص إنجليزي.') + '</div>';
 			return;
 		}
 		list.innerHTML = S.sents.map(function (s, i) {
-			return '<div class="s" data-i="' + i + '"><button class="tm" data-a="seek">' + fmt(s.start) + '</button><div class="tx">' + markup(s.text, S.sentToks ? S.sentToks[i] : null) +
+			return '<div class="s" data-i="' + i + '"><button class="tm" data-a="seek">' + fmt(s.start) + '</button><div class="tx">' + markup(s.text, S.sentToks ? S.sentToks[i] : null, S.fxSents ? S.fxSents[i] : null) +
 				'</div><button class="rep" data-a="once" title="شغّل هذه الجملة فقط">' + REPEAT + '</button></div>';
 		}).join('');
 		S.sIdx = -1;
@@ -392,6 +459,11 @@
 			else if (a === 'min') chrome.storage.local.set({ sideMin: !prefs.sideMin });
 			return;
 		}
+		if (b && (b.dataset.a === 'fprev' || b.dataset.a === 'fnext')) {
+			jumpFocus(b.dataset.a === 'fnext' ? 1 : -1);
+			return;
+		}
+		if (e.target.closest('.focus')) return;
 		var row = e.target.closest('.s');
 		if (!row || !S.video) return;
 		// Selecting text to save an expression shouldn't jump the video.
@@ -505,6 +577,7 @@
 			}
 			Card.show({
 				word: w.textContent,
+				grammar: w.closest('.fx') ? w.closest('.fx').dataset.l : '',
 				rect: w.getBoundingClientRect(),
 				sentence: src.text,
 				source: { url: 'https://www.youtube.com/watch?v=' + S.videoId + '&t=' + Math.floor(src.start / 1000), title: document.title.replace(/ - YouTube$/, ''), videoId: S.videoId, startMs: src.start, endMs: src.end },

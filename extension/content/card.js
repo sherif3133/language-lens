@@ -35,7 +35,11 @@
 		'.note{color:#4A4847;font-size:13.5px;margin-top:4px}' +
 		'.btns{display:flex;gap:6px;flex-wrap:wrap;margin-top:12px}' +
 		'.wide{width:100%;margin-top:8px;border-radius:10px;padding:10px}' +
-		'.brand{margin-top:10px;font-size:11px;color:#8A8584;direction:ltr;text-align:left}';
+		'.brand{margin-top:10px;font-size:11px;color:#8A8584;direction:ltr;text-align:left}' +
+		'.gram{display:inline-block;margin-top:8px;font-size:12.5px;font-weight:600;background:#EDE9FE;border:1px solid #A78BFA;border-radius:6px;padding:2px 8px}' +
+		'.vf{margin-top:8px;padding:8px 10px;background:#F6F5F3;border-radius:8px}' +
+		'.forms{display:flex;gap:6px;align-items:center;direction:ltr;justify-content:flex-start;font:600 15px/1.3 "IBM Plex Sans Arabic",sans-serif;flex-wrap:wrap}.forms i{color:#8A8584;font-style:normal}' +
+		'.vmeta{font-size:12px;color:#4A4847;margin-top:4px}.vmeta em{font-style:normal;font-weight:600}.vmeta em.irr{color:#B45309}';
 
 	var SPEAK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9zM16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12"/></svg>';
 
@@ -126,6 +130,9 @@
 			'<div class="meta"><span class="lv' + (d.levelName ? '' : ' off') + '">' + (d.levelName || (lang === 'en' ? 'rare' : 'خارج القائمة')) + '</span>' +
 			'<span class="lang"><button data-a="lang-ar" class="' + (lang === 'ar' ? 'on' : '') + '">ع</button><button data-a="lang-en" class="' + (lang === 'en' ? 'on' : '') + '">EN</button></span></div></div>' +
 			(d.lemma && d.lemma !== String(cur.word).toLowerCase() ? '<div class="base">' + u(d.lemma) + '</div>' : '') +
+			(cur.grammar ? '<div class="gram">' + u(cur.grammar) + '</div>' : '') +
+			(d.verb ? '<div class="vf"><div class="forms"><span>' + u(d.verb.base) + '</span><i>›</i><span>' + u(d.verb.past) + '</span><i>›</i><span>' + u(d.verb.pp) + '</span></div>' +
+				'<div class="vmeta"><em class="' + (d.verb.irregular ? 'irr' : '') + '">' + (d.verb.irregular ? 'فعل شاذ' : 'فعل منتظم') + '</em> · <span dir="ltr">' + u(d.verb.ing) + '</span> · <span dir="ltr">he/she ' + u(d.verb.s) + '</span></div></div>' : '') +
 			meaning + ctx +
 			(cur.sentence ? '<div class="sent"><button class="say" data-a="say-sent" title="' + (canReplay ? 'Replay from the video' : 'Listen') + '">' + SPEAK + '</button><span>' + u(cur.sentence) + '</span></div>' : '') +
 			'<div class="btns">' +

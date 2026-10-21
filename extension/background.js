@@ -1,7 +1,7 @@
 /* Language Lens: service worker.
    Owns the word list, the learner's marks, saved sentences, sign-in and sync with sawaenglish.com. */
 'use strict';
-importScripts('core/lens-core.js');
+importScripts('core/lens-core.js', 'lib/compromise.js', 'core/grammar.js');
 
 const DEFAULT_SERVER = 'https://sawaenglish.com';
 let lens = null;
@@ -25,6 +25,7 @@ const DEFAULTS = {
 	glossLang: 'ar', // 'ar' Arabic meanings, 'en' English definitions
 	colorPages: true, // colour words on websites
 	sidebar: true, // full transcript next to YouTube videos
+	focus: '', // grammar focus: '' or a key of LensGrammar.FOCUS
 	progress: null,
 	local: { day: '', words: 0, sentences: 0 }
 };
@@ -241,6 +242,7 @@ async function lookup(word) {
 		level: L.level(lemma),
 		levelName: L.level(lemma) ? self.Lens.LEVELS[L.level(lemma) - 1] : '',
 		entries: L.entries(lemma),
+		verb: L.entries(lemma).some((e) => e.pos === 'verb') ? self.LensGrammar.verbForms(lemma) : null,
 		status: L.status(lemma, st),
 		mark: st.words[lemma] || ''
 	};
@@ -297,7 +299,7 @@ chrome.runtime.onStartup.addListener(() => {
 
 const handlers = {
 	state: async () => {
-		const s = await get(['token', 'me', 'level', 'progress', 'local', 'sites', 'pauseOnHover', 'glossLang', 'colorPages', 'sidebar']);
+		const s = await get(['token', 'me', 'level', 'progress', 'local', 'sites', 'pauseOnHover', 'glossLang', 'colorPages', 'sidebar', 'focus']);
 		if (s.token && !s.me) {
 			try {
 				s.me = await api('/me');
@@ -308,7 +310,7 @@ const handlers = {
 			}
 		}
 		const local = s.local.day === today() ? s.local : { words: 0, sentences: 0 };
-		return { signedIn: !!s.token, me: s.me, level: s.level, progress: s.progress, local, sites: s.sites, pauseOnHover: s.pauseOnHover, glossLang: s.glossLang, colorPages: s.colorPages, sidebar: s.sidebar };
+		return { signedIn: !!s.token, me: s.me, level: s.level, progress: s.progress, local, sites: s.sites, pauseOnHover: s.pauseOnHover, glossLang: s.glossLang, colorPages: s.colorPages, sidebar: s.sidebar, focus: s.focus, focusList: Object.keys(self.LensGrammar.FOCUS).map((k) => [k, self.LensGrammar.FOCUS[k][0]]) };
 	},
 	login: () => login(),
 	logout: () => logout(),
@@ -323,11 +325,14 @@ const handlers = {
 	setPref: async ({ key, value }) => {
 		if (key === 'glossLang') return set({ glossLang: value === 'en' ? 'en' : 'ar' });
 		if (key === 'colorPages' || key === 'sidebar') return set({ [key]: !!value });
+		if (key === 'focus') return set({ focus: self.LensGrammar.FOCUS[value] ? value : '' });
 		return null;
 	},
 	saveExpression: (d) => saveExpression(d),
 	lookup: ({ word }) => lookup(word),
 	analyze: ({ texts }) => analyze(texts),
+	grammar: ({ texts, focus }) => self.LensGrammar.grammar(texts || [], focus),
+	focusList: () => Object.keys(self.LensGrammar.FOCUS).map((k) => ({ key: k, name: self.LensGrammar.FOCUS[k][0], rule: self.LensGrammar.FOCUS[k][1] })),
 	mark: ({ lemma, status }) => mark(lemma, status),
 	explain: async ({ word, sentence, lang }) => {
 		const { glossLang } = await get('glossLang');
