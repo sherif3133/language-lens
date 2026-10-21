@@ -138,7 +138,7 @@ async function render() {
 			<div class="legend"><span><i class="sw next"></i>Worth checking (your next level)</span><span><i class="sw hard"></i>Above your level, or rare</span><span><i class="sw learning"></i>Learning</span></div>
 		</div>
 		<div class="sec links">
-			<a href="${esc(me.app || 'https://sawaenglish.com/lens/')}" target="_blank" rel="noopener">Skill tree &amp; writing</a>
+			<a href="${esc(me.app || 'https://sawaenglish.com/lens/')}" target="_blank" rel="noopener">Review, skill tree &amp; writing</a>
 				<a href="${esc(me.tracker || 'https://sawaenglish.com/tracker/')}" target="_blank" rel="noopener">Tracker</a>
 			<button class="out" id="logout">Sign out</button>
 		</div>`;
