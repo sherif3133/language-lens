@@ -75,7 +75,7 @@
 
 	document.addEventListener('mousemove', function (e) {
 		if (PAUSED || e.buttons) return;
-		if (mode === 'alt' && !e.altKey) return;
+		if (mode === 'select' || (mode === 'alt' && !e.altKey)) return; // select mode: meanings only when you select text
 		if (Card.selectOpen()) return;
 		clearTimeout(timer);
 		var x = e.clientX, y = e.clientY;
@@ -100,9 +100,11 @@
 		setTimeout(function () {
 			var sel = window.getSelection();
 			var t = sel && !sel.isCollapsed ? sel.toString().replace(/\s+/g, ' ').trim() : '';
-			if (t.length < 3 || t.length > 600 || !/[A-Za-z]{2,}/.test(t) || (sel.anchorNode && skip(sel.anchorNode))) return;
+			if (t.length < (mode === 'select' ? 2 : 3) || t.length > 600 || !/[A-Za-z]{2,}/.test(t) || (sel.anchorNode && skip(sel.anchorNode))) return;
 			var r = sel.getRangeAt(0);
 			clearTimeout(timer);
+			// One word selected (or double-clicked): its word card. More words: the phrase / sentence card.
+			if (/^[A-Za-z'’-]+$/.test(t)) { Card.show({ word: t, grammar: '', rect: r.getBoundingClientRect(), sentence: sentenceAround(r.startContainer, r.startOffset) || t, source: { url: location.href, title: document.title } }); return; }
 			Card.select({ text: t, sentence: sentenceAround(r.startContainer, r.startOffset) || t, rect: r.getBoundingClientRect(), source: { url: location.href, title: document.title } });
 		}, 10);
 	});
