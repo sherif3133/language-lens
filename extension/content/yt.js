@@ -27,7 +27,7 @@
 		'.tr{font:500 clamp(14px,1.8vw,21px)/1.5 ' + AR + ';direction:rtl;color:#E6E3DF}' +
 		':host(.blur-en) .line.en{filter:blur(7px)}:host(.blur-en) .line.en:hover{filter:none}' +
 		':host(.blur-tr) .line.tr{filter:blur(6px)}:host(.blur-tr) .line.tr:hover{filter:none}' +
-		':host(.no-tr) .line.tr{display:none}' +
+		':host(.no-tr) .line.tr{display:none}.line.snd{font-size:.7em;color:#FDE68A;letter-spacing:.02em;cursor:help;pointer-events:auto}.line.snd:empty{display:none}.no-snd .line.snd{display:none}.box{position:relative}.sndtip{position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%);width:min(520px,90vw);background:#fff;color:#0F0F10;border-radius:12px;padding:10px 14px;font:500 14px/1.45 ' + FONT + ';text-align:left;display:none;box-shadow:0 8px 24px rgba(0,0,0,.3);pointer-events:auto}.sndtip.on{display:block}.sndtip ul{margin:6px 0 0;padding-left:18px}.lensmenu{position:absolute;right:12px;bottom:60px;width:270px;background:rgba(15,15,16,.94);color:#fff;border-radius:12px;padding:10px;display:none;flex-direction:column;gap:6px;pointer-events:auto;font:500 13px/1.3 ' + FONT + '}.lensmenu.on{display:flex}.lensmenu .t{display:flex;justify-content:space-between;align-items:center;width:100%;border-radius:8px;text-align:left}.lensmenu .lmh{font:700 11px/1 ' + FONT + ';letter-spacing:.06em;text-transform:uppercase;color:#FDE68A;margin-top:4px}.lensmenu .menu{position:static;display:block;background:transparent;color:#fff;padding:0;min-width:0}.lensmenu .menu label{display:flex;gap:8px;align-items:center;padding:4px 2px}' +
 		'.wd{cursor:pointer;border-radius:4px;padding:0 1px}' +
 		'.wd:hover{background:#fff;color:#0F0F10;text-decoration:none}' +
 		':host(.colors) .wd.next{text-decoration:underline;text-decoration-color:#34D399;text-decoration-thickness:3px;text-underline-offset:6px}' +
@@ -120,8 +120,8 @@
 	var WAVE = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h2M7 8v8M11 5v14M15 8v8M19 11v2"/></svg>';
 
 	var S = { videoId: '', cues: [], lines: null, sents: [], sentToks: null, tcues: [], cueTr: null, sentTr: null, grade: null, idx: -1, sIdx: -1, host: null, root: null, side: null, sRoot: null, video: null, pausedByUs: false, raf: 0, primed: '', stopAt: 0, follow: true, scrolledAt: 0, sounds: {} };
-	var prefs = { sidebar: true, colors: true, pauseOnHover: true, sideMin: false, focus: '', showTrans: true, blurCaptions: false, blurTrans: false, barPos: 0.12, autoPause: false, maskSwears: false, wordQuiz: true };
-	var PREF_KEYS = ['sidebar', 'lensColors', 'pauseOnHover', 'sideMin', 'focus', 'showTrans', 'blurCaptions', 'blurTrans', 'barPos', 'autoPause', 'maskSwears', 'wordQuiz'];
+	var prefs = { sidebar: true, colors: true, pauseOnHover: true, sideMin: false, focus: '', showTrans: true, showSound: true, blurCaptions: false, blurTrans: false, barPos: 0.12, autoPause: false, maskSwears: false, wordQuiz: true };
+	var PREF_KEYS = ['sidebar', 'lensColors', 'pauseOnHover', 'sideMin', 'focus', 'showTrans', 'showSound', 'blurCaptions', 'blurTrans', 'barPos', 'autoPause', 'maskSwears', 'wordQuiz'];
 	function readPrefs(o) {
 		prefs.sidebar = o.sidebar !== false;
 		prefs.colors = o.lensColors !== false;
@@ -129,6 +129,7 @@
 		prefs.sideMin = !!o.sideMin;
 		prefs.focus = o.focus || '';
 		prefs.showTrans = o.showTrans !== false;
+		prefs.showSound = o.showSound !== false;
 		prefs.blurCaptions = !!o.blurCaptions;
 		prefs.blurTrans = !!o.blurTrans;
 		prefs.barPos = typeof o.barPos === 'number' ? o.barPos : 0.12;
@@ -284,7 +285,7 @@
 	function analyse() {
 		var vid = S.videoId;
 		Promise.all([
-			U.send('analyze', { texts: S.cues.map(function (c) { return c.text; }) }),
+			U.send('analyze', { texts: S.cues.map(function (c) { return c.text; }) }).then(function (x) { U.send('soundLines', { texts: S.cues.map(function (c) { return c.text; }) }).then(function (sl) { S.cueSnd = sl; }, function () {}); U.send('videoProfile', { texts: S.cues.map(function (c) { return c.text; }) }).then(function (vp) { S.vprof = vp; paintProfile(); }, function () {}); return x; }),
 			U.send('analyze', { texts: S.sents.map(function (s) { return s.text; }) })
 		]).then(function (r) {
 			if (vid !== S.videoId) return;
@@ -329,6 +330,7 @@
 			if (!h) return;
 			h.classList.toggle('colors', prefs.colors);
 			h.classList.toggle('no-tr', !prefs.showTrans);
+			h.classList.toggle('no-snd', !prefs.showSound);
 			h.classList.toggle('blur-en', prefs.blurCaptions);
 			h.classList.toggle('blur-tr', prefs.blurTrans);
 		});
@@ -403,24 +405,27 @@
 			S.root = S.host.attachShadow({ mode: 'open' });
 			S.root.innerHTML = '<style>' + CSS + '</style>' +
 				'<button class="chip" hidden></button><div class="advb" hidden></div><div class="panel"></div><div class="quiz" hidden></div>' +
-				'<div class="bar"><div class="grip" title="Drag to move the captions up or down">⋮⋮</div><div class="box"><div class="line en"></div><div class="line tr"></div></div>' +
-				'<div class="tools">' +
-				'<button class="t" data-a="prev" title="Previous sentence">◀<kbd>A</kbd></button>' +
-				'<button class="t" data-a="repeat" title="Repeat sentence">↻<kbd>S</kbd></button>' +
-				'<button class="t" data-a="next" title="Next sentence">▶<kbd>D</kbd></button>' +
+				'<div class="bar"><div class="grip" title="Drag to move the captions up or down">⋮⋮</div><div class="box"><div class="line en"></div><div class="line tr"></div><div class="line snd" title="How it sounds — hover for fast speech"></div><div class="sndtip"></div></div></div>' +
+				'<div class="lensmenu"><div class="lmh">Language Lens</div>' +
+				'<button class="t" data-a="prev" title="Previous sentence">◀ Previous sentence<kbd>A</kbd></button>' +
+				'<button class="t" data-a="repeat" title="Repeat sentence">↻ Repeat sentence<kbd>S</kbd></button>' +
+				'<button class="t" data-a="next" title="Next sentence">▶ Next sentence<kbd>D</kbd></button>' +
 				'<button class="t" data-a="autopause" title="Pause after every sentence">Auto-pause<kbd>Q</kbd></button>' +
 				'<button class="t" data-a="save">Save sentence</button>' +
 				'<button class="t" data-a="side">Transcript</button>' +
-				'<span style="position:relative"><button class="t" data-a="menu">Display ▾</button><div class="menu">' +
-				'<label><input type="checkbox" data-pref="showTrans"> Show translation</label>' +
+				'<div class="lmh">Display</div><div class="menu on">' +
+				'<label><input type="checkbox" data-pref="showTrans"> Arabic translation (2nd line)</label>' +
+				'<label><input type="checkbox" data-pref="showSound"> How it sounds (3rd line)</label>' +
 				'<label><input type="checkbox" data-pref="blurCaptions"> Blur captions until hover</label>' +
 				'<label><input type="checkbox" data-pref="blurTrans"> Blur translation until hover</label>' +
 				'<label><input type="checkbox" data-pref="colors"> Colour words</label>' +
 				'<label><input type="checkbox" data-pref="pauseOnHover"> Pause when I hover a word</label>' +
 				'<label><input type="checkbox" data-pref="maskSwears"> Mask swear words (f***)</label>' +
 				'<label><input type="checkbox" data-pref="wordQuiz"> Quiz me on my Learning words</label>' +
-				'</div></span></div></div>';
+				'</div></div>';
 			player.appendChild(S.host);
+			S.root.querySelector('.line.snd').addEventListener('mouseenter', soundTip);
+			S.root.querySelector('.line.snd').addEventListener('mouseleave', function () { S.root.querySelector('.sndtip').classList.remove('on'); });
 			player.classList.add('sawa-lens-on');
 			hideNativeCaptions();
 			S.root.addEventListener('mouseover', function (e) { onOver(e, 'bar'); });
@@ -439,7 +444,34 @@
 			loop();
 		}
 		applyPrefs();
+		ytButton(player);
 		if (prefs.sidebar) mountSide();
+	}
+
+	/** The Language Lens button on YouTube's own control bar: it opens the menu with the controls and display options. */
+	function ytButton(player) {
+		var bar = player.querySelector('.ytp-right-controls');
+		if (!bar || bar.querySelector('.sawa-lens-ytbtn')) return;
+		var b = document.createElement('button');
+		b.className = 'ytp-button sawa-lens-ytbtn';
+		b.title = 'Language Lens (A ◀ · S ↻ · D ▶ · Q auto-pause)';
+		b.setAttribute('aria-label', 'Language Lens');
+		b.innerHTML = '<span style="display:flex;align-items:center;justify-content:center;height:100%;font:700 15px/1 Arial,sans-serif;color:#fff">Aa</span>';
+		b.addEventListener('click', function (e) { e.stopPropagation(); S.root.querySelector('.lensmenu').classList.toggle('on'); });
+		bar.insertBefore(b, bar.firstChild);
+		document.addEventListener('click', function (e) { if (!e.composedPath().some(function (n) { return n === S.host || (n.classList && n.classList.contains('sawa-lens-ytbtn')); })) S.root.querySelector('.lensmenu').classList.remove('on'); });
+	}
+
+	/** Hover the third line: how the sentence sounds in fast natural speech (and why). */
+	function soundTip() {
+		var i = S.shown, tip = S.root.querySelector('.sndtip');
+		if (i == null || i < 0 || !S.cues[i]) return;
+		S.cueSound = S.cueSound || {};
+		tip.classList.add('on');
+		var paint = function () { if (S.shown === i) tip.innerHTML = soundBox(S.cueSound[i]); };
+		if (S.cueSound[i]) return paint();
+		S.cueSound[i] = 'loading'; paint();
+		U.send('sound', { text: S.cues[i].text }).then(function (r) { S.cueSound[i] = r; paint(); }, function (err) { S.cueSound[i] = { error: U.errText(err) }; paint(); });
 	}
 
 	/** Drag the grip to move the caption box up or down; the position is remembered. */
@@ -510,10 +542,14 @@
 		if (i < 0 || !S.cues[i]) {
 			en.innerHTML = '';
 			tr.textContent = '';
+			var sl = S.root.querySelector('.line.snd'); if (sl) sl.textContent = '';
 			return;
 		}
 		en.innerHTML = U.markup(mask(S.cues[i].text), S.lines ? S.lines[i] : null, S.fxCues ? S.fxCues[i] : null);
 		tr.textContent = S.cueTr ? S.cueTr[i] || '' : '';
+		S.shown = i;
+		var snd = S.root.querySelector('.line.snd'); if (snd) snd.textContent = S.cueSnd ? S.cueSnd[i] || '' : '';
+		var tip = S.root.querySelector('.sndtip'); if (tip) tip.classList.remove('on');
 	}
 
 	/* ------------------------------------------------------------ transcript sidebar */
@@ -525,12 +561,12 @@
 		if (S.side) S.side.remove();
 		S.side = document.createElement('sawa-lens-side');
 		S.sRoot = S.side.attachShadow({ mode: 'open' });
-		S.sRoot.innerHTML = '<style>' + SIDE_CSS + '</style><div class="side">' +
+		S.sRoot.innerHTML = '<style>' + SIDE_CSS + '.vprof{margin:6px 10px;font:500 13px/1.4 ' + FONT + '}.vprof summary{cursor:pointer;padding:6px 0}.vprof summary small{color:#8A8584}.vbar{display:flex;height:10px;border-radius:5px;overflow:hidden;margin:6px 0}.vbar i{display:block;height:100%}.vt{width:100%;border-collapse:collapse;font-size:12.5px}.vt td{padding:2px 4px}.vt td:nth-child(n+2){text-align:right;color:#57534E}.vd{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:6px}.vv{margin:8px 0;font-size:13px}.lmh2{font:700 11px/1 ' + FONT + ';letter-spacing:.06em;text-transform:uppercase;color:#8A8584;margin:8px 0 4px}.vtop{display:flex;flex-wrap:wrap;gap:4px}.vtop span{background:#F3F1EE;border-radius:99px;padding:3px 8px;font-size:12.5px}.vtop small{color:#8A8584}</style><div class="side">' +
 			'<div class="head"><div class="ttl">Language Lens <small class="g"></small></div><div class="hb">' +
 			'<button class="ib" data-a="follow" title="Follow the current sentence">Follow</button>' +
 			'<button class="ib" data-a="colors" title="Colour words">Colours</button>' +
 			'<button class="ib" data-a="min" title="Collapse">—</button></div></div>' +
-			'<div class="goal"></div><div class="lq"></div><div class="adv"></div>' +
+			'<div class="goal"></div><div class="vprof"></div><div class="lq"></div><div class="adv"></div>' +
 			'<div class="legend"><span><i class="sw known"></i>Known</span><span><i class="sw next"></i>Worth checking</span><span><i class="sw hard"></i>Above your level / rare</span><span><i class="sw learning"></i>Learning</span></div>' +
 			'<div class="focus"><label for="fsel">Focus on</label><select class="fsel" id="fsel"><option value="">— none —</option></select></div>' +
 			'<div class="fbar"><div class="row"><div><i class="sw2"></i><b class="fname"></b> · <span class="fcount"></span></div><div class="fnav"><button data-a="fprev" title="Previous example">▲</button><button data-a="fnext" title="Next example">▼</button></div></div><div class="rule"></div></div>' +
@@ -605,6 +641,21 @@
 	}
 
 	/** "Top 1,000 words: 812 known" — the vocabulary goal at the top of the sidebar. */
+	/** The video's vocabulary: frequency bands of all its words and its 20 most used words. */
+	function paintProfile() {
+		var box = S.sRoot && S.sRoot.querySelector('.vprof'), v = S.vprof, u = U.esc;
+		if (!box || !v || !v.total) return;
+		var names = ['Top 1,000', '1,000–2,000', '2,000–3,000', '3,000–6,000', 'Rarer'], cols = ['#15803D', '#65A30D', '#CA8A04', '#EA580C', '#E3262B'];
+		var pct = function (n) { return Math.round(100 * n / v.total); };
+		var verdict = v.cover >= 95 ? '✅ Good for your level: you probably know ' + v.cover + '% of these words.' : v.cover >= 90 ? '🟡 A good challenge: about ' + v.cover + '% of the words are at your level. Use the captions and save new words.' : '🔴 Hard for your level: only ' + v.cover + '% of the words are at your level. Try it with the translation on, or pick an easier video.';
+		box.innerHTML = '<details' + (S.vprofOpen ? ' open' : '') + '><summary><b>Words in this video</b> <small>' + v.total + ' words</small></summary>'
+			+ '<div class="vbar">' + v.bands.map(function (b, i) { return b.n ? '<i style="width:' + (100 * b.n / v.total) + '%;background:' + cols[i] + '" title="' + names[i] + ': ' + b.n + ' words"></i>' : ''; }).join('') + '</div>'
+			+ '<table class="vt">' + v.bands.map(function (b, i) { return '<tr><td><span class="vd" style="background:' + cols[i] + '"></span>' + names[i] + '</td><td>' + b.n + ' words</td><td>' + pct(b.n) + '%</td><td>' + b.uniq + ' different</td></tr>'; }).join('') + '</table>'
+			+ '<p class="vv">' + verdict + '</p>'
+			+ '<div class="lmh2">Most used words</div><div class="vtop">' + v.top.map(function (w) { return '<span title="' + u(w.ar) + '">' + u(w.lemma) + ' <small>×' + w.count + '</small></span>'; }).join('') + '</div></details>';
+		box.querySelector('details').addEventListener('toggle', function () { S.vprofOpen = this.open; });
+	}
+
 	function paintGoal() {
 		if (!S.sRoot) return;
 		U.send('goal').then(function (g) {

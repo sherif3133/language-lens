@@ -28,6 +28,32 @@
 		return !el || !!el.closest(SKIP);
 	}
 
+	/**
+	 * The parts of a page that aren't reading text: links, titles and headlines, buttons, menus, and short labels
+	 * like "Like", "Reply", "7 comments" or a person's name above a comment. Skipped when "Skip links, titles and buttons" is on.
+	 */
+	var UI = 'a,h1,h2,h3,h4,h5,h6,button,label,nav,header,footer,aside,figcaption,summary,option,time,[role=button],[role=link],[role=menu],[role=menuitem],[role=tab],[role=navigation],[role=heading],[role=banner],[role=toolbar],[role=tooltip]';
+	var skipUi = true, shortMemo = new WeakMap();
+	chrome.storage.local.get('skipUi', function (o) { skipUi = o.skipUi !== false; });
+	function uiText(node) {
+		if (!skipUi) return false;
+		var el = node.nodeType === 1 ? node : node.parentElement;
+		if (!el) return false;
+		if (el.closest(UI)) return true;
+		// The nearest block: real paragraphs are reading text; a tiny block without a sentence end is a label.
+		var b = el.closest('p,li,blockquote,td,dd,dt,div,section,article,span');
+		while (b && b.tagName === 'SPAN' && b.parentElement) b = b.parentElement.closest('p,li,blockquote,td,dd,dt,div,section,article,span');
+		if (!b || /^(P|LI|BLOCKQUOTE)$/.test(b.tagName)) return false;
+		var key = el === b ? b : el;
+		if (shortMemo.has(key)) return shortMemo.get(key);
+		var words = function (x) { return (x.textContent || '').trim().split(/\s+/).length; };
+		var t = (b.textContent || '').trim(), label = t.length < 40 && words(b) <= 3 && !/[.!?…]$/.test(t);
+		// A row of small bits ("Like · 16 · Reply · 7 comments"): each piece is a label.
+		if (!label && el !== b) label = words(el) <= 3 && words(b) <= 8 && !/[.!?…,]/.test(t);
+		shortMemo.set(key, label);
+		return label;
+	}
+
 	function wordAt(x, y) {
 		var c = caretAt(x, y);
 		if (!c || !c.node || c.node.nodeType !== 3 || skip(c.node)) return null;
@@ -90,6 +116,7 @@
 		var x = e.clientX, y = e.clientY;
 		timer = setTimeout(function () {
 			var hit = wordAt(x, y);
+			if (hit && uiText(hit.node)) hit = null; // links, titles, buttons and labels: no pop-up
 			if (!hit) {
 				if (Card.isOpen()) Card.hideSoon(500);
 				lastKey = '';
@@ -179,7 +206,7 @@
 			acceptNode: function (n) {
 				if (!/[A-Za-z]{2,}/.test(n.data)) return NodeFilter.FILTER_REJECT;
 				var p = n.parentElement;
-				if (!p || p.closest(SKIP) || p.closest('[aria-hidden="true"],nav,header,footer')) return NodeFilter.FILTER_REJECT;
+				if (!p || p.closest(SKIP) || p.closest('[aria-hidden="true"],nav,header,footer') || uiText(n)) return NodeFilter.FILTER_REJECT;
 				return NodeFilter.FILTER_ACCEPT;
 			}
 		});
@@ -335,6 +362,7 @@
 			lastGrade = 0;
 			gradeT = setTimeout(regrade, 600);
 		}
+		if (ch.skipUi) { skipUi = ch.skipUi.newValue !== false; shortMemo = new WeakMap(); clearTimeout(gradeT); lastGrade = 0; gradeT = setTimeout(regrade, 600); }
 		if (ch.hoverMode) mode = ch.hoverMode.newValue || 'hover';
 		if (ch.focus) {
 			focus = ch.focus.newValue || '';

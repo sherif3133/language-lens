@@ -77,6 +77,7 @@ async function render() {
 	const enabled = !paused; // on by default everywhere; the switch pauses a site
 	const hmode = (await chrome.storage.local.get('hoverMode')).hoverMode || 'hover';
 	const proofOn = (await chrome.storage.local.get('proofOn')).proofOn !== false;
+	const skipUi = (await chrome.storage.local.get('skipUi')).skipUi !== false;
 	const groups = {};
 	(st.focusList || []).forEach((f) => { (groups[f.group] = groups[f.group] || []).push(f); });
 
@@ -139,6 +140,7 @@ async function render() {
 			<p class="hint">Highlights a grammar point or a sound everywhere, so you notice it.</p>
 			<div style="margin-top:12px"><div class="label">Show meanings on websites</div><select id="hmode" class="fsel"><option value="hover" ${hmode === 'hover' ? 'selected' : ''}>When I hover over a word</option><option value="alt" ${hmode === 'alt' ? 'selected' : ''}>When I hover and hold Alt</option><option value="select" ${hmode === 'select' ? 'selected' : ''}>Only when I select text</option></select><p class="hint">Select or double-click a word for its meaning; select more words to translate or save them.</p></div>
 			<div style="margin-top:12px">${toggle('proof', 'Check my writing on websites', 'Red wavy line = spelling, blue = grammar. Click it to see the fix.', proofOn)}</div>
+			<div style="margin-top:12px">${toggle('skipui', 'Skip links, titles and buttons', 'No colours or pop-ups on links, headlines, menus, names and labels like Like · Reply · Share. Select them if you need a meaning.', skipUi)}</div>
 			<div style="margin-top:12px">${toggle('colors', 'Colour words on websites', 'On sites where Language Lens is on.', st.colorPages !== false)}</div>
 			<div class="legend"><span><i class="sw next"></i>Worth checking (your next level)</span><span><i class="sw hard"></i>Above your level, or rare</span><span><i class="sw learning"></i>Learning</span></div>
 		</div>
@@ -171,6 +173,7 @@ async function render() {
 	pref('pause', 'pauseOnHover');
 	$('#focus').onchange = (e) => send('setPref', { key: 'focus', value: e.target.value });
 	const pf = $('#proof'); if (pf) pf.onchange = () => chrome.storage.local.set({ proofOn: pf.checked });
+	const su = $('#skipui'); if (su) su.onchange = () => chrome.storage.local.set({ skipUi: su.checked });
 	const hm = $('#hmode'); if (hm) hm.onchange = (e) => chrome.storage.local.set({ hoverMode: e.target.value });
 	const test = $('#test');
 	if (test) test.onclick = (e) => { e.preventDefault(); send('openTest').then(() => window.close()); };

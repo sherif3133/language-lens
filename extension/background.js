@@ -495,7 +495,42 @@ async function proofText(text, grammar) {
 	return { spell, gram };
 }
 
+/** "Sounds like" respellings for whole caption lines (the third caption line), from the built-in dictionary. */
+async function soundLines(texts) {
+	const P = await loadPron();
+	return texts.map((t) => String(t || '').replace(/[A-Za-z]+(?:['’][A-Za-z]+)?/g, (w) => {
+		const i = P.info(w.toLowerCase());
+		return i && i.soundsLike ? i.soundsLike : w;
+	}));
+}
+
+/**
+ * A video's vocabulary profile: how many running words come from the most frequent 1,000 / 2,000 / 3,000 / 6,000
+ * words of English and how many are rarer, plus the 20 words the video uses most (without small function words and names).
+ * Learners usually need about 95–98% of the words to follow comfortably (Nation).
+ */
+async function videoProfile(texts, level) {
+	const L = await loadLens(), F = await loadFreq(), BANDS = [1000, 2000, 3000, 6000];
+	const counts = [0, 0, 0, 0, 0], uniq = [new Set(), new Set(), new Set(), new Set(), new Set()], use = {};
+	let total = 0;
+	for (const t of texts) {
+		for (const tok of L.analyze(String(t || ''), {})) {
+			if (tok.status === 'name' || !/[a-z]/i.test(tok.text)) continue;
+			const lemma = tok.lemma, r = F.rank[lemma] || F.rank[tok.text.toLowerCase()] || 99999;
+			let b = BANDS.findIndex((x) => r <= x); if (b < 0) b = 4;
+			counts[b]++; uniq[b].add(lemma); total++;
+			if (r > 150 && lemma.length > 2) use[lemma] = (use[lemma] || 0) + 1;
+		}
+	}
+	const top = Object.keys(use).sort((a, b) => use[b] - use[a]).slice(0, 20).map((l) => { const e = L.entries(l); return { lemma: l, count: use[l], level: L.level(l), ar: (e.find((x) => x.ar) || {}).ar || '' }; });
+	// Words a learner at this level usually knows: A1 ≈ 1k, A2 ≈ 2k, B1 ≈ 3k, B2 ≈ 6k most frequent words.
+	const reach = { 1: 0, 2: 1, 3: 2, 4: 3 }[level || 2] ?? 3, within = counts.slice(0, reach + 1).reduce((a, b) => a + b, 0);
+	return { total, bands: counts.map((n, i) => ({ n, uniq: uniq[i].size })), top, cover: total ? Math.round(1000 * within / total) / 10 : 0 };
+}
+
 const handlers = {
+	videoProfile: async ({ texts }) => videoProfile((texts || []).slice(0, 3000), (await get('level')).level),
+	soundLines: ({ texts }) => soundLines((texts || []).slice(0, 2000)),
 	proof: ({ text, grammar }) => proofText(String(text || '').slice(0, 2000), !!grammar),
 	state: async () => {
 		const s = await get(['token', 'me', 'level', 'progress', 'local', 'sites', 'pauseOnHover', 'glossLang', 'colorPages', 'sidebar', 'focus', 'showIPA', 'showTrans', 'blurCaptions', 'blurTrans', 'maskSwears', 'wordQuiz']);
@@ -537,7 +572,7 @@ const handlers = {
 	saveTest: (d) => saveTest(d),
 	openTest: () => openLevelTest(),
 	mark: ({ lemma, status, ctx }) => mark(lemma, status, false, ctx),
-	images: ({ word }) => api('/image?word=' + encodeURIComponent(word), null, 'GET'),
+	images: ({ word, pos }) => api('/image?word=' + encodeURIComponent(word) + (pos ? '&pos=' + encodeURIComponent(pos) : ''), null, 'GET'),
 	aiImage: ({ word, sentence }) => api('/image/ai', { word, sentence }),
 	explain: async ({ word, sentence, lang }) => {
 		const { glossLang } = await get('glossLang');

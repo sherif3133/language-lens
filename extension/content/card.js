@@ -22,7 +22,7 @@
 	var CSS = BASE +
 		'.card{position:fixed;z-index:2147483646;width:340px;max-width:calc(100vw - 16px);max-height:calc(100vh - 16px);overflow:auto;background:#fff;color:#0F0F10;border:1px solid #0F0F10;border-radius:12px;' +
 		'font:14.5px/1.5 ' + FONT + ';text-align:left;padding:14px 14px 12px;display:none}' +
-		'.card.on{display:block}' +
+		'.card.on{display:block}.x{border:0;background:transparent;color:#8A8584;font:400 22px/1 Arial,sans-serif;padding:0 2px 2px 6px;cursor:pointer;flex:none}.x:hover{color:#0F0F10}' +
 		'.top{display:flex;align-items:center;justify-content:space-between;gap:8px}' +
 		'.wrow{display:flex;align-items:center;gap:6px;min-width:0}' +
 		'.w{font:800 22px/1.2 Changa,' + FONT + ';word-break:break-word}' +
@@ -41,7 +41,7 @@
 		'.sent{display:flex;gap:6px;align-items:flex-start;margin-top:10px;padding-top:10px;border-top:1px solid #E6E3DF;font-size:13.5px;color:#4A4847}' +
 		'.note{color:#4A4847;font-size:13px;margin-top:4px}' +
 		'.btns{display:flex;gap:6px;flex-wrap:wrap;margin-top:12px}' +
-		'.pics{display:flex;gap:6px;margin-top:10px;overflow-x:auto}.pics a{flex:none}.pics img{height:84px;width:auto;max-width:150px;object-fit:cover;border-radius:8px;display:block;background:#EFEDEA}.pics img.ai{outline:2px solid #0F0F10}' +
+		'.pics{margin-top:10px;border-radius:10px;overflow:hidden;background:#F3F1EE;min-height:60px;display:flex;align-items:center;justify-content:center}.pics a{display:block;width:100%}.pics img{width:100%;height:230px;object-fit:contain;display:block;background:#F3F1EE}.pics .muted{padding:14px;text-align:center;font-size:13px}' +
 		'.pics-f{font-size:11px;color:#8A8584;margin-top:4px}.pics-f .lk{border:0;background:none;padding:0;font:inherit;font-size:12px;font-weight:600;text-decoration:underline;cursor:pointer;color:#0F0F10}.brand a{color:inherit}' +
 		'.wide{width:100%;margin-top:8px;border-radius:10px;padding:10px}' +
 		'.brand{margin-top:10px;font-size:11px;color:#8A8584}' +
@@ -130,18 +130,19 @@
 		if (!c.pics) return '';
 		if (c.pics === 'loading') return '<div class="pics"><span class="spin"></span></div>';
 		if (c.pics.error) return '<div class="msg bad">' + u(c.pics.error) + '</div>';
-		var imgs = c.pics.images.slice(0, 3).map(function (p) {
-			return '<a href="' + u(p.link) + '" target="_blank" rel="noopener" title="' + u(p.credit) + '"><img src="' + u(p.thumb) + '" alt="" loading="lazy"></a>';
-		}).join('');
-		var ai = c.pics.ai ? '<a href="' + u(c.pics.ai) + '" target="_blank" rel="noopener" title="AI picture"><img class="ai" src="' + u(c.pics.ai) + '" alt=""></a>' : '';
-		return '<div class="pics">' + (ai + imgs || '<span class="muted">No photos for this word.</span>') + '</div>'
-			+ '<div class="pics-f">' + (c.pics.images.length ? 'Photos: Wikipedia / Openverse' : '') + (!c.pics.ai && c.pics.canAi ? (c.pics.aiLoading ? ' · <span class="spin"></span> drawing…' : ' · <button class="lk" data-a="aipic">✨ AI picture</button>') : '') + '</div>';
+		// One big picture: the AI picture made for this word if there is one, else the photo (nouns only).
+		var p = c.pics.images[0], big = c.pics.ai
+			? '<a href="' + u(c.pics.ai) + '" target="_blank" rel="noopener" title="Picture made for this word"><img src="' + u(c.pics.ai) + '" alt=""></a>'
+			: p ? '<a href="' + u(p.link) + '" target="_blank" rel="noopener" title="' + u(p.credit) + '"><img src="' + u(p.url || p.thumb) + '" alt=""></a>' : '';
+		var inner = big || (c.pics.aiLoading ? '<span class="muted"><span class="spin"></span> Drawing a picture for this word… (about 15 seconds)</span>' : '<span class="muted">No picture for this word yet.</span>');
+		return '<div class="pics">' + inner + '</div>'
+			+ '<div class="pics-f">' + (c.pics.ai ? 'Picture made for this word' : p ? 'Photo: Wikipedia' : '') + (!c.pics.ai && p && c.pics.canAi && !c.pics.aiLoading ? ' · <button class="lk" data-a="aipic">Not right? Draw one</button>' : '') + '</div>';
 	}
 
 	function render() {
 		var d = cur.data, u = U.esc;
 		if (!d) {
-			el.innerHTML = '<div class="w">' + u(cur.word) + '</div><div class="msg"><span class="spin"></span></div>';
+			el.innerHTML = '<div class="top"><div class="w">' + u(cur.word) + '</div><button class="x" data-a="close" title="Close (Esc)" aria-label="Close">×</button></div><div class="msg"><span class="spin"></span></div>';
 			return;
 		}
 		var meaning;
@@ -184,7 +185,7 @@
 		el.innerHTML =
 			'<div class="top"><div class="wrow"><button class="say" data-a="say-word" title="Listen">' + SPEAK + '</button><div class="w">' + u(cur.word) + '</div></div>' +
 			'<div class="meta"><span class="lv' + (d.levelName ? '' : ' off') + '">' + (d.levelName || 'rare') + '</span>' +
-			'<span class="lang" title="Meaning in"><button data-a="lang-ar" class="' + (lang === 'ar' ? 'on' : '') + '">AR</button><button data-a="lang-en" class="' + (lang === 'en' ? 'on' : '') + '">EN</button></span></div></div>' +
+			'<span class="lang" title="Meaning in"><button data-a="lang-ar" class="' + (lang === 'ar' ? 'on' : '') + '">AR</button><button data-a="lang-en" class="' + (lang === 'en' ? 'on' : '') + '">EN</button></span><button class="x" data-a="close" title="Close (Esc)" aria-label="Close">×</button></div></div>' +
 			pr +
 			(d.lemma && d.lemma !== String(cur.word).toLowerCase() ? '<div class="base">from ' + u(d.lemma) + '</div>' : '') +
 			(cur.grammar ? '<div class="gram">' + u(cur.grammar) + '</div>' : '') +
@@ -196,19 +197,17 @@
 			'<div class="btns">' +
 			'<button data-a="known" class="' + (known ? 'on' : '') + '">' + (known ? '✓ ' : '') + 'I know it</button>' +
 			'<button data-a="learning" class="' + (learning ? 'on' : '') + '">' + (learning ? '✓ ' : '') + 'Learning</button>' +
-			(cur.sentence && !cur.ctx ? '<button data-a="explain">In this sentence</button>' : '') +
-			(cur.sentence && !cur.snd ? '<button data-a="sound">How it sounds</button>' : '') +
-			(!cur.pics ? '<button data-a="pics">🖼 Picture</button>' : '') +
 			'</div>' +
-			(cur.sentence ? '<button class="wide" data-a="save"' + (cur.saved ? ' disabled' : '') + '>' + (cur.saved ? 'Saved ✓' : 'Save sentence as a review card') + '</button>' : '') +
 			(cur.msg ? '<div class="msg' + (cur.bad ? ' bad' : '') + '">' + u(cur.msg) + '</div>' : '') +
-			'<div class="brand"><a href="https://youglish.com/pronounce/' + encodeURIComponent((d.lemma || cur.word).toLowerCase()) + '/english" target="_blank" rel="noopener">Hear it in other videos ↗</a> · Language Lens · Sawa English</div>';
+			'<div class="brand">' + (!cur.pics ? '<a href="#" data-a="pics">🖼 Picture</a> · ' : '') + '<a href="https://youglish.com/pronounce/' + encodeURIComponent((d.lemma || cur.word).toLowerCase()) + '/english" target="_blank" rel="noopener">Hear it in other videos ↗</a> · Language Lens · Sawa English</div>';
 		place(cur.rect);
 	}
 
 	function onClick(e) {
 		var b = e.target.closest('button,[data-a]');
+		if (b && b.dataset.a === 'close') return hide();
 		if (!b || !cur || !cur.data) return;
+		if (b.tagName === 'A' && b.dataset.a) e.preventDefault();
 		var a = b.dataset.a, c = cur;
 		if (a === 'tip') {
 			c.tip = c.tip === +b.dataset.i ? null : +b.dataset.i;
@@ -247,12 +246,14 @@
 		} else if (a === 'pics') {
 			c.pics = 'loading';
 			render();
-			U.send('images', { word: (c.data.lemma || c.word) }).then(function (r) { c.pics = r; if (cur === c) render(); }, function (err) { c.pics = { error: U.errText(err) }; if (cur === c) render(); });
-		} else if (a === 'aipic') {
-			c.pics.aiLoading = true;
-			render();
-			U.send('aiImage', { word: (c.data.lemma || c.word), sentence: c.sentence || '' }).then(function (r) { c.pics.ai = r.url; c.pics.aiLoading = false; if (cur === c) render(); }, function (err) { c.pics.aiLoading = false; c.msg = U.errText(err); c.bad = true; if (cur === c) render(); });
-		} else if (a === 'explain') {
+			var pos = ((c.data.entries || [])[0] || {}).pos || '';
+			U.send('images', { word: (c.data.lemma || c.word), pos: pos }).then(function (r) {
+				c.pics = r;
+				if (cur === c) render();
+				// No photo fits (verbs, adjectives, ideas): draw one straight away.
+				if (!r.ai && !r.images.length && r.canAi && cur === c) aiPic(c);
+			}, function (err) { c.pics = { error: U.errText(err) }; if (cur === c) render(); });
+		} else if (a === 'aipic') aiPic(c); else if (a === 'explain') {
 			c.ctx = 'loading';
 			render();
 			U.send('explain', { word: c.word, sentence: c.sentence, lang: lang }).then(function (r) {
@@ -289,6 +290,13 @@
 			c.bad = true;
 			if (cur === c) render();
 		};
+	}
+
+	/** Draw a picture for the word (made once, then shared by everyone). */
+	function aiPic(c) {
+		c.pics.aiLoading = true;
+		render();
+		U.send('aiImage', { word: (c.data.lemma || c.word), sentence: c.sentence || '' }).then(function (r) { c.pics.ai = r.url; c.pics.aiLoading = false; if (cur === c) render(); }, function (err) { c.pics.aiLoading = false; c.msg = U.errText(err); c.bad = true; if (cur === c) render(); });
 	}
 
 	function hideSoon(ms) {
@@ -454,7 +462,9 @@
 		sCur = null;
 	}
 	document.addEventListener('mousedown', function (e) {
-		if (sCur && e.composedPath().indexOf(sHost) < 0) selHide();
+		var path = e.composedPath();
+		if (sCur && path.indexOf(sHost) < 0) selHide();
+		if (cur && path.indexOf(host) < 0) hide(); // click away closes the word card
 	}, true);
 
 	document.addEventListener('keydown', function (e) {
