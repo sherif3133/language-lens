@@ -92,7 +92,7 @@ async function render() {
 	$('#app').innerHTML = `
 		<div class="sec who" style="border-top:0">
 			${me.avatar ? `<img src="${esc(me.avatar)}" alt="">` : ''}
-			<div><b>Hi ${esc(me.firstName || me.name || '')}</b><div class="muted" style="font-size:12.5px">Your progress shows in the Sawa English tracker</div></div>
+			<div><b>Hi ${esc(me.firstName || me.name || '')}</b><div class="muted" style="font-size:12.5px">Your progress shows in the Sawa English app</div></div>
 		</div>
 		${goalHtml}
 		<div class="sec">
@@ -138,8 +138,7 @@ async function render() {
 			<div class="legend"><span><i class="sw next"></i>Worth checking (your next level)</span><span><i class="sw hard"></i>Above your level, or rare</span><span><i class="sw learning"></i>Learning</span></div>
 		</div>
 		<div class="sec links">
-			<a href="${esc(me.app || 'https://sawaenglish.com/lens/')}" target="_blank" rel="noopener">Review, skill tree &amp; writing</a>
-				<a href="${esc(me.tracker || 'https://sawaenglish.com/tracker/')}" target="_blank" rel="noopener">Tracker</a>
+			<a href="${esc(me.app || 'https://sawaenglish.com/app/')}" target="_blank" rel="noopener">Open the Sawa English app</a>
 				<a href="https://sawaenglish.com/guide/" target="_blank" rel="noopener">Guide</a>
 			<button class="out" id="logout">Sign out</button>
 		</div>`;
