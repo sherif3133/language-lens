@@ -14,7 +14,21 @@
 		if (logs.length > 60) logs.shift();
 	}
 
+	/** YouTube's own flags: not family-safe, or age-restricted. */
+	function safety() {
+		try {
+			var p = document.querySelector('#movie_player');
+			var pr = (p && p.getPlayerResponse && p.getPlayerResponse()) || window.ytInitialPlayerResponse || {};
+			var mf = pr.microformat && pr.microformat.playerMicroformatRenderer;
+			var ps = pr.playabilityStatus || {};
+			return { familySafe: mf ? mf.isFamilySafe !== false : true, ageRestricted: !!(ps.desktopLegacyAgeGateReason || /age|inappropriate/i.test(ps.reason || '')) };
+		} catch (e) {
+			return { familySafe: true, ageRestricted: false };
+		}
+	}
+
 	function post(msg) {
+		if (msg.type === 'captions') msg.safety = safety();
 		dbg('post ' + msg.type + ' ' + msg.videoId + (msg.none ? ' none' : '') + (msg.body ? ' len=' + msg.body.length + ' kind=' + msg.kind : ''));
 		window.postMessage(Object.assign({ source: 'sawa-lens-main' }, msg), location.origin);
 	}

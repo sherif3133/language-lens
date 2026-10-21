@@ -2,30 +2,65 @@
 	"manifest_version": 3,
 	"name": "Language Lens – Sawa English",
 	"short_name": "Language Lens",
-	"version": "0.3.0",
+	"version": "0.3.1",
 	"description": "Learn English from YouTube and the web: meanings on hover, IPA and sounds-like, grammar and pronunciation focus, vocabulary goals and review cards. For Sawa English members.",
 	"minimum_chrome_version": "116",
-	"permissions": ["storage", "identity", "scripting", "alarms", "activeTab"],
-	"host_permissions": ["https://www.youtube.com/*", "https://sawaenglish.com/*"],
-	"optional_host_permissions": ["https://*/*", "http://*/*"],
-	"background": { "service_worker": "background.js" },
+	"permissions": [
+		"storage",
+		"identity",
+		"scripting",
+		"alarms",
+		"activeTab"
+	],
+	"host_permissions": [
+		"https://www.youtube.com/*",
+		"https://sawaenglish.com/*"
+	],
+	"optional_host_permissions": [
+		"https://*/*",
+		"http://*/*"
+	],
+	"background": {
+		"service_worker": "background.js"
+	},
 	"content_scripts": [
 		{
-			"matches": ["https://www.youtube.com/*"],
-			"js": ["content/yt-main.js"],
+			"matches": [
+				"https://www.youtube.com/*"
+			],
+			"js": [
+				"content/yt-main.js"
+			],
 			"world": "MAIN",
 			"run_at": "document_start"
 		},
 		{
-			"matches": ["https://www.youtube.com/*"],
-			"js": ["content/common.js", "content/card.js", "content/yt.js"],
+			"matches": [
+				"https://www.youtube.com/*"
+			],
+			"js": [
+				"content/common.js",
+				"content/card.js",
+				"core/explicit.js",
+				"content/yt.js"
+			],
 			"run_at": "document_idle"
 		}
 	],
 	"action": {
 		"default_popup": "popup/popup.html",
 		"default_title": "Language Lens",
-		"default_icon": { "16": "icons/16.png", "32": "icons/32.png", "48": "icons/48.png", "128": "icons/128.png" }
+		"default_icon": {
+			"16": "icons/16.png",
+			"32": "icons/32.png",
+			"48": "icons/48.png",
+			"128": "icons/128.png"
+		}
 	},
-	"icons": { "16": "icons/16.png", "32": "icons/32.png", "48": "icons/48.png", "128": "icons/128.png" }
+	"icons": {
+		"16": "icons/16.png",
+		"32": "icons/32.png",
+		"48": "icons/48.png",
+		"128": "icons/128.png"
+	}
 }

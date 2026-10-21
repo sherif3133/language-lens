@@ -127,6 +127,7 @@ async function render() {
 			${toggle('showTrans', 'Arabic translation line', 'YouTube\'s auto-translation, under the captions.', st.showTrans !== false)}
 			${toggle('blurCaptions', 'Blur captions until hover', 'Listen first, then check.', !!st.blurCaptions)}
 			${toggle('blurTrans', 'Blur translation until hover', '', !!st.blurTrans)}
+			${toggle('maskSwears', 'Mask swear words', 'Shows f*** in captions and the transcript. Each video still gets a content check.', !!st.maskSwears)}
 			<p class="hint">Hotkeys: <kbd>A</kbd> previous · <kbd>S</kbd> repeat · <kbd>D</kbd> next · <kbd>Q</kbd> auto-pause. Drag the ⋮⋮ grip to move the captions.</p>
 		</div>
 		<div class="sec">
@@ -159,6 +160,7 @@ async function render() {
 	pref('showTrans', 'showTrans');
 	pref('blurCaptions', 'blurCaptions');
 	pref('blurTrans', 'blurTrans');
+	pref('maskSwears', 'maskSwears');
 	pref('colors', 'colorPages');
 	pref('pause', 'pauseOnHover');
 	$('#focus').onchange = (e) => send('setPref', { key: 'focus', value: e.target.value });

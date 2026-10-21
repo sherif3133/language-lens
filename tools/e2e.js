@@ -105,6 +105,7 @@ async function connectManual() {
 		return { rows: rows.length, first: rows.slice(0, 4).map((x) => x.querySelector('.tm').textContent + ' ' + x.querySelector('.tx').textContent), classes: cls, inRight: !!h.closest('#secondary') };
 	});
 	log('sidebar:', JSON.stringify(side));
+	log('content check:', await page.evaluate(() => { const r = document.querySelector('sawa-lens-side').shadowRoot; return r.querySelector('.adv').innerText.replace(/s+/g, ' '); }), '| badge hidden:', await page.evaluate(() => document.querySelector('sawa-lens-yt').shadowRoot.querySelector('.advb').hidden));
 	await page.evaluate(() => document.querySelector('sawa-lens-side').scrollIntoView({ block: 'start' }));
 	await page.screenshot({ path: path.join(out, 'yt-sidebar.png') });
 	// Translation line + hotkey D (next sentence)

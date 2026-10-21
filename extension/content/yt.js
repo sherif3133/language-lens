@@ -44,6 +44,7 @@
 		'.chip b{font:800 14px/1 Changa,sans-serif;margin:0 4px}' +
 		'.chip .dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#fff;margin-right:6px;vertical-align:1px}' +
 		'.chip.hard .dot,.chip.too-hard .dot{background:#E3262B}' +
+		'.advb{position:absolute;top:12px;left:12px;z-index:61;font:600 12.5px/1 ' + FONT + ';background:#E3262B;color:#fff;border-radius:999px;padding:8px 12px;pointer-events:auto;cursor:default}' +
 		'.panel{position:absolute;top:52px;right:12px;z-index:62;width:300px;max-height:calc(100% - 140px);overflow:auto;background:#fff;color:#0F0F10;border-radius:12px;' +
 		'font:14px/1.5 ' + FONT + ';text-align:left;padding:14px;display:none;pointer-events:auto}' +
 		'.panel.on{display:block}' +
@@ -70,6 +71,7 @@
 		'.goal .gl{display:flex;justify-content:space-between;gap:8px}.goal b{color:#0F0F10}' +
 		'.gbar{position:relative;height:8px;border-radius:99px;background:#EFEDEA;overflow:hidden;margin-top:5px}.gbar i{position:absolute;left:0;top:0;bottom:0;background:#0F0F10}.gbar i.lr{background:#FDE68A}' +
 		'.goal a{color:#0F0F10;font-weight:600}' +
+		'.adv{padding:8px 12px;border-bottom:1px solid #E6E3DF;font-size:12.5px;color:#4A4847}.adv:empty{display:none}.adv .ok{color:#15803D;font-weight:600}.adv .warn{color:#B91C1C;font-weight:600}.adv a{color:#0F0F10;font-weight:600;cursor:pointer;text-decoration:underline}.adv ul{list-style:none;margin:6px 0 0;padding:0;max-height:160px;overflow:auto}.adv li{display:flex;gap:8px;align-items:center;padding:3px 0}.adv .lvl{font-size:11px;border-radius:4px;padding:1px 6px;font-weight:600}.lvl.mild{background:#FEF3C7}.lvl.moderate{background:#FED7AA}.lvl.strong{background:#FECACA}' +
 		'.legend{display:flex;flex-wrap:wrap;gap:10px;padding:8px 12px;border-bottom:1px solid #E6E3DF;font-size:12px;color:#4A4847}' +
 		'.legend span{display:inline-flex;align-items:center;gap:5px}' +
 		'.sw{display:inline-block;width:18px;height:10px;border-radius:2px}' +
@@ -110,8 +112,8 @@
 	var WAVE = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h2M7 8v8M11 5v14M15 8v8M19 11v2"/></svg>';
 
 	var S = { videoId: '', cues: [], lines: null, sents: [], sentToks: null, tcues: [], cueTr: null, sentTr: null, grade: null, idx: -1, sIdx: -1, host: null, root: null, side: null, sRoot: null, video: null, pausedByUs: false, raf: 0, primed: '', stopAt: 0, follow: true, scrolledAt: 0, sounds: {} };
-	var prefs = { sidebar: true, colors: true, pauseOnHover: true, sideMin: false, focus: '', showTrans: true, blurCaptions: false, blurTrans: false, barPos: 0.12, autoPause: false };
-	var PREF_KEYS = ['sidebar', 'lensColors', 'pauseOnHover', 'sideMin', 'focus', 'showTrans', 'blurCaptions', 'blurTrans', 'barPos', 'autoPause'];
+	var prefs = { sidebar: true, colors: true, pauseOnHover: true, sideMin: false, focus: '', showTrans: true, blurCaptions: false, blurTrans: false, barPos: 0.12, autoPause: false, maskSwears: false };
+	var PREF_KEYS = ['sidebar', 'lensColors', 'pauseOnHover', 'sideMin', 'focus', 'showTrans', 'blurCaptions', 'blurTrans', 'barPos', 'autoPause', 'maskSwears'];
 	function readPrefs(o) {
 		prefs.sidebar = o.sidebar !== false;
 		prefs.colors = o.lensColors !== false;
@@ -123,6 +125,7 @@
 		prefs.blurTrans = !!o.blurTrans;
 		prefs.barPos = typeof o.barPos === 'number' ? o.barPos : 0.12;
 		prefs.autoPause = !!o.autoPause;
+		prefs.maskSwears = !!o.maskSwears;
 	}
 	chrome.storage.local.get(PREF_KEYS, function (o) {
 		readPrefs(o);
@@ -143,7 +146,9 @@
 			return;
 		}
 		if (d.type !== 'captions') return;
+		S.safety = d.safety || null;
 		if (d.none) {
+			S.adv = null;
 			S.videoId = d.videoId;
 			S.cues = [];
 			S.sents = [];
@@ -161,6 +166,8 @@
 		S.kind = d.kind;
 		S.sents = sentences(cues, d.kind === 'asr');
 		S.sounds = {};
+		S.adv = window.LensExplicit ? window.LensExplicit.scan(S.sents.map(function (x) { return x.text; })) : null;
+		S.advOpen = '';
 		alignTranslation();
 		mount();
 		S.fxCues = S.fxSents = null;
@@ -299,6 +306,11 @@
 			readPrefs(o);
 			applyPrefs();
 			if (oldFocus !== prefs.focus) runFocus();
+			if (ch.maskSwears) {
+				paintSide();
+				S.idx = -1;
+				tick(true);
+			}
 		});
 	});
 
@@ -380,7 +392,7 @@
 			S.host.style.cssText = 'position:absolute;inset:0;pointer-events:none;z-index:60';
 			S.root = S.host.attachShadow({ mode: 'open' });
 			S.root.innerHTML = '<style>' + CSS + '</style>' +
-				'<button class="chip" hidden></button><div class="panel"></div>' +
+				'<button class="chip" hidden></button><div class="advb" hidden></div><div class="panel"></div>' +
 				'<div class="bar"><div class="grip" title="Drag to move the captions up or down">⋮⋮</div><div class="box"><div class="line en"></div><div class="line tr"></div></div>' +
 				'<div class="tools">' +
 				'<button class="t" data-a="prev" title="Previous sentence">◀<kbd>A</kbd></button>' +
@@ -395,6 +407,7 @@
 				'<label><input type="checkbox" data-pref="blurTrans"> Blur translation until hover</label>' +
 				'<label><input type="checkbox" data-pref="colors"> Colour words</label>' +
 				'<label><input type="checkbox" data-pref="pauseOnHover"> Pause when I hover a word</label>' +
+				'<label><input type="checkbox" data-pref="maskSwears"> Mask swear words (f***)</label>' +
 				'</div></span></div></div>';
 			player.appendChild(S.host);
 			player.classList.add('sawa-lens-on');
@@ -465,6 +478,7 @@
 		c.innerHTML = '<span class="dot"></span>You know<b>' + S.grade.percent + '%</b>· ' + BAND[S.grade.band];
 		c.title = 'Language Lens: share of the words in this video you know';
 		if (S.root.querySelector('.panel').classList.contains('on')) paintPanel();
+		paintAdvisory();
 	}
 
 	function paintPanel() {
@@ -486,7 +500,7 @@
 			tr.textContent = '';
 			return;
 		}
-		en.innerHTML = U.markup(S.cues[i].text, S.lines ? S.lines[i] : null, S.fxCues ? S.fxCues[i] : null);
+		en.innerHTML = U.markup(mask(S.cues[i].text), S.lines ? S.lines[i] : null, S.fxCues ? S.fxCues[i] : null);
 		tr.textContent = S.cueTr ? S.cueTr[i] || '' : '';
 	}
 
@@ -504,7 +518,7 @@
 			'<button class="ib" data-a="follow" title="Follow the current sentence">Follow</button>' +
 			'<button class="ib" data-a="colors" title="Colour words">Colours</button>' +
 			'<button class="ib" data-a="min" title="Collapse">—</button></div></div>' +
-			'<div class="goal"></div>' +
+			'<div class="goal"></div><div class="adv"></div>' +
 			'<div class="legend"><span><i class="sw known"></i>Known</span><span><i class="sw next"></i>Worth checking</span><span><i class="sw hard"></i>Above your level / rare</span><span><i class="sw learning"></i>Learning</span></div>' +
 			'<div class="focus"><label for="fsel">Focus on</label><select class="fsel" id="fsel"><option value="">— none —</option></select></div>' +
 			'<div class="fbar"><div class="row"><div><i class="sw2"></i><b class="fname"></b> · <span class="fcount"></span></div><div class="fnav"><button data-a="fprev" title="Previous example">▲</button><button data-a="fnext" title="Next example">▼</button></div></div><div class="rule"></div></div>' +
@@ -530,6 +544,52 @@
 		applyPrefs();
 		paintSide();
 		paintGoal();
+	}
+
+	/** Swear words shown as f*** when the learner turns masking on (same length, so word positions stay put). */
+	function mask(text) {
+		if (!prefs.maskSwears || !window.LensExplicit) return text;
+		return text.replace(/[A-Za-z]+(?:['\u2019][A-Za-z]+)*/g, function (w) {
+			return window.LensExplicit.severityOf(w) ? w[0] + w.slice(1).replace(/[A-Za-z']/g, '*') : w;
+		});
+	}
+
+	var THEME_NAMES = { violence: 'violence', sexual: 'sexual content', drugs: 'drugs or alcohol', selfharm: 'self-harm' };
+	/** Content check: swearing by severity, mature themes mentioned, and YouTube's own family-safe flag. */
+	function paintAdvisory() {
+		var a = S.adv, sf = S.safety || {}, unsafe = sf.familySafe === false || sf.ageRestricted;
+		var badge = S.root && S.root.querySelector('.advb');
+		if (badge) {
+			var strongish = a && (a.level === 'strong' || a.level === 'moderate');
+			badge.hidden = !(strongish || unsafe);
+			badge.textContent = unsafe && !strongish ? '⚠ Not family-safe (YouTube)' : a ? '⚠ ' + { strong: 'Strong', moderate: 'Moderate', mild: 'Mild' }[a.level] + ' language' + (unsafe ? ' · not family-safe' : '') : '';
+			badge.title = 'Language Lens content check. Details in the transcript panel.';
+		}
+		var el = S.sRoot && S.sRoot.querySelector('.adv');
+		if (!el) return;
+		if (!a) { el.innerHTML = unsafe ? '<span class="warn">⚠ YouTube marks this video as not family-safe.</span>' : ''; return; }
+		var u = U.esc, parts = [];
+		if (a.level === 'none') parts.push('<span class="ok">✓ No swearing found</span>');
+		else {
+			parts.push('<span class="warn">⚠ ' + { strong: 'Strong', moderate: 'Moderate', mild: 'Mild' }[a.level] + ' language</span> · ' +
+				['strong', 'moderate', 'mild'].filter(function (k) { return a.counts[k]; }).map(function (k) { return k + ' ×' + a.counts[k]; }).join(', ') +
+				' · <a data-adv="words">' + (S.advOpen === 'words' ? 'hide' : 'show') + '</a>');
+		}
+		var th = Object.keys(a.themes);
+		if (th.length) parts.push('Mentions: ' + th.map(function (k) { return THEME_NAMES[k] + ' ×' + a.themes[k]; }).join(', ') + ' · <a data-adv="themes">' + (S.advOpen === 'themes' ? 'hide' : 'show') + '</a>');
+		if (unsafe) parts.push('<span class="warn">⚠ YouTube marks this video as ' + (sf.ageRestricted ? 'age-restricted' : 'not family-safe') + ': it may contain graphic content.</span>');
+		var list = '';
+		if (S.advOpen === 'words') {
+			list = '<ul>' + a.hits.map(function (h) {
+				var w = prefs.maskSwears ? h.word[0] + h.word.slice(1).replace(/[A-Za-z']/g, '*') : h.word;
+				return '<li><button class="tm" data-adv="play" data-i="' + h.i + '">' + fmt(S.sents[h.i].start) + '</button><span class="lvl ' + h.level + '">' + h.level + '</span>' + u(w) + '</li>';
+			}).join('') + '</ul>';
+		} else if (S.advOpen === 'themes') {
+			list = '<ul>' + th.map(function (k) {
+				return a.themeHits[k].slice(0, 20).map(function (i) { return '<li><button class="tm" data-adv="play" data-i="' + i + '">' + fmt(S.sents[i].start) + '</button>' + u(THEME_NAMES[k]) + '</li>'; }).join('');
+			}).join('') + '</ul>';
+		}
+		el.innerHTML = '<div>' + parts.join('<br>') + '</div>' + list + '<div style="margin-top:4px;font-size:11.5px;color:#8A8584">Checked from the words spoken (no AI). It can\'t see what is shown on screen.</div>';
 	}
 
 	/** "Top 1,000 words: 812 known" — the vocabulary goal at the top of the sidebar. */
@@ -576,7 +636,7 @@
 	function rowHtml(s, i) {
 		var tr = S.sentTr && S.sentTr[i] ? '<div class="trs">' + U.esc(S.sentTr[i]) + '</div>' : '';
 		return '<div class="s" data-i="' + i + '"><button class="tm" data-a="seek">' + fmt(s.start) + '</button><div class="body"><div class="tx">' +
-			U.markup(s.text, S.sentToks ? S.sentToks[i] : null, S.fxSents ? S.fxSents[i] : null) + '</div>' + tr +
+			U.markup(mask(s.text), S.sentToks ? S.sentToks[i] : null, S.fxSents ? S.fxSents[i] : null) + '</div>' + tr +
 			(S.sounds[i] ? soundBox(S.sounds[i]) : '') + '</div>' +
 			'<div class="acts"><button class="rep" data-a="once" title="Play only this sentence">' + REPEAT + '</button><button class="rep" data-a="sound" title="How it sounds in fast speech">' + WAVE + '</button></div></div>';
 	}
@@ -587,6 +647,7 @@
 		g.textContent = S.grade ? 'you know ' + S.grade.percent + '%' : '';
 		S.sRoot.querySelector('[data-a=follow]').classList.toggle('on', S.follow);
 		paintFocusBar();
+		paintAdvisory();
 		if (!S.sents.length) {
 			list.innerHTML = '<div class="empty">' + (S.cues.length || !S.videoId ? 'Preparing the transcript…' : 'This video has no English captions.') + '</div>';
 			return;
@@ -618,7 +679,16 @@
 			jumpFocus(b.dataset.a === 'fnext' ? 1 : -1);
 			return;
 		}
-		if (e.target.closest('.focus,.goal,.snd')) return;
+		var ab = e.target.closest('[data-adv]');
+		if (ab) {
+			if (ab.dataset.adv === 'play') play(S.sents[+ab.dataset.i].start, S.sents[+ab.dataset.i].end);
+			else {
+				S.advOpen = S.advOpen === ab.dataset.adv ? '' : ab.dataset.adv;
+				paintAdvisory();
+			}
+			return;
+		}
+		if (e.target.closest('.focus,.goal,.snd,.adv')) return;
 		var row = e.target.closest('.s');
 		if (!row || !S.video) return;
 		var i = +row.dataset.i, s = S.sents[i];

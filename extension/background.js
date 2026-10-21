@@ -422,7 +422,7 @@ chrome.runtime.onStartup.addListener(() => {
 
 const handlers = {
 	state: async () => {
-		const s = await get(['token', 'me', 'level', 'progress', 'local', 'sites', 'pauseOnHover', 'glossLang', 'colorPages', 'sidebar', 'focus', 'showIPA', 'showTrans', 'blurCaptions', 'blurTrans']);
+		const s = await get(['token', 'me', 'level', 'progress', 'local', 'sites', 'pauseOnHover', 'glossLang', 'colorPages', 'sidebar', 'focus', 'showIPA', 'showTrans', 'blurCaptions', 'blurTrans', 'maskSwears']);
 		if (s.token && !s.me) {
 			try {
 				s.me = await api('/me');
@@ -433,7 +433,7 @@ const handlers = {
 			}
 		}
 		const local = s.local.day === today() ? s.local : { words: 0, sentences: 0 };
-		return { signedIn: !!s.token, me: s.me, level: s.level, progress: s.progress, local, sites: s.sites, pauseOnHover: s.pauseOnHover, glossLang: s.glossLang, colorPages: s.colorPages, sidebar: s.sidebar, focus: s.focus, focusList: focusList(), showIPA: s.showIPA, showTrans: s.showTrans, blurCaptions: s.blurCaptions, blurTrans: s.blurTrans };
+		return { signedIn: !!s.token, me: s.me, level: s.level, progress: s.progress, local, sites: s.sites, pauseOnHover: s.pauseOnHover, glossLang: s.glossLang, colorPages: s.colorPages, sidebar: s.sidebar, focus: s.focus, focusList: focusList(), showIPA: s.showIPA, showTrans: s.showTrans, blurCaptions: s.blurCaptions, blurTrans: s.blurTrans, maskSwears: s.maskSwears };
 	},
 	login: () => login(),
 	logout: () => logout(),
@@ -447,7 +447,7 @@ const handlers = {
 	setPause: async ({ on }) => set({ pauseOnHover: !!on }),
 	setPref: async ({ key, value }) => {
 		if (key === 'glossLang') return set({ glossLang: value === 'en' ? 'en' : 'ar' });
-		if (['colorPages', 'sidebar', 'showIPA', 'showTrans', 'blurCaptions', 'blurTrans', 'pauseOnHover'].includes(key)) return set({ [key]: !!value });
+		if (['colorPages', 'sidebar', 'showIPA', 'showTrans', 'blurCaptions', 'blurTrans', 'pauseOnHover', 'maskSwears'].includes(key)) return set({ [key]: !!value });
 		if (key === 'focus') return set({ focus: self.LensGrammar.FOCUS[value] || self.LensPron.FOCUS[value] ? value : '' });
 		return null;
 	},
