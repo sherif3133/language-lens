@@ -41,6 +41,8 @@
 		'.sent{display:flex;gap:6px;align-items:flex-start;margin-top:10px;padding-top:10px;border-top:1px solid #E6E3DF;font-size:13.5px;color:#4A4847}' +
 		'.note{color:#4A4847;font-size:13px;margin-top:4px}' +
 		'.btns{display:flex;gap:6px;flex-wrap:wrap;margin-top:12px}' +
+		'.pics{display:flex;gap:6px;margin-top:10px;overflow-x:auto}.pics a{flex:none}.pics img{height:84px;width:auto;max-width:150px;object-fit:cover;border-radius:8px;display:block;background:#EFEDEA}.pics img.ai{outline:2px solid #0F0F10}' +
+		'.pics-f{font-size:11px;color:#8A8584;margin-top:4px}.pics-f .lk{border:0;background:none;padding:0;font:inherit;font-size:12px;font-weight:600;text-decoration:underline;cursor:pointer;color:#0F0F10}.brand a{color:inherit}' +
 		'.wide{width:100%;margin-top:8px;border-radius:10px;padding:10px}' +
 		'.brand{margin-top:10px;font-size:11px;color:#8A8584}' +
 		'.gram{display:inline-block;margin-top:8px;font-size:12.5px;font-weight:600;background:#EDE9FE;border:1px solid #A78BFA;border-radius:6px;padding:2px 8px}' +
@@ -122,6 +124,20 @@
 		return { noun: 'اسم', verb: 'فعل', adjective: 'صفة', adverb: 'ظرف', preposition: 'حرف جر', pronoun: 'ضمير', determiner: 'أداة', conjunction: 'أداة ربط', interjection: 'تعجب', number: 'عدد' }[p] || '';
 	}
 
+	/** Pictures for the word: real photos first, an AI picture on request for abstract words. */
+	function picsHtml(c) {
+		var u = U.esc;
+		if (!c.pics) return '';
+		if (c.pics === 'loading') return '<div class="pics"><span class="spin"></span></div>';
+		if (c.pics.error) return '<div class="msg bad">' + u(c.pics.error) + '</div>';
+		var imgs = c.pics.images.slice(0, 3).map(function (p) {
+			return '<a href="' + u(p.link) + '" target="_blank" rel="noopener" title="' + u(p.credit) + '"><img src="' + u(p.thumb) + '" alt="" loading="lazy"></a>';
+		}).join('');
+		var ai = c.pics.ai ? '<a href="' + u(c.pics.ai) + '" target="_blank" rel="noopener" title="AI picture"><img class="ai" src="' + u(c.pics.ai) + '" alt=""></a>' : '';
+		return '<div class="pics">' + (ai + imgs || '<span class="muted">No photos for this word.</span>') + '</div>'
+			+ '<div class="pics-f">' + (c.pics.images.length ? 'Photos: Wikipedia / Openverse' : '') + (!c.pics.ai && c.pics.canAi ? (c.pics.aiLoading ? ' · <span class="spin"></span> drawing…' : ' · <button class="lk" data-a="aipic">✨ AI picture</button>') : '') + '</div>';
+	}
+
 	function render() {
 		var d = cur.data, u = U.esc;
 		if (!d) {
@@ -174,7 +190,7 @@
 			(cur.grammar ? '<div class="gram">' + u(cur.grammar) + '</div>' : '') +
 			(d.verb ? '<div class="vf"><div class="forms"><span>' + u(d.verb.base) + '</span><i>›</i><span>' + u(d.verb.past) + '</span><i>›</i><span>' + u(d.verb.pp) + '</span></div>' +
 				'<div class="vmeta"><em class="' + (d.verb.irregular ? 'irr' : '') + '">' + (d.verb.irregular ? 'irregular' : 'regular') + '</em> · ' + u(d.verb.ing) + ' · he/she ' + u(d.verb.s) + '</div></div>' : '') +
-			meaning + ctx +
+			meaning + picsHtml(cur) + ctx +
 			(cur.sentence ? '<div class="sent"><button class="say" data-a="say-sent" title="' + (canReplay ? 'Replay from the video' : 'Listen') + '">' + SPEAK + '</button><span>' + u(cur.sentence) + '</span></div>' : '') +
 			snd +
 			'<div class="btns">' +
@@ -182,10 +198,11 @@
 			'<button data-a="learning" class="' + (learning ? 'on' : '') + '">' + (learning ? '✓ ' : '') + 'Learning</button>' +
 			(cur.sentence && !cur.ctx ? '<button data-a="explain">In this sentence</button>' : '') +
 			(cur.sentence && !cur.snd ? '<button data-a="sound">How it sounds</button>' : '') +
+			(!cur.pics ? '<button data-a="pics">🖼 Picture</button>' : '') +
 			'</div>' +
 			(cur.sentence ? '<button class="wide" data-a="save"' + (cur.saved ? ' disabled' : '') + '>' + (cur.saved ? 'Saved ✓' : 'Save sentence as a review card') + '</button>' : '') +
 			(cur.msg ? '<div class="msg' + (cur.bad ? ' bad' : '') + '">' + u(cur.msg) + '</div>' : '') +
-			'<div class="brand">Language Lens · Sawa English</div>';
+			'<div class="brand"><a href="https://youglish.com/pronounce/' + encodeURIComponent((d.lemma || cur.word).toLowerCase()) + '/english" target="_blank" rel="noopener">Hear it in other videos ↗</a> · Language Lens · Sawa English</div>';
 		place(cur.rect);
 	}
 
@@ -210,7 +227,8 @@
 			render();
 		} else if (a === 'known' || a === 'learning') {
 			var next = c.data.mark === a ? '' : a;
-			U.send('mark', { lemma: c.data.lemma, status: next }).then(function (st) {
+			var src0 = c.source || {};
+			U.send('mark', { lemma: c.data.lemma, status: next, ctx: c.sentence ? { sentence: c.sentence, url: src0.url || location.href, title: src0.title || document.title, videoId: src0.videoId || '', startMs: src0.startMs || 0 } : null }).then(function (st) {
 				c.data.status = st;
 				c.data.mark = next;
 				c.msg = '';
@@ -226,6 +244,14 @@
 					}, function () {});
 				}
 			}, fail(c));
+		} else if (a === 'pics') {
+			c.pics = 'loading';
+			render();
+			U.send('images', { word: (c.data.lemma || c.word) }).then(function (r) { c.pics = r; if (cur === c) render(); }, function (err) { c.pics = { error: U.errText(err) }; if (cur === c) render(); });
+		} else if (a === 'aipic') {
+			c.pics.aiLoading = true;
+			render();
+			U.send('aiImage', { word: (c.data.lemma || c.word), sentence: c.sentence || '' }).then(function (r) { c.pics.ai = r.url; c.pics.aiLoading = false; if (cur === c) render(); }, function (err) { c.pics.aiLoading = false; c.msg = U.errText(err); c.bad = true; if (cur === c) render(); });
 		} else if (a === 'explain') {
 			c.ctx = 'loading';
 			render();

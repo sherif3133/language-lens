@@ -166,7 +166,7 @@ chrome.alarms.onAlarm.addListener((a) => {
 /* ------------------------------------------------------------ actions */
 
 /** Mark a word. baseline = from the placement test: known already, so it isn't counted as learned today. */
-async function mark(lemma, status, baseline) {
+async function mark(lemma, status, baseline, ctx) {
 	lemma = String(lemma || '').toLowerCase();
 	if (!lemma) return null;
 	const L = await loadLens();
@@ -177,6 +177,8 @@ async function mark(lemma, status, baseline) {
 	const t = Date.now();
 	s.wordTs[lemma] = t;
 	s.pending.words[lemma] = { status: status || '', t, level: L.level(lemma), base: baseline ? 1 : 0 };
+	// Where the learner met the word: the sentence (and video moment) becomes the context of its review card.
+	if (ctx && ctx.sentence && status === 'learning') s.pending.words[lemma].ctx = { sentence: String(ctx.sentence).slice(0, 600), url: ctx.url || '', title: ctx.title || '', videoId: ctx.videoId || '', startMs: ctx.startMs || 0 };
 	await set({ words: s.words, wordTs: s.wordTs, pending: s.pending });
 	const after = L.status(lemma, { level: s.level, words: s.words });
 	if (!baseline && before !== 'known' && after === 'known') await bumpLocal('words', 1);
@@ -477,7 +479,9 @@ const handlers = {
 	testItems: () => testItems(),
 	saveTest: (d) => saveTest(d),
 	openTest: () => chrome.tabs.create({ url: chrome.runtime.getURL('test/test.html') }),
-	mark: ({ lemma, status }) => mark(lemma, status),
+	mark: ({ lemma, status, ctx }) => mark(lemma, status, false, ctx),
+	images: ({ word }) => api('/image?word=' + encodeURIComponent(word), null, 'GET'),
+	aiImage: ({ word, sentence }) => api('/image/ai', { word, sentence }),
 	explain: async ({ word, sentence, lang }) => {
 		const { glossLang } = await get('glossLang');
 		return api('/explain', { word, sentence, lang: lang || glossLang });
