@@ -140,6 +140,7 @@ async function render() {
 		<div class="sec links">
 			<a href="${esc(me.app || 'https://sawaenglish.com/lens/')}" target="_blank" rel="noopener">Review, skill tree &amp; writing</a>
 				<a href="${esc(me.tracker || 'https://sawaenglish.com/tracker/')}" target="_blank" rel="noopener">Tracker</a>
+				<a href="https://sawaenglish.com/guide/" target="_blank" rel="noopener">Guide</a>
 			<button class="out" id="logout">Sign out</button>
 		</div>`;
 
