@@ -45,6 +45,13 @@
 		'.chip .dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#fff;margin-right:6px;vertical-align:1px}' +
 		'.chip.hard .dot,.chip.too-hard .dot{background:#E3262B}' +
 		'.advb{position:absolute;top:12px;left:12px;z-index:61;font:600 12.5px/1 ' + FONT + ';background:#E3262B;color:#fff;border-radius:999px;padding:8px 12px;pointer-events:auto;cursor:default}' +
+		'.quiz{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:64;width:min(460px,calc(100% - 32px));max-height:calc(100% - 40px);overflow:auto;background:#fff;color:#0F0F10;border-radius:14px;padding:18px;pointer-events:auto;font:15px/1.5 ' + FONT + ';box-shadow:0 12px 40px rgba(0,0,0,.35);text-align:left}' +
+		'.quiz .qh{font-size:12px;color:#8A8584;font-weight:600;margin-bottom:6px}.quiz .qq{font-size:18px;font-weight:600;margin:0 0 12px}.quiz .qq u{text-decoration:none;border-bottom:2px solid #0F0F10;padding:0 22px}' +
+		'.quiz .qo{display:grid;gap:8px}.quiz .qo button{text-align:left;border:1px solid #E6E3DF;background:#fff;border-radius:10px;padding:10px 12px;font:inherit;font-size:16px;cursor:pointer;color:#0F0F10}.quiz .qo button:hover{border-color:#0F0F10}' +
+		'.quiz .qo button.r{border-color:#15803D;background:#E7F5EC;color:#15803D;font-weight:600}.quiz .qo button.w{border-color:#E3262B;background:#FDECEC;color:#E3262B}' +
+		'.quiz input{width:100%;box-sizing:border-box;border:1px solid #E6E3DF;border-radius:10px;padding:10px 12px;font:inherit;font-size:16px}' +
+		'.quiz .fb{margin-top:10px;border-radius:10px;padding:10px 12px}.quiz .fb.ok{background:#E7F5EC}.quiz .fb.no{background:#FDECEC}.quiz .fb p{margin:4px 0 0}.quiz .ar{direction:rtl;text-align:right}' +
+		'.quiz .qa{display:flex;gap:8px;justify-content:space-between;align-items:center;margin-top:12px;flex-wrap:wrap}.quiz .go{border:0;background:#0F0F10;color:#fff;border-radius:999px;padding:9px 18px;font:inherit;font-weight:600;cursor:pointer}.quiz .lk{border:0;background:none;padding:0;font:inherit;font-size:13px;text-decoration:underline;cursor:pointer;color:#4A4847}' +
 		'.panel{position:absolute;top:52px;right:12px;z-index:62;width:300px;max-height:calc(100% - 140px);overflow:auto;background:#fff;color:#0F0F10;border-radius:12px;' +
 		'font:14px/1.5 ' + FONT + ';text-align:left;padding:14px;display:none;pointer-events:auto}' +
 		'.panel.on{display:block}' +
@@ -72,6 +79,7 @@
 		'.gbar{position:relative;height:8px;border-radius:99px;background:#EFEDEA;overflow:hidden;margin-top:5px}.gbar i{position:absolute;left:0;top:0;bottom:0;background:#0F0F10}.gbar i.lr{background:#FDE68A}' +
 		'.goal a{color:#0F0F10;font-weight:600}' +
 		'.adv{padding:8px 12px;border-bottom:1px solid #E6E3DF;font-size:12.5px;color:#4A4847}.adv:empty{display:none}.adv .ok{color:#15803D;font-weight:600}.adv .warn{color:#B91C1C;font-weight:600}.adv a{color:#0F0F10;font-weight:600;cursor:pointer;text-decoration:underline}.adv ul{list-style:none;margin:6px 0 0;padding:0;max-height:160px;overflow:auto}.adv li{display:flex;gap:8px;align-items:center;padding:3px 0}.adv .lvl{font-size:11px;border-radius:4px;padding:1px 6px;font-weight:600}.lvl.mild{background:#FEF3C7}.lvl.moderate{background:#FED7AA}.lvl.strong{background:#FECACA}' +
+		'.lq{padding:8px 12px;border-bottom:1px solid #E6E3DF;font-size:12.5px;color:#4A4847}.lq:empty{display:none}.lq a{color:#0F0F10;font-weight:600;cursor:pointer;text-decoration:underline}' +
 		'.legend{display:flex;flex-wrap:wrap;gap:10px;padding:8px 12px;border-bottom:1px solid #E6E3DF;font-size:12px;color:#4A4847}' +
 		'.legend span{display:inline-flex;align-items:center;gap:5px}' +
 		'.sw{display:inline-block;width:18px;height:10px;border-radius:2px}' +
@@ -112,8 +120,8 @@
 	var WAVE = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h2M7 8v8M11 5v14M15 8v8M19 11v2"/></svg>';
 
 	var S = { videoId: '', cues: [], lines: null, sents: [], sentToks: null, tcues: [], cueTr: null, sentTr: null, grade: null, idx: -1, sIdx: -1, host: null, root: null, side: null, sRoot: null, video: null, pausedByUs: false, raf: 0, primed: '', stopAt: 0, follow: true, scrolledAt: 0, sounds: {} };
-	var prefs = { sidebar: true, colors: true, pauseOnHover: true, sideMin: false, focus: '', showTrans: true, blurCaptions: false, blurTrans: false, barPos: 0.12, autoPause: false, maskSwears: false };
-	var PREF_KEYS = ['sidebar', 'lensColors', 'pauseOnHover', 'sideMin', 'focus', 'showTrans', 'blurCaptions', 'blurTrans', 'barPos', 'autoPause', 'maskSwears'];
+	var prefs = { sidebar: true, colors: true, pauseOnHover: true, sideMin: false, focus: '', showTrans: true, blurCaptions: false, blurTrans: false, barPos: 0.12, autoPause: false, maskSwears: false, wordQuiz: true };
+	var PREF_KEYS = ['sidebar', 'lensColors', 'pauseOnHover', 'sideMin', 'focus', 'showTrans', 'blurCaptions', 'blurTrans', 'barPos', 'autoPause', 'maskSwears', 'wordQuiz'];
 	function readPrefs(o) {
 		prefs.sidebar = o.sidebar !== false;
 		prefs.colors = o.lensColors !== false;
@@ -126,6 +134,7 @@
 		prefs.barPos = typeof o.barPos === 'number' ? o.barPos : 0.12;
 		prefs.autoPause = !!o.autoPause;
 		prefs.maskSwears = !!o.maskSwears;
+		prefs.wordQuiz = o.wordQuiz !== false;
 	}
 	chrome.storage.local.get(PREF_KEYS, function (o) {
 		readPrefs(o);
@@ -173,6 +182,7 @@
 		S.fxCues = S.fxSents = null;
 		analyse();
 		runFocus();
+		loadLesson(d.videoId);
 	});
 
 	function parse(body, asr) {
@@ -392,7 +402,7 @@
 			S.host.style.cssText = 'position:absolute;inset:0;pointer-events:none;z-index:60';
 			S.root = S.host.attachShadow({ mode: 'open' });
 			S.root.innerHTML = '<style>' + CSS + '</style>' +
-				'<button class="chip" hidden></button><div class="advb" hidden></div><div class="panel"></div>' +
+				'<button class="chip" hidden></button><div class="advb" hidden></div><div class="panel"></div><div class="quiz" hidden></div>' +
 				'<div class="bar"><div class="grip" title="Drag to move the captions up or down">⋮⋮</div><div class="box"><div class="line en"></div><div class="line tr"></div></div>' +
 				'<div class="tools">' +
 				'<button class="t" data-a="prev" title="Previous sentence">◀<kbd>A</kbd></button>' +
@@ -408,6 +418,7 @@
 				'<label><input type="checkbox" data-pref="colors"> Colour words</label>' +
 				'<label><input type="checkbox" data-pref="pauseOnHover"> Pause when I hover a word</label>' +
 				'<label><input type="checkbox" data-pref="maskSwears"> Mask swear words (f***)</label>' +
+				'<label><input type="checkbox" data-pref="wordQuiz"> Quiz me on my Learning words</label>' +
 				'</div></span></div></div>';
 			player.appendChild(S.host);
 			player.classList.add('sawa-lens-on');
@@ -424,6 +435,7 @@
 			S.video = player.querySelector('video');
 			// Also check on the video's own time updates: screen refreshes slow down when the tab is in the background.
 			S.video.addEventListener('timeupdate', checkStop);
+			S.video.addEventListener('timeupdate', checkQuiz);
 			loop();
 		}
 		applyPrefs();
@@ -518,7 +530,7 @@
 			'<button class="ib" data-a="follow" title="Follow the current sentence">Follow</button>' +
 			'<button class="ib" data-a="colors" title="Colour words">Colours</button>' +
 			'<button class="ib" data-a="min" title="Collapse">—</button></div></div>' +
-			'<div class="goal"></div><div class="adv"></div>' +
+			'<div class="goal"></div><div class="lq"></div><div class="adv"></div>' +
 			'<div class="legend"><span><i class="sw known"></i>Known</span><span><i class="sw next"></i>Worth checking</span><span><i class="sw hard"></i>Above your level / rare</span><span><i class="sw learning"></i>Learning</span></div>' +
 			'<div class="focus"><label for="fsel">Focus on</label><select class="fsel" id="fsel"><option value="">— none —</option></select></div>' +
 			'<div class="fbar"><div class="row"><div><i class="sw2"></i><b class="fname"></b> · <span class="fcount"></span></div><div class="fnav"><button data-a="fprev" title="Previous example">▲</button><button data-a="fnext" title="Next example">▼</button></div></div><div class="rule"></div></div>' +
@@ -648,6 +660,7 @@
 		S.sRoot.querySelector('[data-a=follow]').classList.toggle('on', S.follow);
 		paintFocusBar();
 		paintAdvisory();
+		paintLessonInfo();
 		if (!S.sents.length) {
 			list.innerHTML = '<div class="empty">' + (S.cues.length || !S.videoId ? 'Preparing the transcript…' : 'This video has no English captions.') + '</div>';
 			return;
@@ -677,6 +690,11 @@
 		}
 		if (b && (b.dataset.a === 'fprev' || b.dataset.a === 'fnext')) {
 			jumpFocus(b.dataset.a === 'fnext' ? 1 : -1);
+			return;
+		}
+		var lq = e.target.closest('[data-lq]');
+		if (lq) {
+			if (lq.dataset.lq === 'make') makeQuiz();
 			return;
 		}
 		var ab = e.target.closest('[data-adv]');
@@ -745,6 +763,129 @@
 		}
 		if (ans >= 0 && slack != null && ms > arr[ans].end + slack) return -1;
 		return ans;
+	}
+
+	/* ------------------------------------------------------------ video quizzes */
+	/** Sherif's quiz for this video, if he published one. Admins also get a "make a quiz" button. */
+	function loadLesson(vid) {
+		U.send('lesson', { videoId: vid }).then(function (r) {
+			if (vid !== S.videoId) return;
+			S.lesson = r.lesson;
+			S.isAdmin = r.admin;
+			paintSide();
+			if (S.lesson) say('This video has ' + S.lesson.questions.length + ' questions from Sherif. The video stops to ask them.');
+		}, function () {});
+	}
+
+	function quizOpen() { var q = S.root && S.root.querySelector('.quiz'); return q && !q.hidden; }
+
+	function checkQuiz() {
+		if (!S.video || quizOpen() || document.querySelector('#movie_player.ad-showing')) return;
+		var t = S.video.currentTime;
+		// 1. Sherif's questions
+		if (S.lesson) {
+			for (var i = 0; i < S.lesson.questions.length; i++) {
+				var q = S.lesson.questions[i];
+				if (!S.lesson.answers[q.id] && t >= q.t && t < q.t + 5) { S.video.pause(); askLesson(q, i); return; }
+			}
+		}
+		// 2. A Learning word just said (at most one quiz every 3 minutes)
+		if (!prefs.wordQuiz || !S.sentToks || !S.sents.length) return;
+		var ms = t * 1000, k = find(S.sents, ms, null);
+		var ended = k - 1;
+		if (k >= 0 && ms > S.sents[k].end) ended = k;
+		if (ended < 0 || ended === S.lastEnded) return;
+		S.lastEnded = ended;
+		if (Date.now() - S.quizAt < 180000 || ms - S.sents[ended].end > 1500) return;
+		var nearLesson = S.lesson && S.lesson.questions.some(function (q) { return Math.abs(q.t - t) < 20; });
+		if (nearLesson) return;
+		var tok = (S.sentToks[ended] || []).filter(function (x) { return x.status === 'learning' && x.listed && !S.quizzed[x.lemma] && /^[A-Za-z][a-z'-]+$/.test(x.text); })[0];
+		if (!tok) return;
+		S.quizzed[tok.lemma] = 1;
+		S.quizAt = Date.now();
+		S.video.pause();
+		askWord(ended, tok);
+	}
+
+	function showQuiz(html) {
+		var el = S.root.querySelector('.quiz');
+		el.innerHTML = html;
+		el.hidden = false;
+		return el;
+	}
+	function closeQuiz(play) {
+		var el = S.root && S.root.querySelector('.quiz');
+		if (el) { el.hidden = true; el.innerHTML = ''; }
+		if (play && S.video) S.video.play();
+	}
+
+	function askLesson(q, i) {
+		var u = U.esc, L = S.lesson;
+		var body = q.type === 'blank'
+			? '<input class="qi" placeholder="Type the missing word" autocomplete="off"><div class="qa"><span></span><button class="go" data-q="send">Check</button></div>'
+			: '<div class="qo">' + q.options.map(function (o, k) { return '<button data-k="' + k + '">' + u(o) + '</button>'; }).join('') + '</div>';
+		var el = showQuiz('<div class="qh">Question ' + (i + 1) + ' of ' + L.questions.length + ' · from Sherif</div><p class="qq">' + u(q.q).replace(/_{3,}/g, '<u></u>') + '</p>' + body + '<div class="out"></div>'
+			+ '<div class="qa"><button class="lk" data-q="rewatch">↺ Watch that part again</button></div>');
+		var send = function (a, btn) {
+			U.send('lessonAnswer', { id: L.id, qid: q.id, a: a }).then(function (r) {
+				L.answers[q.id] = { a: a, ok: r.ok };
+				paintLessonInfo();
+				el.querySelectorAll('.qo button').forEach(function (b) { b.disabled = true; });
+				if (btn) btn.classList.add(r.ok ? 'r' : 'w');
+				var right = el.querySelector('.qo button[data-k="' + r.answer + '"]'); if (right) right.classList.add('r');
+				el.querySelector('.out').innerHTML = '<div class="fb ' + (r.ok ? 'ok' : 'no') + '"><b>' + (r.ok ? 'Correct ✓ +5 XP' : 'Not quite' + (q.type === 'blank' ? ' — it\'s “' + u(r.answer) + '”' : '')) + '</b>'
+					+ (r.why ? '<p>' + u(r.why) + '</p>' : '') + (r.why_ar ? '<p class="ar">' + u(r.why_ar) + '</p>' : '') + (!r.ok && q.word ? '<p style="font-size:13px;color:#8A8584">“' + u(q.word) + '” is now in your Learning words.</p>' : '') + '</div>'
+					+ '<div class="qa"><span>' + r.correct + ' right so far · ' + Object.keys(L.answers).length + ' of ' + r.total + ' done</span><button class="go" data-q="cont">Continue ▶</button></div>';
+			}, function (err) { say(U.errText(err)); });
+		};
+		el.onclick = function (e) {
+			var b = e.target.closest('button'); if (!b) return;
+			if (b.dataset.k != null && !b.disabled) send(+b.dataset.k, b);
+			else if (b.dataset.q === 'send') { var v = el.querySelector('.qi').value.trim(); if (v) { b.remove(); el.querySelector('.qi').disabled = true; send(v); } }
+			else if (b.dataset.q === 'cont') closeQuiz(true);
+			else if (b.dataset.q === 'rewatch') { closeQuiz(false); S.video.currentTime = Math.max(0, q.t - 12); S.video.play(); }
+		};
+		var inp = el.querySelector('.qi');
+		if (inp) { inp.focus(); inp.onkeydown = function (e) { e.stopPropagation(); if (e.key === 'Enter') el.querySelector('[data-q=send]') && el.querySelector('[data-q=send]').click(); }; }
+	}
+
+	/** "Which word did you hear?" for one of the learner's Learning words in the sentence just said. */
+	function askWord(si, tok) {
+		var u = U.esc, s = S.sents[si];
+		var text = s.text.slice(0, tok.start) + '_____' + s.text.slice(tok.end);
+		U.send('distractors', { lemma: tok.lemma, n: 2 }).then(function (ds) {
+			var opts = ds.concat([tok.text.toLowerCase()]).sort(function () { return Math.random() - 0.5; });
+			var el = showQuiz('<div class="qh">Your Learning word · which word did you hear?</div><p class="qq">' + u(text).replace('_____', '<u></u>') + '</p>'
+				+ '<div class="qo">' + opts.map(function (o) { return '<button data-w="' + u(o) + '">' + u(o) + '</button>'; }).join('') + '</div><div class="out"></div>'
+				+ '<div class="qa"><button class="lk" data-q="again">↺ Hear it again</button><button class="lk" data-q="off">Stop these quizzes</button></div>');
+			el.onclick = function (e) {
+				var b = e.target.closest('button'); if (!b) return;
+				if (b.dataset.w && !b.disabled) {
+					var ok = b.dataset.w === tok.text.toLowerCase();
+					el.querySelectorAll('.qo button').forEach(function (x) { x.disabled = true; if (x.dataset.w === tok.text.toLowerCase()) x.classList.add('r'); });
+					if (!ok) b.classList.add('w');
+					el.querySelector('.out').innerHTML = '<div class="fb ' + (ok ? 'ok' : 'no') + '"><b>' + (ok ? 'Correct ✓' : 'It was “' + u(tok.text) + '”') + '</b><p>' + u(s.text) + '</p></div><div class="qa"><span></span><button class="go" data-q="cont">Continue ▶</button></div>';
+				} else if (b.dataset.q === 'again') { S.stopAt = s.end; S.video.currentTime = Math.max(0, s.start / 1000 - 0.05); S.video.play(); }
+				else if (b.dataset.q === 'off') { setPref('wordQuiz', false); closeQuiz(true); say('Word quizzes are off. Turn them on again in Display ▾.'); }
+				else if (b.dataset.q === 'cont') closeQuiz(true);
+			};
+		}, function () { S.video.play(); });
+	}
+
+	function paintLessonInfo() {
+		var el = S.sRoot && S.sRoot.querySelector('.lq');
+		if (!el) return;
+		var L = S.lesson, n = L ? Object.keys(L.answers).length : 0;
+		el.innerHTML = (L ? '<b>🎯 Quiz from Sherif:</b> ' + L.questions.length + ' questions' + (n ? ' · ' + n + ' answered' : ' · the video stops to ask them') : '')
+			+ (S.isAdmin ? (L ? ' · ' : '') + '<a data-lq="make">' + (L ? 'Edit this quiz' : 'Make a quiz from this video') + '</a>' : '');
+	}
+
+	/** Admin: send this video's captions to make a quiz draft in WordPress. */
+	function makeQuiz() {
+		if (!S.sents.length) return say('Captions are still loading.');
+		say('Sending the transcript…');
+		U.send('lessonDraft', { videoId: S.videoId, title: (document.title || '').replace(/ - YouTube$/, ''), lines: S.sents.map(function (s) { return { start: s.start / 1000, text: s.text }; }) })
+			.then(function () { say('Draft made. Add key words and generate questions in the new tab.'); }, function (err) { say(U.errText(err)); });
 	}
 
 	function checkStop() {
@@ -1002,6 +1143,10 @@
 		S.sIdx = -1;
 		S.stopAt = 0;
 		S.sounds = {};
+		S.lesson = null;
+		S.quizzed = {};
+		S.quizAt = 0;
+		S.lastEnded = -1;
 		var tries = 0;
 		(function wait() {
 			if (document.querySelector('#movie_player video')) {

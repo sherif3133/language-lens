@@ -371,6 +371,23 @@ async function lookup(word) {
 	};
 }
 
+/** Words of the same level and part of speech, for "which word did you hear?" quizzes. */
+async function distractors(lemma, n) {
+	const L = await loadLens();
+	const lex = L.lex;
+	const mine = (lex.lemmas[lemma] || []).map((i) => lex.entries[i]);
+	const lv = mine.length ? mine[0][2] : 2;
+	const pos = mine.length ? mine[0][1] : 'noun';
+	const pool = [];
+	for (let i = 0; i < lex.entries.length; i++) {
+		const e = lex.entries[i];
+		if (e[2] === lv && e[1] === pos && e[0] !== lemma && /^[a-z]+$/.test(e[0])) pool.push(e[0]);
+	}
+	const out = [];
+	while (out.length < n && pool.length) out.push(pool.splice(Math.floor(Math.random() * pool.length), 1)[0]);
+	return out;
+}
+
 async function analyze(texts) {
 	const L = await loadLens();
 	const st = await userState();
@@ -422,7 +439,7 @@ chrome.runtime.onStartup.addListener(() => {
 
 const handlers = {
 	state: async () => {
-		const s = await get(['token', 'me', 'level', 'progress', 'local', 'sites', 'pauseOnHover', 'glossLang', 'colorPages', 'sidebar', 'focus', 'showIPA', 'showTrans', 'blurCaptions', 'blurTrans', 'maskSwears']);
+		const s = await get(['token', 'me', 'level', 'progress', 'local', 'sites', 'pauseOnHover', 'glossLang', 'colorPages', 'sidebar', 'focus', 'showIPA', 'showTrans', 'blurCaptions', 'blurTrans', 'maskSwears', 'wordQuiz']);
 		if (s.token && !s.me) {
 			try {
 				s.me = await api('/me');
@@ -433,7 +450,7 @@ const handlers = {
 			}
 		}
 		const local = s.local.day === today() ? s.local : { words: 0, sentences: 0 };
-		return { signedIn: !!s.token, me: s.me, level: s.level, progress: s.progress, local, sites: s.sites, pauseOnHover: s.pauseOnHover, glossLang: s.glossLang, colorPages: s.colorPages, sidebar: s.sidebar, focus: s.focus, focusList: focusList(), showIPA: s.showIPA, showTrans: s.showTrans, blurCaptions: s.blurCaptions, blurTrans: s.blurTrans, maskSwears: s.maskSwears };
+		return { signedIn: !!s.token, me: s.me, level: s.level, progress: s.progress, local, sites: s.sites, pauseOnHover: s.pauseOnHover, glossLang: s.glossLang, colorPages: s.colorPages, sidebar: s.sidebar, focus: s.focus, focusList: focusList(), showIPA: s.showIPA, showTrans: s.showTrans, blurCaptions: s.blurCaptions, blurTrans: s.blurTrans, maskSwears: s.maskSwears, wordQuiz: s.wordQuiz !== false };
 	},
 	login: () => login(),
 	logout: () => logout(),
@@ -447,7 +464,7 @@ const handlers = {
 	setPause: async ({ on }) => set({ pauseOnHover: !!on }),
 	setPref: async ({ key, value }) => {
 		if (key === 'glossLang') return set({ glossLang: value === 'en' ? 'en' : 'ar' });
-		if (['colorPages', 'sidebar', 'showIPA', 'showTrans', 'blurCaptions', 'blurTrans', 'pauseOnHover', 'maskSwears'].includes(key)) return set({ [key]: !!value });
+		if (['colorPages', 'sidebar', 'showIPA', 'showTrans', 'blurCaptions', 'blurTrans', 'pauseOnHover', 'maskSwears', 'wordQuiz'].includes(key)) return set({ [key]: !!value });
 		if (key === 'focus') return set({ focus: self.LensGrammar.FOCUS[value] || self.LensPron.FOCUS[value] ? value : '' });
 		return null;
 	},
@@ -468,6 +485,18 @@ const handlers = {
 	/** How a sentence or phrase sounds in natural fast speech, and why (connected speech). */
 	sound: ({ text }) => api('/sound', { text }),
 	saveSentence: (d) => saveSentence(d),
+	lesson: async ({ videoId }) => {
+		const { me } = await get('me');
+		const r = await api('/video/' + encodeURIComponent(videoId), null, 'GET');
+		return { lesson: r.lesson, admin: !!(me && me.admin) };
+	},
+	lessonAnswer: ({ id, qid, a }) => api('/lesson/' + id + '/answer', { qid, a }),
+	lessonDraft: async ({ videoId, title, lines }) => {
+		const r = await api('/lessons/draft', { videoId, title, lines });
+		chrome.tabs.create({ url: r.edit });
+		return r;
+	},
+	distractors: ({ lemma, n }) => distractors(lemma, n || 2),
 	enableSite: ({ origin, tabId }) => enableSite(origin, tabId),
 	disableSite: ({ origin }) => disableSite(origin)
 };
