@@ -611,7 +611,7 @@
 			var el = S.sRoot && S.sRoot.querySelector('.goal');
 			if (!el) return;
 			if (!g.tested && !g.known) {
-				el.innerHTML = '<div class="gl"><span>Find your level: a 3-minute vocabulary test.</span><a href="#" data-a="test">Start</a></div>';
+				el.innerHTML = '<div class="gl"><span>Find your English level (A1–C2): free level test.</span><a href="#" data-a="test">Start</a></div>';
 				return;
 			}
 			var n = g.goal.toLocaleString('en-US'), k = Math.round(g.have), pk = Math.min(100, (g.have / g.goal) * 100), pl = Math.min(100 - pk, (g.learning / g.goal) * 100);

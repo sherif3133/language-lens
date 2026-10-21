@@ -85,7 +85,7 @@ async function render() {
 			<div class="steps">${goal.steps.map((s) => `<span class="${s.done ? 'done' : s.goal === goal.goal ? 'cur' : ''}">top ${s.goal / 1000}k</span>`).join('')}</div>
 			<div class="gl"><span>Top <b>${n(goal.goal)}</b> words</span><span><b>${n(goal.have)}</b> known${goal.learning ? ` · ${goal.learning} learning` : ''}</span></div>
 			<div class="gbar"><i style="width:${pk}%"></i><i class="lr" style="left:${pk}%;width:${pl}%"></i></div>
-			${goal.tested ? `<p class="hint">Test estimate: about <b>${n(goal.estimate)}</b> words. <a href="#" id="test">Retake the test</a></p>` : `<button class="btn" id="test">Take the 3-minute vocabulary test</button>`}
+			${goal.tested ? `<p class="hint">Level test: about <b>${n(goal.estimate)}</b> words known. <a href="#" id="test">Take it again</a></p>` : `<button class="btn" id="test">Take the English level test</button>`}
 		</div>`;
 	}
 

@@ -91,6 +91,13 @@ async function api(path, body, method) {
 	return j;
 }
 
+/** The Sawa English level test (CEFR level + vocabulary size); the result comes back with the next sync. */
+async function openLevelTest() {
+	const { server } = await get('server');
+	await set({ syncAfterTest: Date.now() });
+	return chrome.tabs.create({ url: server + '/placement/' });
+}
+
 async function login() {
 	const { server } = await get('server');
 	const state = crypto.randomUUID();
@@ -107,7 +114,7 @@ async function login() {
 	await sync();
 	// First time: start with the vocabulary test.
 	const { vocabTest } = await get('vocabTest');
-	if (!vocabTest) chrome.tabs.create({ url: chrome.runtime.getURL('test/test.html') });
+	if (!vocabTest) await openLevelTest();
 	return me;
 }
 
@@ -132,8 +139,10 @@ async function sync() {
 	if (!s.token) return null;
 	const pushWords = Object.keys(s.pending.words).map((lemma) => Object.assign({ lemma }, s.pending.words[lemma]));
 	const pushSent = Object.values(s.pending.sentences);
-	const { vocabTest } = await get('vocabTest');
-	const res = await api('/sync', { since: s.cursor, level: s.level, words: pushWords, sentences: pushSent, vocab: vocabTest || null });
+	const { vocabTest, levelDirty } = await get(['vocabTest', 'levelDirty']);
+	// Send the level only when the learner changed it here, so the level test's result isn't overwritten.
+	const res = await api('/sync', { since: s.cursor, level: levelDirty ? s.level : 0, words: pushWords, sentences: pushSent, vocab: vocabTest || null });
+	if (levelDirty) await set({ levelDirty: false });
 	if (res.vocab && (!vocabTest || res.vocab.t > vocabTest.t)) await set({ vocabTest: res.vocab });
 	// Apply the server's changes unless this device has an even newer local change.
 	const fresh = await get(['pending', 'words', 'wordTs', 'sentences']);
@@ -459,7 +468,7 @@ const handlers = {
 	sync: () => sync(),
 	setLevel: async ({ level }) => {
 		level = Math.max(1, Math.min(6, level | 0));
-		await set({ level });
+		await set({ level, levelDirty: true });
 		scheduleSync(500);
 		return level;
 	},
@@ -478,7 +487,7 @@ const handlers = {
 	goal: () => goal(),
 	testItems: () => testItems(),
 	saveTest: (d) => saveTest(d),
-	openTest: () => chrome.tabs.create({ url: chrome.runtime.getURL('test/test.html') }),
+	openTest: () => openLevelTest(),
 	mark: ({ lemma, status, ctx }) => mark(lemma, status, false, ctx),
 	images: ({ word }) => api('/image?word=' + encodeURIComponent(word), null, 'GET'),
 	aiImage: ({ word, sentence }) => api('/image/ai', { word, sentence }),
