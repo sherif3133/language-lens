@@ -108,21 +108,21 @@
 	var root = host.attachShadow({ mode: 'open' });
 	root.innerHTML = '<style>' +
 		':host{all:initial}*{box-sizing:border-box}' +
-		'.chip{position:fixed;z-index:2147483645;left:16px;bottom:16px;display:none;font:600 13px/1 "IBM Plex Sans Arabic","Segoe UI",Tahoma,sans-serif;background:#0F0F10;color:#fff;border:1px solid rgba(255,255,255,.2);border-radius:999px;padding:9px 13px;cursor:pointer;direction:rtl}.chip.on{display:block}' +
+		'.chip{position:fixed;z-index:2147483645;left:16px;bottom:16px;display:none;font:600 13px/1 "IBM Plex Sans Arabic","Segoe UI",Tahoma,sans-serif;background:#0F0F10;color:#fff;border:1px solid rgba(255,255,255,.2);border-radius:999px;padding:9px 13px;cursor:pointer}.chip.on{display:block}' +
 		'.chip b{font:800 14px/1 Changa,sans-serif;margin-inline-start:4px}.chip .x{opacity:.6;margin-inline-start:8px}' +
 		'.chip .dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#fff;margin-inline-end:6px}.chip.hard .dot,.chip.too-hard .dot{background:#E3262B}' +
 		'.panel{position:fixed;left:16px;bottom:60px;z-index:2147483645;width:300px;max-height:60vh;overflow:auto;background:#fff;color:#0F0F10;border:1px solid #0F0F10;border-radius:12px;' +
-		'font:14px/1.55 "IBM Plex Sans Arabic","Segoe UI",Tahoma,sans-serif;direction:rtl;text-align:right;padding:14px;display:none}.panel.on{display:block}' +
+		'font:14px/1.55 "IBM Plex Sans Arabic","Segoe UI",Tahoma,sans-serif;text-align:left;padding:14px;display:none}.panel.on{display:block}' +
 		'.panel h3{font:800 17px/1.3 Changa,sans-serif;margin:0 0 4px}.panel .sub{color:#8A8584;font-size:12.5px;margin-bottom:10px}' +
 		'.legend{display:flex;flex-wrap:wrap;gap:8px;font-size:12px;color:#4A4847;margin-bottom:10px}.legend span{display:inline-flex;align-items:center;gap:4px}' +
 		'.sw{display:inline-block;width:16px;height:9px}.sw.next{border-bottom:3px solid #15803D}.sw.hard{border-bottom:3px solid #E3262B}.sw.learning{background:#FDE68A}' +
 		'.panel ul{list-style:none;margin:0;padding:0}.panel li{display:flex;justify-content:space-between;gap:8px;align-items:center;padding:7px 0;border-top:1px solid #E6E3DF}' +
-		'.panel .en{direction:ltr;font-weight:600}.panel .ar{color:#4A4847;font-size:13px}' +
+		'.panel .en{font-weight:600}.panel .ar{color:#4A4847;font-size:13px;direction:rtl;text-align:left}' +
 		'.panel .lv{font-size:11px;border:1px solid #E6E3DF;border-radius:5px;padding:1px 5px;margin-inline-start:6px}' +
 		'.panel .k{font:600 12px/1 "IBM Plex Sans Arabic",sans-serif;border:1px solid #E6E3DF;background:#fff;border-radius:999px;padding:6px 9px;cursor:pointer}' +
-		'.focus{display:flex;align-items:center;gap:8px;margin:0 0 8px;font-size:12.5px}.focus label{font-weight:600;color:#4A4847;white-space:nowrap}.fsel{flex:1;font:600 13px/1.2 "IBM Plex Sans Arabic",sans-serif;border:1px solid #E6E3DF;border-radius:8px;padding:6px 8px;background:#fff;direction:rtl}' +
+		'.focus{display:flex;align-items:center;gap:8px;margin:0 0 8px;font-size:12.5px}.focus label{font-weight:600;color:#4A4847;white-space:nowrap}.fsel{flex:1;font:600 13px/1.2 "IBM Plex Sans Arabic",sans-serif;border:1px solid #E6E3DF;border-radius:8px;padding:6px 8px;background:#fff}' +
 		'.fbar{background:#F5F3FF;border:1px solid #DDD6FE;border-radius:8px;padding:8px 10px;font-size:12.5px;color:#4A4847;margin-bottom:10px}.fbar b{color:#0F0F10}' +
-		'.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:2147483645;font:600 14px/1.4 "IBM Plex Sans Arabic",sans-serif;background:#0F0F10;color:#fff;border-radius:10px;padding:9px 14px;direction:rtl;display:none}.toast.on{display:block}' +
+		'.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:2147483645;font:600 14px/1.4 "IBM Plex Sans Arabic",sans-serif;background:#0F0F10;color:#fff;border-radius:10px;padding:9px 14px;display:none}.toast.on{display:block}' +
 		'</style><button class="chip"></button><div class="panel"></div><div class="toast"></div>';
 	document.documentElement.appendChild(host);
 	var chip = root.querySelector('.chip'), panel = root.querySelector('.panel'), toast = root.querySelector('.toast');
@@ -135,7 +135,7 @@
 	}
 
 	/* ------------------------------------------------------------ colour coding + grade */
-	var BAND = { easy: 'سهل', good: 'مناسب', hard: 'صعب', 'too-hard': 'صعب جدًا' };
+	var BAND = { easy: 'Easy', good: 'Good level', hard: 'Hard', 'too-hard': 'Too hard' };
 	var grade = null, gradeT = null, hidden = false, colors = true, lastGrade = 0;
 	var canHighlight = !!(window.CSS && CSS.highlights && window.Highlight);
 	var focus = '', focusInfo = null, focusMap = new WeakMap();
@@ -197,7 +197,7 @@
 			grade.level = r.level;
 			if (!hidden && text.length >= 500) {
 				chip.className = 'chip on ' + grade.band;
-				chip.innerHTML = '<span class="dot"></span>تعرف <b dir="ltr">' + grade.percent + '%</b> · ' + BAND[grade.band] + '<span class="x" data-x="1">✕</span>';
+				chip.innerHTML = '<span class="dot"></span>You know <b>' + grade.percent + '%</b> · ' + BAND[grade.band] + '<span class="x" data-x="1">✕</span>';
 			}
 			if (panel.classList.contains('on')) paint();
 			paintHighlights(nodes, r.lines);
@@ -279,12 +279,12 @@
 
 	function paint() {
 		var u = U.esc, g = grade;
-		panel.innerHTML = '<h3>كلمات جديدة في هذه الصفحة</h3><div class="sub">تعرف <bdi>' + g.percent + '%</bdi> من الكلمات (مستواك ' + U.LEVEL_NAMES[(g.level || 2) - 1] + ').</div>' +
-			(focusList ? '<div class="focus"><label>ركّز على</label><select class="fsel"><option value="">— بدون —</option>' + focusList.map(function (f) { return '<option value="' + f.key + '"' + (f.key === focus ? ' selected' : '') + '>' + u(f.name) + '</option>'; }).join('') + '</select></div>' +
-				(focus && focusInfo ? '<div class="fbar"><b>' + u(focusInfo.name) + '</b> · ' + (focusInfo.count ? focusInfo.count + ' مثال' : 'لا توجد أمثلة') + '<div>' + u(focusInfo.rule) + '</div></div>' : '') : '') +
-			'<div class="legend"><span><i class="sw next"></i>تستحق المراجعة</span><span><i class="sw hard"></i>فوق مستواك أو نادرة</span><span><i class="sw learning"></i>أتعلّمها</span></div><ul>' +
+		panel.innerHTML = '<h3>New words on this page</h3><div class="sub">You know ' + g.percent + '% of the words (your level: ' + U.LEVEL_NAMES[(g.level || 2) - 1] + ').</div>' +
+			(focusList ? '<div class="focus"><label>Focus on</label><select class="fsel"><option value="">— none —</option>' + focusList.map(function (f) { return '<option value="' + f.key + '"' + (f.key === focus ? ' selected' : '') + '>' + u(f.name) + '</option>'; }).join('') + '</select></div>' +
+				(focus && focusInfo ? '<div class="fbar"><b>' + u(focusInfo.name) + '</b> · ' + (focusInfo.count ? focusInfo.count + ' examples' : 'none on this page') + '<div>' + u(focusInfo.rule) + '</div></div>' : '') : '') +
+			'<div class="legend"><span><i class="sw next"></i>Worth checking</span><span><i class="sw hard"></i>Above your level / rare</span><span><i class="sw learning"></i>Learning</span></div><ul>' +
 			g.top.slice(0, 20).map(function (w) {
-				return '<li><div><span class="en">' + u(w.lemma) + '</span>' + (w.level ? '<span class="lv">' + U.LEVEL_NAMES[w.level - 1] + '</span>' : '') + (w.ar ? '<div class="ar">' + u(w.ar) + '</div>' : '') + '</div><button class="k" data-l="' + u(w.lemma) + '">أعرفها</button></li>';
+				return '<li><div><span class="en">' + u(w.lemma) + '</span>' + (w.level ? '<span class="lv">' + U.LEVEL_NAMES[w.level - 1] + '</span>' : '') + (w.ar ? '<div class="ar">' + u(w.ar) + '</div>' : '') + '</div><button class="k" data-l="' + u(w.lemma) + '">I know it</button></li>';
 			}).join('') + '</ul>';
 	}
 

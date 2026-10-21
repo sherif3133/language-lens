@@ -37,4 +37,7 @@ node build-lexicon.js
 - Octanove Vocabulary Profile C1/C2 1.0, Octanove Labs, CC BY-SA 4.0 (`tools/data/octanove-vocabulary-profile-c1c2-1.0.csv`).
 - Arabic glossary: written for Sawa English, drafted with AI.
 - English definitions and examples: WordNet 3.0, Copyright 2006 by Princeton University. All rights reserved. Used under the WordNet License (https://wordnet.princeton.edu/license-and-commercial-use).
+- Pronunciations: The CMU Pronouncing Dictionary (Carnegie Mellon University), via cmu-pronouncing-dictionary (ISC).
+- Word frequencies: wordfreq data by Robyn Speer et al., CC BY-SA 4.0 (https://github.com/rspeer/wordfreq). The derived ranking extension/data/freq.json is shared under the same licence.
+- Grammar tagging: compromise (MIT), bundled in extension/lib.
 - Word forms built with compromise (MIT).

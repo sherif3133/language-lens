@@ -6,7 +6,7 @@
 	if (window.__sawaLensMain) return;
 	window.__sawaLensMain = true;
 
-	var lastPot = '', lastVideo = '', sentFor = '', primes = 0, lastPrimeFor = '';
+	var lastPot = '', lastVideo = '', sentFor = '', primes = 0, lastPrimeFor = '', transFor = '';
 	// Beta diagnostics: window.__sawaLensLog in the console shows what happened on this page.
 	var logs = (window.__sawaLensLog = []);
 	function dbg(s) {
@@ -59,8 +59,24 @@
 					return;
 				}
 				post({ type: 'captions', videoId: t.videoId, lang: best.languageCode, kind: best.kind || 'manual', body: body });
+				fetchTranslation(best, pot, t.videoId);
 			})
 			.catch(function () { sentFor = ''; });
+	}
+
+	/** YouTube's own auto-translation of the English track into Arabic (free, same token). */
+	function fetchTranslation(track, pot, videoId) {
+		if (transFor === videoId) return;
+		transFor = videoId;
+		var url = track.baseUrl.replace(/([?&])fmt=[^&]*/, '$1') + '&fmt=json3&c=WEB&tlang=ar' + (pot ? '&pot=' + encodeURIComponent(pot) : '');
+		origFetch.call(window, url, { credentials: 'include' })
+			.then(function (r) { return r.text(); })
+			.then(function (body) {
+				dbg('translation ' + videoId + ' len=' + (body || '').length);
+				if (body) post({ type: 'translation', videoId: videoId, lang: 'ar', body: body });
+				else transFor = '';
+			})
+			.catch(function () { transFor = ''; });
 	}
 
 	function seen(url) {
@@ -100,7 +116,11 @@
 						var u = new URL(s, location.href), lang = u.searchParams.get('lang') || '', body = this.responseText;
 						if (body && /^en(-|$)/.test(lang) && /json3/.test(u.searchParams.get('fmt') || '')) {
 							var t = tracks(), v = u.searchParams.get('v') || '';
-							if (v && v === t.videoId) post({ type: 'captions', videoId: v, lang: lang, kind: u.searchParams.get('kind') || 'manual', body: body });
+							if (v && v === t.videoId) {
+								post({ type: 'captions', videoId: v, lang: lang, kind: u.searchParams.get('kind') || 'manual', body: body });
+								var bt = bestEnglish(t.list);
+								if (bt) fetchTranslation(bt, u.searchParams.get('pot') || lastPot, v);
+							}
 						}
 					} catch (e) {
 						/* ignore */

@@ -1,44 +1,51 @@
 /* Language Lens: the word card and the selection popup.
-   Card: meaning (Arabic or English), level, listen, known/learning, meaning in this sentence, save sentence.
-   Selection popup: save a sentence, an expression (phrasal verb, idiom, collocation) or a grammar point.
-   Both live in shadow roots so page styles can't touch them. */
+   Card: meaning (Arabic or English), IPA + "sounds like", hard sounds, verb forms, level, listen,
+   known/learning, meaning in this sentence, how the sentence sounds, save sentence.
+   Selection popup: AI translation, how it sounds, save a sentence / expression / grammar point.
+   Both live in shadow roots so page styles can't touch them. The interface is English;
+   meanings can be Arabic or English. */
 (function () {
 	'use strict';
 	if (window.LensCard) return;
 	var U = window.LensUI;
 
+	var FONT = '"IBM Plex Sans","IBM Plex Sans Arabic","Segoe UI",system-ui,sans-serif';
 	var BASE = ':host{all:initial}*{box-sizing:border-box}' +
-		'button{font:600 13.5px/1 "IBM Plex Sans Arabic","Segoe UI",Tahoma,sans-serif;border:1px solid #E6E3DF;background:#fff;color:#0F0F10;border-radius:999px;padding:8px 12px;cursor:pointer}' +
+		'button{font:600 13px/1 ' + FONT + ';border:1px solid #E6E3DF;background:#fff;color:#0F0F10;border-radius:999px;padding:8px 12px;cursor:pointer}' +
 		'button:hover{border-color:#0F0F10}button.on{background:#0F0F10;border-color:#0F0F10;color:#fff}button:disabled{opacity:.5;cursor:default}' +
 		'.spin{display:inline-block;width:12px;height:12px;border:2px solid #E6E3DF;border-top-color:#0F0F10;border-radius:50%;animation:s .8s linear infinite;vertical-align:-2px}@keyframes s{to{transform:rotate(360deg)}}' +
-		'.msg{font-size:13px;color:#8A8584;margin-top:8px}.msg.bad{color:#E3262B}';
+		'.msg{font-size:13px;color:#8A8584;margin-top:8px}.msg.bad{color:#E3262B}' +
+		'.ar-text{direction:rtl;text-align:right;font-family:"IBM Plex Sans Arabic",' + FONT + '}' +
+		'.res{margin-top:10px;padding-top:10px;border-top:1px solid #E6E3DF;font-size:14px}.res b{font-weight:600}.res .muted{color:#4A4847}' +
+		'.sl{font:600 15px/1.4 ' + FONT + ';letter-spacing:.2px}.notes{margin:6px 0 0;padding:0;list-style:none}.notes li{margin-top:6px;font-size:13px;color:#4A4847}.notes li b{color:#0F0F10}';
 
 	var CSS = BASE +
-		'.card{position:fixed;z-index:2147483646;width:330px;max-width:calc(100vw - 16px);max-height:calc(100vh - 16px);overflow:auto;background:#fff;color:#0F0F10;border:1px solid #0F0F10;border-radius:12px;' +
-		'font:15px/1.55 "IBM Plex Sans Arabic","Segoe UI",Tahoma,sans-serif;direction:rtl;text-align:right;padding:14px 14px 12px;display:none}' +
+		'.card{position:fixed;z-index:2147483646;width:340px;max-width:calc(100vw - 16px);max-height:calc(100vh - 16px);overflow:auto;background:#fff;color:#0F0F10;border:1px solid #0F0F10;border-radius:12px;' +
+		'font:14.5px/1.5 ' + FONT + ';text-align:left;padding:14px 14px 12px;display:none}' +
 		'.card.on{display:block}' +
-		'.top{display:flex;align-items:center;justify-content:space-between;gap:8px;direction:ltr}' +
+		'.top{display:flex;align-items:center;justify-content:space-between;gap:8px}' +
 		'.wrow{display:flex;align-items:center;gap:6px;min-width:0}' +
-		'.w{font:800 22px/1.2 Changa,"IBM Plex Sans Arabic",sans-serif;text-align:left;word-break:break-word}' +
+		'.w{font:800 22px/1.2 Changa,' + FONT + ';word-break:break-word}' +
 		'.say{border:0;background:transparent;padding:4px;border-radius:6px;line-height:0;color:#0F0F10;flex:none}.say:hover{background:#F6F5F3}.say svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}' +
 		'.meta{display:flex;align-items:center;gap:6px}' +
-		'.lv{font:600 12px/1 "IBM Plex Sans Arabic",sans-serif;border:1px solid #0F0F10;border-radius:6px;padding:3px 6px;white-space:nowrap}.lv.off{border-color:#E6E3DF;color:#8A8584}' +
+		'.lv{font:600 12px/1 ' + FONT + ';border:1px solid #0F0F10;border-radius:6px;padding:3px 6px;white-space:nowrap}.lv.off{border-color:#E6E3DF;color:#8A8584}' +
 		'.lang{display:inline-flex;border:1px solid #E6E3DF;border-radius:999px;overflow:hidden}.lang button{border:0;border-radius:0;padding:4px 8px;font-size:12px}' +
-		'.base{direction:ltr;text-align:left;color:#8A8584;font-size:13px;margin-top:2px}' +
-		'.ar{font-size:17px;margin-top:8px}.en{font-size:15px;margin-top:8px;direction:ltr;text-align:left}' +
-		'.pos{color:#8A8584;font-size:12px;margin-inline-start:6px}.row{display:block;margin-top:2px}' +
-		'.ex{direction:ltr;text-align:left;margin-top:8px;font-size:14px;color:#4A4847;display:flex;gap:6px;align-items:flex-start}.ex i{font-style:italic}' +
+		'.pr{margin-top:4px;display:flex;flex-wrap:wrap;gap:4px 12px;align-items:baseline;font-size:13.5px;color:#4A4847}.pr .ipa{font-family:"Charis SIL","Doulos SIL","Segoe UI",' + FONT + ';color:#0F0F10}.pr .slk b{color:#0F0F10;font-weight:600;letter-spacing:.3px}' +
+		'.chips{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}.chip{font-size:11.5px;font-weight:600;border:1px solid #E6E3DF;border-radius:999px;padding:2px 8px;cursor:help;background:#FFFBEB;border-color:#FCD34D}' +
+		'.tip{font-size:12.5px;color:#4A4847;margin-top:4px}' +
+		'.base{color:#8A8584;font-size:13px;margin-top:2px}' +
+		'.ar{font-size:17px;margin-top:8px}.en{font-size:14.5px;margin-top:8px}' +
+		'.pos{color:#8A8584;font-size:12px;margin-inline:0 6px}.ar .pos{margin-inline:6px 0}.row{display:block;margin-top:2px}' +
+		'.ex{margin-top:8px;font-size:13.5px;color:#4A4847;display:flex;gap:6px;align-items:flex-start}.ex i{font-style:italic}' +
 		'.alt{color:#8A8584;font-size:12.5px;margin-top:4px}' +
-		'.ctx{margin-top:10px;padding-top:10px;border-top:1px solid #E6E3DF;font-size:14.5px}.ctx b{font-weight:600}.ctx .muted{color:#8A8584}' +
-		'.ctx.en-ctx{direction:ltr;text-align:left}' +
-		'.sent{display:flex;gap:6px;align-items:flex-start;margin-top:10px;padding-top:10px;border-top:1px solid #E6E3DF;direction:ltr;text-align:left;font-size:13.5px;color:#4A4847}' +
-		'.note{color:#4A4847;font-size:13.5px;margin-top:4px}' +
+		'.sent{display:flex;gap:6px;align-items:flex-start;margin-top:10px;padding-top:10px;border-top:1px solid #E6E3DF;font-size:13.5px;color:#4A4847}' +
+		'.note{color:#4A4847;font-size:13px;margin-top:4px}' +
 		'.btns{display:flex;gap:6px;flex-wrap:wrap;margin-top:12px}' +
 		'.wide{width:100%;margin-top:8px;border-radius:10px;padding:10px}' +
-		'.brand{margin-top:10px;font-size:11px;color:#8A8584;direction:ltr;text-align:left}' +
+		'.brand{margin-top:10px;font-size:11px;color:#8A8584}' +
 		'.gram{display:inline-block;margin-top:8px;font-size:12.5px;font-weight:600;background:#EDE9FE;border:1px solid #A78BFA;border-radius:6px;padding:2px 8px}' +
 		'.vf{margin-top:8px;padding:8px 10px;background:#F6F5F3;border-radius:8px}' +
-		'.forms{display:flex;gap:6px;align-items:center;direction:ltr;justify-content:flex-start;font:600 15px/1.3 "IBM Plex Sans Arabic",sans-serif;flex-wrap:wrap}.forms i{color:#8A8584;font-style:normal}' +
+		'.forms{display:flex;gap:6px;align-items:center;font:600 15px/1.3 ' + FONT + ';flex-wrap:wrap}.forms i{color:#8A8584;font-style:normal}' +
 		'.vmeta{font-size:12px;color:#4A4847;margin-top:4px}.vmeta em{font-style:normal;font-weight:600}.vmeta em.irr{color:#B45309}';
 
 	var SPEAK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9zM16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12"/></svg>';
@@ -63,10 +70,31 @@
 		speechSynthesis.speak(u);
 	}
 
+	/** "How it sounds": AI respelling of fast natural speech + the connected-speech features behind it. */
+	function soundHtml(r) {
+		var u = U.esc;
+		return '<div><b>Sounds like:</b> <span class="sl">' + u(r.soundsLike) + '</span></div>' +
+			(r.ipa ? '<div class="muted" style="margin-top:2px">' + u(r.ipa) + '</div>' : '') +
+			(r.features && r.features.length ? '<ul class="notes">' + r.features.map(function (f) { return '<li><b>' + u(f.where) + '</b> · ' + u(f.feature) + ': ' + u(f.why) + '</li>'; }).join('') + '</ul>' : '');
+	}
+	/** AI translation / explanation of a selected phrase. */
+	function transHtml(r, lang) {
+		var u = U.esc, cls = lang === 'ar' ? ' class="ar-text"' : '';
+		return '<div' + cls + '><b>' + (lang === 'ar' ? 'المعنى:' : 'Meaning:') + '</b> ' + u(r.meaning) + '</div>' +
+			(r.sentence ? '<div' + cls + ' style="margin-top:4px;color:#4A4847">' + u(r.sentence) + '</div>' : '') +
+			(r.note ? '<div' + cls + ' style="margin-top:4px;font-size:13px;color:#4A4847">' + u(r.note) + '</div>' : '');
+	}
+
 	/* ------------------------------------------------------------ card */
-	var host, root, el, cur = null, hideT = null, onState = null, lang = 'ar';
-	chrome.storage.local.get('glossLang', function (o) { lang = o.glossLang === 'en' ? 'en' : 'ar'; });
-	chrome.storage.onChanged.addListener(function (ch) { if (ch.glossLang) lang = ch.glossLang.newValue === 'en' ? 'en' : 'ar'; });
+	var host, root, el, cur = null, hideT = null, onState = null, lang = 'ar', showIPA = true;
+	chrome.storage.local.get(['glossLang', 'showIPA'], function (o) {
+		lang = o.glossLang === 'en' ? 'en' : 'ar';
+		showIPA = o.showIPA !== false;
+	});
+	chrome.storage.onChanged.addListener(function (ch) {
+		if (ch.glossLang) lang = ch.glossLang.newValue === 'en' ? 'en' : 'ar';
+		if (ch.showIPA) showIPA = ch.showIPA.newValue !== false;
+	});
 
 	function ensure() {
 		if (host && host.isConnected) return;
@@ -82,7 +110,7 @@
 	}
 
 	function place(rect) {
-		var w = el.offsetWidth || 330, h = el.offsetHeight || 200;
+		var w = el.offsetWidth || 340, h = el.offsetHeight || 200;
 		var x = Math.min(Math.max(8, rect.left + rect.width / 2 - w / 2), window.innerWidth - w - 8);
 		var y = rect.top - h - 10;
 		if (y < 8) y = rect.bottom + 10;
@@ -97,60 +125,78 @@
 	function render() {
 		var d = cur.data, u = U.esc;
 		if (!d) {
-			el.innerHTML = '<div class="w" style="direction:ltr;text-align:left">' + u(cur.word) + '</div><div class="msg"><span class="spin"></span></div>';
+			el.innerHTML = '<div class="w">' + u(cur.word) + '</div><div class="msg"><span class="spin"></span></div>';
 			return;
 		}
 		var meaning;
 		if (lang === 'en') {
 			var en = d.entries.filter(function (e) { return e.en; });
 			meaning = '<div class="en">' + (en.length
-				? en.map(function (e) { return '<span class="row"><span class="pos">' + u(e.pos) + '</span> ' + u(e.en) + '</span>'; }).join('')
+				? en.map(function (e) { return '<span class="row"><span class="pos">' + u(e.pos) + '</span>' + u(e.en) + '</span>'; }).join('')
 				: '<span class="row" style="color:#8A8584">No dictionary entry. Try "In this sentence".</span>') + '</div>';
 			var ex = (en.filter(function (e) { return e.ex; })[0] || {}).ex;
 			if (ex) meaning += '<div class="ex"><button class="say" data-a="say-ex" title="Listen">' + SPEAK + '</button><i>' + u(ex) + '</i></div>';
 		} else {
 			var ar = d.entries.filter(function (e) { return e.ar; });
-			meaning = '<div class="ar">' + (ar.length
+			meaning = '<div class="ar ar-text">' + (ar.length
 				? ar.map(function (e) { return '<span class="row">' + u(e.ar) + '<span class="pos">' + u(posAr(e.pos)) + '</span></span>'; }).join('')
-				: '<span class="row" style="color:#8A8584">ليست في القاموس. اضغط "معناها في الجملة".</span>') + '</div>' +
-				(d.alts && d.alts.length ? '<div class="alt">وقد تعني: ' + d.alts.map(function (a) { return '<span dir="ltr">' + u(a.lemma) + '</span>' + (a.ar ? ' (' + u(a.ar.split('،')[0]) + ')' : ''); }).join('، ') + '</div>' : '');
+				: '<span class="row" style="color:#8A8584">Not in the dictionary. Try "In this sentence".</span>') + '</div>' +
+				(d.alts && d.alts.length ? '<div class="alt">Can also be: ' + d.alts.map(function (a) { return u(a.lemma) + (a.ar ? ' <span class="ar-text">(' + u(a.ar.split('،')[0]) + ')</span>' : ''); }).join(', ') + '</div>' : '');
+		}
+		var pr = '';
+		if (d.pron && showIPA) {
+			pr = '<div class="pr"><span class="ipa">' + u(d.pron.ipa) + '</span><span class="slk">sounds like <b>' + u(d.pron.soundsLike) + '</b></span></div>';
+			if (d.pron.features.length) {
+				pr += '<div class="chips">' + d.pron.features.map(function (f, i) { return '<span class="chip" data-a="tip" data-i="' + i + '" title="' + u(f.tip) + '">' + u(f.label) + '</span>'; }).join('') + '</div>' +
+					(cur.tip != null && d.pron.features[cur.tip] ? '<div class="tip">' + u(d.pron.features[cur.tip].tip) + '</div>' : '');
+			}
 		}
 		var ctx = '';
-		if (cur.ctx === 'loading') ctx = '<div class="ctx"><span class="spin"></span></div>';
-		else if (cur.ctx && cur.ctx.error) ctx = '<div class="ctx"><div class="msg bad">' + u(cur.ctx.error) + '</div></div>';
+		if (cur.ctx === 'loading') ctx = '<div class="res"><span class="spin"></span></div>';
+		else if (cur.ctx && cur.ctx.error) ctx = '<div class="res"><div class="msg bad">' + u(cur.ctx.error) + '</div></div>';
 		else if (cur.ctx) {
-			ctx = lang === 'en'
-				? '<div class="ctx en-ctx"><div><b>Here:</b> ' + u(cur.ctx.meaning) + '</div>' + (cur.ctx.sentence ? '<div class="muted" style="margin-top:4px">' + u(cur.ctx.sentence) + '</div>' : '') + (cur.ctx.note ? '<div class="note">' + u(cur.ctx.note) + '</div>' : '') + '</div>'
-				: '<div class="ctx"><div><b>في هذه الجملة:</b> ' + u(cur.ctx.meaning) + '</div>' + (cur.ctx.sentence ? '<div class="muted" style="margin-top:4px">' + u(cur.ctx.sentence) + '</div>' : '') + (cur.ctx.note ? '<div class="note">' + u(cur.ctx.note) + '</div>' : '') + '</div>';
+			ctx = '<div class="res">' + (lang === 'ar'
+				? '<div class="ar-text"><b>في هذه الجملة:</b> ' + u(cur.ctx.meaning) + '</div>' + (cur.ctx.sentence ? '<div class="ar-text muted" style="margin-top:4px">' + u(cur.ctx.sentence) + '</div>' : '') + (cur.ctx.note ? '<div class="ar-text note">' + u(cur.ctx.note) + '</div>' : '')
+				: '<div><b>Here:</b> ' + u(cur.ctx.meaning) + '</div>' + (cur.ctx.sentence ? '<div class="muted" style="margin-top:4px">' + u(cur.ctx.sentence) + '</div>' : '') + (cur.ctx.note ? '<div class="note">' + u(cur.ctx.note) + '</div>' : '')) + '</div>';
 		}
+		var snd = '';
+		if (cur.snd === 'loading') snd = '<div class="res"><span class="spin"></span></div>';
+		else if (cur.snd && cur.snd.error) snd = '<div class="res"><div class="msg bad">' + u(cur.snd.error) + '</div></div>';
+		else if (cur.snd) snd = '<div class="res">' + soundHtml(cur.snd) + '</div>';
 		var known = d.status === 'known', learning = d.status === 'learning';
 		var canReplay = !!(cur.onReplay && cur.source && cur.source.videoId);
 		el.innerHTML =
-			'<div class="top"><div class="wrow"><button class="say" data-a="say-word" title="Listen / استمع">' + SPEAK + '</button><div class="w">' + u(cur.word) + '</div></div>' +
-			'<div class="meta"><span class="lv' + (d.levelName ? '' : ' off') + '">' + (d.levelName || (lang === 'en' ? 'rare' : 'خارج القائمة')) + '</span>' +
-			'<span class="lang"><button data-a="lang-ar" class="' + (lang === 'ar' ? 'on' : '') + '">ع</button><button data-a="lang-en" class="' + (lang === 'en' ? 'on' : '') + '">EN</button></span></div></div>' +
-			(d.lemma && d.lemma !== String(cur.word).toLowerCase() ? '<div class="base">' + u(d.lemma) + '</div>' : '') +
+			'<div class="top"><div class="wrow"><button class="say" data-a="say-word" title="Listen">' + SPEAK + '</button><div class="w">' + u(cur.word) + '</div></div>' +
+			'<div class="meta"><span class="lv' + (d.levelName ? '' : ' off') + '">' + (d.levelName || 'rare') + '</span>' +
+			'<span class="lang" title="Meaning in"><button data-a="lang-ar" class="' + (lang === 'ar' ? 'on' : '') + '">AR</button><button data-a="lang-en" class="' + (lang === 'en' ? 'on' : '') + '">EN</button></span></div></div>' +
+			pr +
+			(d.lemma && d.lemma !== String(cur.word).toLowerCase() ? '<div class="base">from ' + u(d.lemma) + '</div>' : '') +
 			(cur.grammar ? '<div class="gram">' + u(cur.grammar) + '</div>' : '') +
 			(d.verb ? '<div class="vf"><div class="forms"><span>' + u(d.verb.base) + '</span><i>›</i><span>' + u(d.verb.past) + '</span><i>›</i><span>' + u(d.verb.pp) + '</span></div>' +
-				'<div class="vmeta"><em class="' + (d.verb.irregular ? 'irr' : '') + '">' + (d.verb.irregular ? 'فعل شاذ' : 'فعل منتظم') + '</em> · <span dir="ltr">' + u(d.verb.ing) + '</span> · <span dir="ltr">he/she ' + u(d.verb.s) + '</span></div></div>' : '') +
+				'<div class="vmeta"><em class="' + (d.verb.irregular ? 'irr' : '') + '">' + (d.verb.irregular ? 'irregular' : 'regular') + '</em> · ' + u(d.verb.ing) + ' · he/she ' + u(d.verb.s) + '</div></div>' : '') +
 			meaning + ctx +
 			(cur.sentence ? '<div class="sent"><button class="say" data-a="say-sent" title="' + (canReplay ? 'Replay from the video' : 'Listen') + '">' + SPEAK + '</button><span>' + u(cur.sentence) + '</span></div>' : '') +
+			snd +
 			'<div class="btns">' +
-			'<button data-a="known" class="' + (known ? 'on' : '') + '">' + (known ? '✓ ' : '') + 'أعرفها</button>' +
-			'<button data-a="learning" class="' + (learning ? 'on' : '') + '">' + (learning ? '✓ ' : '') + 'أتعلّمها</button>' +
-			(cur.sentence && !cur.ctx ? '<button data-a="explain">' + (lang === 'en' ? 'In this sentence' : 'معناها في الجملة') + '</button>' : '') +
+			'<button data-a="known" class="' + (known ? 'on' : '') + '">' + (known ? '✓ ' : '') + 'I know it</button>' +
+			'<button data-a="learning" class="' + (learning ? 'on' : '') + '">' + (learning ? '✓ ' : '') + 'Learning</button>' +
+			(cur.sentence && !cur.ctx ? '<button data-a="explain">In this sentence</button>' : '') +
+			(cur.sentence && !cur.snd ? '<button data-a="sound">How it sounds</button>' : '') +
 			'</div>' +
-			(cur.sentence ? '<button class="wide" data-a="save"' + (cur.saved ? ' disabled' : '') + '>' + (cur.saved ? 'تم حفظ الجملة ✓' : 'احفظ الجملة كبطاقة مراجعة') + '</button>' : '') +
+			(cur.sentence ? '<button class="wide" data-a="save"' + (cur.saved ? ' disabled' : '') + '>' + (cur.saved ? 'Saved ✓' : 'Save sentence as a review card') + '</button>' : '') +
 			(cur.msg ? '<div class="msg' + (cur.bad ? ' bad' : '') + '">' + u(cur.msg) + '</div>' : '') +
 			'<div class="brand">Language Lens · Sawa English</div>';
 		place(cur.rect);
 	}
 
 	function onClick(e) {
-		var b = e.target.closest('button');
+		var b = e.target.closest('button,[data-a]');
 		if (!b || !cur || !cur.data) return;
 		var a = b.dataset.a, c = cur;
-		if (a === 'say-word') speak(c.data.lemma && c.data.lemma.indexOf(' ') > 0 ? c.data.lemma : c.word, true);
+		if (a === 'tip') {
+			c.tip = c.tip === +b.dataset.i ? null : +b.dataset.i;
+			render();
+		} else if (a === 'say-word') speak(c.data.lemma && c.data.lemma.indexOf(' ') > 0 ? c.data.lemma : c.word, true);
 		else if (a === 'say-ex') {
 			var ex = (c.data.entries.filter(function (x) { return x.ex; })[0] || {}).ex;
 			speak(ex);
@@ -167,8 +213,18 @@
 			U.send('mark', { lemma: c.data.lemma, status: next }).then(function (st) {
 				c.data.status = st;
 				c.data.mark = next;
+				c.msg = '';
 				if (cur === c) render();
 				if (onState) onState(c.data.lemma, st);
+				// A top-5,000 word: show how close the learner is to the next vocabulary goal.
+				if (next && c.data.rank && c.data.rank <= 5000) {
+					U.send('goal').then(function (g) {
+						c.msg = '#' + c.data.rank.toLocaleString('en-US') + ' most common word ' + (next === 'known' ? '✓' : '· learning') +
+							' — goal: ' + g.have.toLocaleString('en-US') + ' / ' + g.goal.toLocaleString('en-US') + ' top words known';
+						c.bad = false;
+						if (cur === c) render();
+					}, function () {});
+				}
 			}, fail(c));
 		} else if (a === 'explain') {
 			c.ctx = 'loading';
@@ -180,12 +236,22 @@
 				c.ctx = { error: U.errText(err) };
 				if (cur === c) render();
 			});
+		} else if (a === 'sound') {
+			c.snd = 'loading';
+			render();
+			U.send('sound', { text: c.sentence }).then(function (r) {
+				c.snd = r;
+				if (cur === c) render();
+			}, function (err) {
+				c.snd = { error: U.errText(err) };
+				if (cur === c) render();
+			});
 		} else if (a === 'save') {
 			var d = Object.assign({ text: c.sentence, focus: c.word, focusLemma: c.data.lemma, ar: c.ctx && c.ctx.sentence && lang === 'ar' ? c.ctx.sentence : '' }, c.source || {});
 			b.disabled = true;
 			U.send('saveSentence', d).then(function () {
 				c.saved = true;
-				c.msg = 'ستجدها في بطاقات المراجعة.';
+				c.msg = 'You\'ll find it in your review cards.';
 				if (cur === c) render();
 			}, fail(c));
 		}
@@ -213,14 +279,14 @@
 
 	/**
 	 * Show the card for a word.
-	 * o = { word, rect, sentence, source: {url,title,videoId,startMs,endMs}, onHide, onReplay(startMs, endMs) }
+	 * o = { word, rect, sentence, grammar, source: {url,title,videoId,startMs,endMs}, onHide, onReplay(startMs, endMs) }
 	 */
 	function show(o) {
 		ensure();
 		clearTimeout(hideT);
 		if (cur && cur.word === o.word && cur.sentence === o.sentence) return;
 		if (cur && cur.onHide && cur.onHide !== o.onHide) cur.onHide();
-		cur = Object.assign({ data: null, ctx: null, saved: false, msg: '' }, o);
+		cur = Object.assign({ data: null, ctx: null, snd: null, tip: null, saved: false, msg: '' }, o);
 		var c = cur;
 		el.classList.add('on');
 		render();
@@ -238,16 +304,16 @@
 
 	/* ------------------------------------------------------------ selection popup */
 	var GRAMMAR = [
-		['conditional', 'جملة شرطية (if)'], ['passive', 'المبني للمجهول'], ['present-perfect', 'المضارع التام'], ['past-perfect', 'الماضي التام'],
-		['continuous', 'الأزمنة المستمرة'], ['future', 'المستقبل'], ['modal', 'الأفعال الناقصة (can, should…)'], ['relative', 'جملة وصل (who, which…)'],
-		['reported', 'الكلام المنقول'], ['comparison', 'المقارنة والتفضيل'], ['question', 'صيغة السؤال'], ['other', 'قاعدة أخرى']
+		['conditional', 'Conditional (if)'], ['passive', 'Passive'], ['present-perfect', 'Present perfect'], ['past-perfect', 'Past perfect'],
+		['continuous', 'Continuous'], ['future', 'Future'], ['modal', 'Modal verb'], ['relative', 'Relative clause'],
+		['reported', 'Reported speech'], ['comparison', 'Comparison'], ['question', 'Question form'], ['other', 'Other']
 	];
-	var KINDS = [['phrasal', 'فعل مركّب'], ['idiom', 'تعبير اصطلاحي'], ['collocation', 'تلازم لفظي'], ['phrase', 'عبارة']];
+	var KINDS = [['phrasal', 'Phrasal verb'], ['idiom', 'Idiom'], ['collocation', 'Collocation'], ['phrase', 'Phrase']];
 	var SCSS = BASE +
-		'.pop{position:fixed;z-index:2147483646;width:300px;max-width:calc(100vw - 16px);background:#fff;color:#0F0F10;border:1px solid #0F0F10;border-radius:12px;font:14px/1.55 "IBM Plex Sans Arabic","Segoe UI",Tahoma,sans-serif;direction:rtl;text-align:right;padding:12px;display:none}' +
-		'.pop.on{display:block}.sel{direction:ltr;text-align:left;font-weight:600;margin:0 22px 8px 0;max-height:72px;overflow:auto}' +
+		'.pop{position:fixed;z-index:2147483646;width:330px;max-width:calc(100vw - 16px);max-height:calc(100vh - 16px);overflow:auto;background:#fff;color:#0F0F10;border:1px solid #0F0F10;border-radius:12px;font:14px/1.5 ' + FONT + ';text-align:left;padding:12px;display:none}' +
+		'.pop.on{display:block}.sel{font-weight:600;margin:0 0 8px 0;padding-inline-end:24px;max-height:72px;overflow:auto}' +
 		'.grid{display:flex;flex-wrap:wrap;gap:6px}.h{font-size:12px;color:#8A8584;margin:10px 0 6px}' +
-		'.close{position:absolute;top:6px;left:6px;border:0;padding:4px 8px;font-size:16px;line-height:1;background:transparent}';
+		'.close{position:absolute;top:6px;right:6px;border:0;padding:4px 8px;font-size:16px;line-height:1;background:transparent}';
 	var sHost, sRoot, sEl, sCur = null;
 
 	function sEnsure() {
@@ -264,22 +330,29 @@
 		var c = sCur, u = U.esc, words = c.text.split(/\s+/).length;
 		var body;
 		if (c.mode === 'expr') {
-			body = '<div class="h">نوع التعبير</div><div class="grid">' + KINDS.map(function (k) { return '<button data-k="' + k[0] + '">' + k[1] + '</button>'; }).join('') + '</div>';
+			body = '<div class="h">What kind of expression?</div><div class="grid">' + KINDS.map(function (k) { return '<button data-k="' + k[0] + '">' + k[1] + '</button>'; }).join('') + '</div>';
 		} else if (c.mode === 'grammar') {
-			body = '<div class="h">ما القاعدة في هذه الجملة؟</div><div class="grid">' + GRAMMAR.map(function (g) { return '<button data-g="' + g[0] + '">' + g[1] + '</button>'; }).join('') + '</div>';
+			body = '<div class="h">Which grammar point is in this sentence?</div><div class="grid">' + GRAMMAR.map(function (g) { return '<button data-g="' + g[0] + '">' + g[1] + '</button>'; }).join('') + '</div>';
 		} else {
 			body = '<div class="grid">' +
-				'<button data-a="sentence">احفظ الجملة</button>' +
-				(words >= 2 && words <= 8 ? '<button data-a="expr">احفظ كتعبير</button>' : '') +
-				'<button data-a="grammar">علّم قاعدة</button>' +
-				'<button data-a="say">استمع</button></div>';
+				'<button data-a="translate">' + (lang === 'ar' ? 'Translate (AR)' : 'Explain (EN)') + '</button>' +
+				'<button data-a="sound">How it sounds</button>' +
+				'<button data-a="say">Listen</button>' +
+				'<button data-a="sentence">Save sentence</button>' +
+				(words >= 2 && words <= 8 ? '<button data-a="expr">Save expression</button>' : '') +
+				'<button data-a="grammar">Mark grammar</button></div>';
 		}
-		sEl.innerHTML = '<button class="close" data-a="close" aria-label="إغلاق">×</button><div class="sel">' + u(c.text.length > 160 ? c.text.slice(0, 160) + '…' : c.text) + '</div>' + body +
+		var res = '';
+		if (c.res === 'loading') res = '<div class="res"><span class="spin"></span></div>';
+		else if (c.res && c.res.error) res = '<div class="res"><div class="msg bad">' + u(c.res.error) + '</div></div>';
+		else if (c.res && c.res.kind === 'sound') res = '<div class="res">' + soundHtml(c.res.data) + '</div>';
+		else if (c.res && c.res.kind === 'trans') res = '<div class="res">' + transHtml(c.res.data, c.res.lang) + '</div>';
+		sEl.innerHTML = '<button class="close" data-a="close" aria-label="Close">×</button><div class="sel">' + u(c.text.length > 160 ? c.text.slice(0, 160) + '…' : c.text) + '</div>' + body + res +
 			(c.msg ? '<div class="msg' + (c.bad ? ' bad' : '') + '">' + u(c.msg) + '</div>' : '');
-		var r = c.rect, w = 300, h = sEl.offsetHeight || 140;
+		var r = c.rect, w = 330, h = sEl.offsetHeight || 140;
 		sEl.style.left = Math.min(Math.max(8, r.left + r.width / 2 - w / 2), window.innerWidth - w - 8) + 'px';
 		var y = r.top - h - 10;
-		sEl.style.top = (y < 8 ? r.bottom + 10 : y) + 'px';
+		sEl.style.top = Math.max(8, y < 8 ? Math.min(r.bottom + 10, window.innerHeight - h - 8) : y) + 'px';
 	}
 
 	function sClick(e) {
@@ -289,9 +362,8 @@
 		var done = function (msg) {
 			c.msg = msg;
 			c.bad = false;
-			c.mode = 'done';
+			c.mode = '';
 			sRender();
-			setTimeout(function () { if (sCur === c) selHide(); }, 1800);
 		};
 		var failS = function (err) {
 			c.msg = U.errText(err);
@@ -309,12 +381,37 @@
 			c.mode = b.dataset.a;
 			return sRender();
 		}
+		if (b.dataset.a === 'translate') {
+			var l = lang;
+			c.res = 'loading';
+			sRender();
+			U.send('explain', { word: c.text, sentence: c.sentence || c.text, lang: l }).then(function (r) {
+				c.res = { kind: 'trans', data: r, lang: l };
+				if (sCur === c) sRender();
+			}, function (err) {
+				c.res = { error: U.errText(err) };
+				if (sCur === c) sRender();
+			});
+			return;
+		}
+		if (b.dataset.a === 'sound') {
+			c.res = 'loading';
+			sRender();
+			U.send('sound', { text: c.text }).then(function (r) {
+				c.res = { kind: 'sound', data: r };
+				if (sCur === c) sRender();
+			}, function (err) {
+				c.res = { error: U.errText(err) };
+				if (sCur === c) sRender();
+			});
+			return;
+		}
 		if (b.dataset.a === 'sentence') {
-			U.send('saveSentence', Object.assign({ text: c.sentence || c.text }, src)).then(function () { done('تم حفظ الجملة ✓'); }, failS);
+			U.send('saveSentence', Object.assign({ text: c.sentence || c.text }, src)).then(function () { done('Sentence saved ✓'); }, failS);
 		} else if (b.dataset.k) {
-			U.send('saveExpression', Object.assign({ phrase: c.text, sentence: c.sentence, kind: 'phrase', tag: b.dataset.k }, src)).then(function () { done('تم حفظ التعبير ✓ سيظهر ملوّنًا أينما قابلته.'); }, failS);
+			U.send('saveExpression', Object.assign({ phrase: c.text, sentence: c.sentence, kind: 'phrase', tag: b.dataset.k }, src)).then(function () { done('Expression saved ✓ It will be highlighted wherever you meet it.'); }, failS);
 		} else if (b.dataset.g) {
-			U.send('saveSentence', Object.assign({ text: c.sentence || c.text, focus: c.text, kind: 'grammar', tag: b.dataset.g }, src)).then(function () { done('تم حفظ الجملة مع القاعدة ✓'); }, failS);
+			U.send('saveSentence', Object.assign({ text: c.sentence || c.text, focus: c.text, kind: 'grammar', tag: b.dataset.g }, src)).then(function () { done('Sentence saved with its grammar point ✓'); }, failS);
 		}
 	}
 
@@ -322,7 +419,7 @@
 	function selShow(o) {
 		sEnsure();
 		hide();
-		sCur = Object.assign({ mode: '', msg: '' }, o);
+		sCur = Object.assign({ mode: '', msg: '', res: null }, o);
 		sEl.classList.add('on');
 		sRender();
 	}

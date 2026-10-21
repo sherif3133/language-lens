@@ -107,6 +107,24 @@ async function connectManual() {
 	log('sidebar:', JSON.stringify(side));
 	await page.evaluate(() => document.querySelector('sawa-lens-side').scrollIntoView({ block: 'start' }));
 	await page.screenshot({ path: path.join(out, 'yt-sidebar.png') });
+	// Translation line + hotkey D (next sentence)
+	await wait(2500);
+	log('translation line:', await page.evaluate(() => { const r = document.querySelector('sawa-lens-yt').shadowRoot; return r.querySelector('.line.tr').textContent || '(empty)'; }), '| sidebar translations:', await page.evaluate(() => document.querySelector('sawa-lens-side').shadowRoot.querySelectorAll('.trs').length));
+	const t0 = await page.evaluate(() => document.querySelector('#movie_player video').currentTime);
+	await page.keyboard.press('d');
+	await wait(700);
+	log('hotkey D:', t0.toFixed(1), '→', (await page.evaluate(() => document.querySelector('#movie_player video').currentTime)).toFixed(1));
+	await sw.evaluate(() => chrome.storage.local.set({ blurCaptions: true }));
+	await wait(400);
+	log('blur on:', await page.evaluate(() => document.querySelector('sawa-lens-yt').classList.contains('blur-en')));
+	await sw.evaluate(() => chrome.storage.local.set({ blurCaptions: false, focus: 'th' }));
+	await wait(2500);
+	log('focus th:', JSON.stringify(await page.evaluate(() => { const r = document.querySelector('sawa-lens-side').shadowRoot; return [...r.querySelectorAll('.fx')].slice(0, 8).map((x) => x.textContent).concat(r.querySelector('.fcount').textContent); })));
+	await sw.evaluate(() => chrome.storage.local.set({ focus: 'ed' }));
+	await wait(2500);
+	log('focus -ed:', JSON.stringify(await page.evaluate(() => { const r = document.querySelector('sawa-lens-side').shadowRoot; return [...r.querySelectorAll('.fx')].slice(0, 6).map((x) => x.textContent + '=' + x.dataset.l); })));
+	await page.screenshot({ path: path.join(out, 'yt-focus-ed.png') });
+
 	// Grammar focus: past simple, then hover a highlighted verb
 	await sw.evaluate(() => chrome.storage.local.set({ focus: 'past' }));
 	await wait(2500);
@@ -260,6 +278,32 @@ async function connectManual() {
 	const wchip = await wiki.evaluate(() => { const h = document.querySelector('sawa-lens-page'); const c = h && h.shadowRoot.querySelector('.chip.on'); return c ? c.textContent : ''; });
 	log('wiki grade chip:', wchip);
 	await wiki.screenshot({ path: path.join(out, 'wiki-card.png') });
+
+	// Vocabulary test page
+	const tp = await browser.newPage();
+	await tp.goto('chrome-extension://' + extId + '/test/test.html');
+	await wait(800);
+	await tp.click('#go');
+	await wait(1200);
+	let answered = 0;
+	for (let k = 0; k < 90; k++) {
+		const has = await tp.$('[data-y]');
+		if (!has) break;
+		const word = await tp.evaluate(() => document.querySelector('.word').textContent);
+		// pretend: know common words (short) and say no to the rest
+		await tp.click(word.length <= 6 ? '[data-y="1"]' : '[data-y="0"]');
+		answered++;
+		await wait(60);
+	}
+	await wait(1500);
+	log('test answered', answered, '→', (await tp.evaluate(() => document.querySelector('.card').innerText)).replace(/s+/g, ' ').slice(0, 260));
+	await tp.screenshot({ path: path.join(out, 'test-result.png'), fullPage: true });
+	const pp = await browser.newPage();
+	await pp.setViewport({ width: 350, height: 1400 });
+	await pp.goto('chrome-extension://' + extId + '/popup/popup.html');
+	await wait(3000);
+	log('popup goal:', (await pp.evaluate(() => { const g = document.querySelector('.goal'); return g ? g.innerText : 'none'; })).replace(/s+/g, ' '));
+	await pp.screenshot({ path: path.join(out, 'popup-v3.png') });
 
 	await browser.close();
 })().catch((e) => {

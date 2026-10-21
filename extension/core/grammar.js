@@ -6,28 +6,28 @@
 
 	/** The structures a learner can focus on: key -> [Arabic name, short rule]. */
 	var FOCUS = {
-		verbs: ['كل الأفعال', 'مرّر على أي فعل لترى تصريفاته الثلاثة.'],
-		past: ['الماضي البسيط', 'الفعل + ed، أو التصريف الثاني للأفعال الشاذة: walked · went.'],
-		present: ['المضارع البسيط', 'الفعل كما هو، ونضيف s مع he / she / it: I work · she works.'],
-		future: ['المستقبل', 'will + الفعل، أو am / is / are going to + الفعل.'],
-		continuous: ['الأزمنة المستمرة', 'am / is / are / was / were + الفعل‑ing: is running · was running.'],
-		perfect: ['الأزمنة التامة', 'have / has / had + التصريف الثالث: has lived · had known.'],
-		passive: ['المبني للمجهول', 'be + التصريف الثالث: was built · is made.'],
-		modal: ['الأفعال الناقصة', 'can · could · should · must · might · may · would + الفعل.'],
-		conditional: ['الجمل الشرطية', 'if + شرط، ثم النتيجة. صفري: present + present · أول: present + will · ثانٍ: past + would · ثالث: had + would have.'],
-		relative: ['جمل الوصل', 'who للأشخاص · which للأشياء · that للاثنين · whose للملكية · where للمكان.'],
-		pronouns: ['الضمائر', 'I · you · he · she · it · we · they، و me · him · her · us · them، و my · your · his …'],
-		adjectives: ['الصفات', 'تصف الاسم وتأتي قبله غالبًا: a big house · the house is big.'],
-		comparatives: ['المقارنة والتفضيل', 'الصفة + er / more، والصفة + est / most: bigger · the biggest · more useful.'],
-		phrasal: ['الأفعال المركّبة', 'فعل + حرف يغيّر المعنى: give up · look after · find out.']
+		verbs: ['All verbs', 'Hover any verb to see its three forms: base · past · past participle.'],
+		past: ['Past simple', 'verb + ed, or the 2nd form of irregular verbs: walked · went.'],
+		present: ['Present simple', 'base verb, + s with he / she / it: I work · she works.'],
+		future: ['Future', 'will + verb, or am / is / are going to + verb.'],
+		continuous: ['Continuous tenses', 'am / is / are / was / were + verb-ing: is running · was running.'],
+		perfect: ['Perfect tenses', 'have / has / had + past participle: has lived · had known.'],
+		passive: ['Passive voice', 'be + past participle: was built · is made.'],
+		modal: ['Modal verbs', 'can · could · should · must · might · may · would + base verb.'],
+		conditional: ['Conditionals (if)', 'Zero: present + present · 1st: present + will · 2nd: past + would · 3rd: had + would have.'],
+		relative: ['Relative clauses', 'who for people · which for things · that for both · whose for possession · where for places.'],
+		pronouns: ['Pronouns', 'I · you · he · she · it · we · they · me · him · her · us · them · my · your · his …'],
+		adjectives: ['Adjectives', 'Describe a noun, usually before it: a big house · the house is big.'],
+		comparatives: ['Comparatives & superlatives', 'adjective + er / more · adjective + est / most: bigger · the biggest · more useful.'],
+		phrasal: ['Phrasal verbs', 'verb + particle with a new meaning: give up · look after · find out.']
 	};
 
 	var FORM_LABEL = {
-		'simple-past': 'الماضي البسيط', 'simple-present': 'المضارع البسيط', 'simple-future': 'المستقبل (will)', 'auxiliary-future': 'المستقبل (going to)',
-		'present-progressive': 'المضارع المستمر', 'past-progressive': 'الماضي المستمر', 'future-progressive': 'المستقبل المستمر',
-		'present-perfect': 'المضارع التام', 'past-perfect': 'الماضي التام', 'future-perfect': 'المستقبل التام',
-		'present-perfect-progressive': 'المضارع التام المستمر', 'past-perfect-progressive': 'الماضي التام المستمر',
-		'passive-past': 'المبني للمجهول (ماضٍ)', 'passive-present': 'المبني للمجهول (مضارع)', 'passive-future': 'المبني للمجهول (مستقبل)'
+		'simple-past': 'past simple', 'simple-present': 'present simple', 'simple-future': 'future (will)', 'auxiliary-future': 'future (going to)',
+		'present-progressive': 'present continuous', 'past-progressive': 'past continuous', 'future-progressive': 'future continuous',
+		'present-perfect': 'present perfect', 'past-perfect': 'past perfect', 'future-perfect': 'future perfect',
+		'present-perfect-progressive': 'present perfect continuous', 'past-perfect-progressive': 'past perfect continuous',
+		'passive-past': 'passive (past)', 'passive-present': 'passive (present)', 'passive-future': 'passive (future)'
 	};
 	var MODALS = /^(can|could|should|must|might|may|would|shall|ought|can't|couldn't|shouldn't|mustn't|wouldn't|won't|cannot)\b/i;
 
@@ -51,7 +51,7 @@
 		nlp()(text).verbs().json({ offset: true }).forEach(function (v) {
 			var gr = (v.verb && v.verb.grammar) || {}, form = gr.form || '';
 			var isModal = MODALS.test(v.text.trim());
-			var label = isModal ? 'فعل ناقص (modal)' : FORM_LABEL[form] || (gr.tense === 'PastTense' ? 'زمن ماضٍ' : gr.tense === 'FutureTense' ? 'المستقبل' : 'فعل');
+			var label = isModal ? 'modal verb' : FORM_LABEL[form] || (gr.tense === 'PastTense' ? 'past' : gr.tense === 'FutureTense' ? 'future' : 'verb');
 			if (keep(form, gr, isModal)) {
 				var s = span(text, v.offset.start, v.offset.length, label);
 				if (s) out.push(s);
@@ -81,11 +81,11 @@
 			var sStart = Math.max(text.lastIndexOf('. ', start), text.lastIndexOf('? ', start), text.lastIndexOf('! ', start));
 			sStart = sStart < 0 ? 0 : sStart + 2;
 			var sentence = text.slice(sStart, end).toLowerCase();
-			var type = 'جملة شرطية';
-			if (/\bhad\b[^,]*,?.*\bwould(n't)? have\b|\bwould(n't)? have\b.*\bif\b[^,]*\bhad\b/.test(sentence)) type = 'شرطية – النوع الثالث (had + would have)';
-			else if (/\bwould(n't)?\b|\b(could|might)\b/.test(sentence) && /\bif\b\s+\w+\s+(were|was|had|did|\w+ed)\b/.test(sentence)) type = 'شرطية – النوع الثاني (past + would)';
-			else if (/\bwill\b|'ll\b|\bwon't\b|\bgoing to\b/.test(sentence)) type = 'شرطية – النوع الأول (present + will)';
-			else if (!/\bwould\b/.test(sentence)) type = 'شرطية – النوع الصفري (present + present)';
+			var type = 'conditional';
+			if (/\bhad\b[^,]*,?.*\bwould(n't)? have\b|\bwould(n't)? have\b.*\bif\b[^,]*\bhad\b/.test(sentence)) type = '3rd conditional (had + would have)';
+			else if (/\bwould(n't)?\b|\b(could|might)\b/.test(sentence) && /\bif\b\s+\w+\s+(were|was|had|did|\w+ed)\b/.test(sentence)) type = '2nd conditional (past + would)';
+			else if (/\bwill\b|'ll\b|\bwon't\b|\bgoing to\b/.test(sentence)) type = '1st conditional (present + will)';
+			else if (!/\bwould\b/.test(sentence)) type = 'zero conditional (present + present)';
 			var sp = span(text, sStart, end - sStart, type);
 			if (sp) out.push(sp);
 			re.lastIndex = end;
@@ -109,7 +109,7 @@
 			// …and before the main verb: "the book [that I bought] is better".
 			var after = verbs.filter(function (v) { return v > start; });
 			if (after.length >= 2 && after[1] - start < len) len = after[1] - start;
-			var label = { who: 'جملة وصل (who: للأشخاص)', whom: 'جملة وصل (whom)', whose: 'جملة وصل (whose: للملكية)', which: 'جملة وصل (which: للأشياء)', where: 'جملة وصل (where: للمكان)', that: 'جملة وصل (that)' }[r.text.trim().toLowerCase()] || 'جملة وصل';
+			var label = { who: 'relative clause (who: people)', whom: 'relative clause (whom)', whose: 'relative clause (whose: possession)', which: 'relative clause (which: things)', where: 'relative clause (where: places)', that: 'relative clause (that)' }[r.text.trim().toLowerCase()] || 'relative clause';
 			var s = span(text, start, len, label);
 			if (s) out.push(s);
 		});
@@ -128,10 +128,10 @@
 			case 'modal': return verbSpans(text, function (f, gr, modal) { return modal; });
 			case 'conditional': return conditionals(text);
 			case 'relative': return relatives(text);
-			case 'pronouns': return matchSpans(text, '#Pronoun', 'ضمير');
-			case 'adjectives': return matchSpans(text, '#Adjective', 'صفة');
-			case 'comparatives': return matchSpans(text, '(#Comparative|#Superlative|more #Adjective|most #Adjective|less #Adjective|least #Adjective|as #Adjective as)', 'مقارنة / تفضيل');
-			case 'phrasal': return matchSpans(text, '#PhrasalVerb+', 'فعل مركّب');
+			case 'pronouns': return matchSpans(text, '#Pronoun', 'pronoun');
+			case 'adjectives': return matchSpans(text, '#Adjective', 'adjective');
+			case 'comparatives': return matchSpans(text, '(#Comparative|#Superlative|more #Adjective|most #Adjective|less #Adjective|least #Adjective|as #Adjective as)', 'comparative / superlative');
+			case 'phrasal': return matchSpans(text, '#PhrasalVerb+', 'phrasal verb');
 		}
 		return [];
 	}

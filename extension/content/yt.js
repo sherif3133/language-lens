@@ -1,114 +1,155 @@
 /* Language Lens on YouTube.
-   - Caption line on the video: hoverable, colour-coded words.
-   - Transcript sidebar on the right: full sentences with timestamps; click one to play from there,
-     or the repeat button to play only that sentence.
-   - The video's grade, the new-words list, saving sentences, expressions and grammar points.
-   Colours: known = plain · next level = green underline · beyond your level or rare = red underline · learning = yellow. */
+   - Caption box on the video: hoverable, colour-coded words, a translation line (YouTube's own auto-translate),
+     optional blur until hovered, and a grip to move it up or down.
+   - Transcript sidebar on the right: full sentences with timestamps and translations; click to play,
+     ↻ to play one sentence, "Sounds" for how it's said in fast speech.
+   - Focus: highlight a grammar or pronunciation feature everywhere, and jump between examples.
+   - Hotkeys: A previous sentence · S repeat · D next · Q auto-pause after each sentence.
+   - Vocabulary goal bar (top 1k / 2k / 3k words) at the top of the sidebar.
+   Colours: known = plain · next level = green · beyond your level or rare = red · learning = yellow. */
 (function () {
 	'use strict';
 	if (window.__sawaLensYT) return;
 	window.__sawaLensYT = true;
 	var U = window.LensUI, Card = window.LensCard;
 
-	var FONT = '"IBM Plex Sans Arabic","Segoe UI",Tahoma,sans-serif';
+	var FONT = '"IBM Plex Sans","IBM Plex Sans Arabic","Segoe UI",system-ui,sans-serif';
+	var AR = '"IBM Plex Sans Arabic","Segoe UI",Tahoma,sans-serif';
 	var CSS = '' +
 		':host{all:initial}*{box-sizing:border-box}' +
-		'.bar{position:absolute;left:50%;transform:translateX(-50%);bottom:64px;z-index:60;max-width:min(92%,980px);width:max-content;pointer-events:auto;' +
-		'font:600 clamp(16px,2.2vw,26px)/1.45 ' + FONT + ';color:#fff;text-align:center;direction:ltr;transition:bottom .2s}' +
-		':host(.ctrl) .bar{bottom:84px}' +
-		'.line{background:rgba(15,15,16,.86);border-radius:10px;padding:6px 14px;display:inline-block;user-select:text}' +
+		'.bar{position:absolute;left:50%;transform:translateX(-50%);bottom:var(--pos,12%);z-index:60;max-width:min(94%,1000px);width:max-content;pointer-events:auto;' +
+		'font:600 clamp(16px,2.2vw,26px)/1.45 ' + FONT + ';color:#fff;text-align:center;display:flex;align-items:center;gap:6px}' +
+		'.grip{flex:none;align-self:stretch;display:flex;align-items:center;cursor:ns-resize;color:rgba(255,255,255,.55);font-size:16px;padding:0 4px;opacity:0;transition:opacity .15s;user-select:none}' +
+		'.bar:hover .grip{opacity:1}.grip:hover{color:#fff}' +
+		'.box{display:flex;flex-direction:column;align-items:center;gap:4px;min-width:0}' +
+		'.line{background:rgba(15,15,16,.86);border-radius:10px;padding:5px 14px;display:inline-block;user-select:text;transition:filter .15s}' +
 		'.line:empty{display:none}' +
+		'.tr{font:500 clamp(14px,1.8vw,21px)/1.5 ' + AR + ';direction:rtl;color:#E6E3DF}' +
+		':host(.blur-en) .line.en{filter:blur(7px)}:host(.blur-en) .line.en:hover{filter:none}' +
+		':host(.blur-tr) .line.tr{filter:blur(6px)}:host(.blur-tr) .line.tr:hover{filter:none}' +
+		':host(.no-tr) .line.tr{display:none}' +
 		'.wd{cursor:pointer;border-radius:4px;padding:0 1px}' +
 		'.wd:hover{background:#fff;color:#0F0F10;text-decoration:none}' +
 		':host(.colors) .wd.next{text-decoration:underline;text-decoration-color:#34D399;text-decoration-thickness:3px;text-underline-offset:6px}' +
 		':host(.colors) .wd.hard{text-decoration:underline;text-decoration-color:#FF6B6B;text-decoration-thickness:3px;text-underline-offset:6px}' +
 		':host(.colors) .wd.learning{background:#FDE68A;color:#0F0F10;box-shadow:0 0 0 2px #FDE68A}' +
 		'.fx{background:rgba(167,139,250,.55);box-shadow:0 0 0 2px rgba(167,139,250,.55);border-radius:4px}' +
-		'.tools{display:flex;justify-content:center;gap:6px;margin-top:6px;opacity:0;transition:opacity .15s;direction:rtl}' +
-		'.bar:hover .tools{opacity:1}' +
-		'.t{font:600 13px/1 ' + FONT + ';background:rgba(15,15,16,.86);color:#fff;border:1px solid rgba(255,255,255,.25);border-radius:999px;padding:7px 12px;cursor:pointer}' +
-		'.t:hover{border-color:#fff}.t[disabled]{opacity:.6;cursor:default}' +
-		'.chip{position:absolute;top:12px;right:12px;z-index:61;font:600 13px/1 ' + FONT + ';background:#0F0F10;color:#fff;border:1px solid rgba(255,255,255,.3);border-radius:999px;padding:8px 12px;cursor:pointer;direction:rtl;pointer-events:auto}' +
-		'.chip b{font:800 14px/1 Changa,sans-serif;margin-inline-start:4px}' +
-		'.chip .dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#fff;margin-inline-end:6px;vertical-align:1px}' +
+		'.tools{position:absolute;left:50%;transform:translateX(-50%);top:100%;margin-top:6px;display:flex;justify-content:center;gap:5px;opacity:0;transition:opacity .15s;white-space:nowrap}' +
+		'.bar:hover .tools,.tools:hover{opacity:1}' +
+		'.t{font:600 12.5px/1 ' + FONT + ';background:rgba(15,15,16,.9);color:#fff;border:1px solid rgba(255,255,255,.25);border-radius:999px;padding:7px 11px;cursor:pointer}' +
+		'.t:hover{border-color:#fff}.t.on{background:#fff;color:#0F0F10}.t[disabled]{opacity:.6;cursor:default}.t kbd{font:600 10.5px/1 ' + FONT + ';opacity:.6;margin-left:4px}' +
+		'.menu{position:absolute;bottom:calc(100% + 8px);right:0;background:#fff;color:#0F0F10;border-radius:12px;padding:8px;font:500 13.5px/1.4 ' + FONT + ';text-align:left;display:none;min-width:220px;pointer-events:auto}' +
+		'.menu.on{display:block}.menu label{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:8px;cursor:pointer}.menu label:hover{background:#F6F5F3}' +
+		'.chip{position:absolute;top:12px;right:12px;z-index:61;font:600 13px/1 ' + FONT + ';background:#0F0F10;color:#fff;border:1px solid rgba(255,255,255,.3);border-radius:999px;padding:8px 12px;cursor:pointer;pointer-events:auto}' +
+		'.chip b{font:800 14px/1 Changa,sans-serif;margin:0 4px}' +
+		'.chip .dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#fff;margin-right:6px;vertical-align:1px}' +
 		'.chip.hard .dot,.chip.too-hard .dot{background:#E3262B}' +
 		'.panel{position:absolute;top:52px;right:12px;z-index:62;width:300px;max-height:calc(100% - 140px);overflow:auto;background:#fff;color:#0F0F10;border-radius:12px;' +
-		'font:14px/1.55 ' + FONT + ';direction:rtl;text-align:right;padding:14px;display:none;pointer-events:auto}' +
+		'font:14px/1.5 ' + FONT + ';text-align:left;padding:14px;display:none;pointer-events:auto}' +
 		'.panel.on{display:block}' +
 		'.panel h3{font:800 17px/1.3 Changa,sans-serif;margin:0 0 4px}' +
 		'.panel .sub{color:#8A8584;font-size:12.5px;margin-bottom:10px}' +
 		'.panel ul{list-style:none;margin:0;padding:0}' +
 		'.panel li{display:flex;justify-content:space-between;gap:8px;align-items:center;padding:7px 0;border-top:1px solid #E6E3DF}' +
-		'.panel .en{direction:ltr;font-weight:600}.panel .ar{color:#4A4847;font-size:13px}' +
-		'.panel .lv{font-size:11px;border:1px solid #E6E3DF;border-radius:5px;padding:1px 5px;margin-inline-start:6px;direction:ltr}' +
+		'.panel .en{font-weight:600}.panel .ar{color:#4A4847;font-size:13px;direction:rtl;text-align:left;font-family:' + AR + '}' +
+		'.panel .lv{font-size:11px;border:1px solid #E6E3DF;border-radius:5px;padding:1px 5px;margin-left:6px}' +
 		'.panel .k{font:600 12px/1 ' + FONT + ';border:1px solid #E6E3DF;background:#fff;border-radius:999px;padding:6px 9px;cursor:pointer;white-space:nowrap}' +
 		'.panel .k:hover{border-color:#0F0F10}' +
-		'.msg{position:absolute;left:50%;transform:translateX(-50%);bottom:64px;z-index:60;font:600 14px/1.4 ' + FONT + ';background:rgba(15,15,16,.86);color:#fff;border-radius:10px;padding:8px 14px;direction:rtl;pointer-events:auto}';
+		'.msg{position:absolute;left:50%;transform:translateX(-50%);top:14%;z-index:63;font:600 14px/1.4 ' + FONT + ';background:rgba(15,15,16,.9);color:#fff;border-radius:10px;padding:8px 14px;pointer-events:none}';
 
 	var SIDE_CSS = '' +
 		':host{all:initial;display:block;margin-bottom:16px}*{box-sizing:border-box}' +
-		'.side{font:14px/1.6 ' + FONT + ';color:#0F0F10;background:#fff;border:1px solid #E6E3DF;border-radius:12px;overflow:hidden}' +
-		'.head{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 12px;background:#0F0F10;color:#fff;direction:rtl}' +
+		'.side{font:14px/1.55 ' + FONT + ';color:#0F0F10;background:#fff;border:1px solid #E6E3DF;border-radius:12px;overflow:hidden}' +
+		'.head{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 12px;background:#0F0F10;color:#fff}' +
 		'.ttl{font:800 15px/1 Changa,' + FONT + ';display:flex;align-items:center;gap:8px}' +
 		'.ttl small{font:600 12px/1 ' + FONT + ';color:#8A8584}' +
 		'.hb{display:flex;gap:4px}' +
 		'.ib{font:600 12px/1 ' + FONT + ';background:transparent;color:#fff;border:1px solid rgba(255,255,255,.25);border-radius:999px;padding:6px 10px;cursor:pointer}' +
 		'.ib:hover{border-color:#fff}.ib.on{background:#fff;color:#0F0F10;border-color:#fff}' +
-		'.legend{display:flex;flex-wrap:wrap;gap:10px;padding:8px 12px;border-bottom:1px solid #E6E3DF;font-size:12px;color:#4A4847;direction:rtl}' +
+		'.goal{padding:9px 12px;border-bottom:1px solid #E6E3DF;font-size:12.5px;color:#4A4847}' +
+		'.goal .gl{display:flex;justify-content:space-between;gap:8px}.goal b{color:#0F0F10}' +
+		'.gbar{position:relative;height:8px;border-radius:99px;background:#EFEDEA;overflow:hidden;margin-top:5px}.gbar i{position:absolute;left:0;top:0;bottom:0;background:#0F0F10}.gbar i.lr{background:#FDE68A}' +
+		'.goal a{color:#0F0F10;font-weight:600}' +
+		'.legend{display:flex;flex-wrap:wrap;gap:10px;padding:8px 12px;border-bottom:1px solid #E6E3DF;font-size:12px;color:#4A4847}' +
 		'.legend span{display:inline-flex;align-items:center;gap:5px}' +
 		'.sw{display:inline-block;width:18px;height:10px;border-radius:2px}' +
 		'.sw.next{border-bottom:3px solid #15803D}.sw.hard{border-bottom:3px solid #E3262B}.sw.learning{background:#FDE68A;outline:1px solid #B45309}.sw.known{border-bottom:1px solid #E6E3DF}' +
-		'.list{max-height:min(62vh,640px);overflow:auto;padding:4px 0;direction:ltr}' +
-		'.s{display:flex;gap:8px;align-items:flex-start;padding:7px 10px 7px 8px;border-inline-start:3px solid transparent;cursor:pointer}' +
+		'.focus{display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid #E6E3DF;font-size:12.5px}' +
+		'.focus label{color:#4A4847;font-weight:600;white-space:nowrap}' +
+		'.fsel{flex:1;min-width:0;font:600 13px/1.2 ' + FONT + ';border:1px solid #E6E3DF;border-radius:8px;padding:6px 8px;background:#fff;color:#0F0F10}' +
+		'.fbar{display:none;padding:8px 12px;border-bottom:1px solid #E6E3DF;background:#F5F3FF;font-size:12.5px;color:#4A4847}' +
+		'.fbar.on{display:block}.fbar .rule{margin-top:2px}.fbar .row{display:flex;align-items:center;justify-content:space-between;gap:8px}' +
+		'.fbar b{color:#0F0F10}.fbar .sw2{display:inline-block;width:18px;height:10px;background:#EDE9FE;outline:1px solid #A78BFA;margin-right:6px}' +
+		'.fnav{display:flex;gap:4px}.fnav button{font:600 12px/1 ' + FONT + ';border:1px solid #E6E3DF;background:#fff;border-radius:6px;padding:5px 9px;cursor:pointer}.fnav button:hover{border-color:#0F0F10}' +
+		'.list{max-height:min(62vh,640px);overflow:auto;padding:4px 0}' +
+		'.s{display:flex;gap:8px;align-items:flex-start;padding:7px 8px 7px 10px;border-left:3px solid transparent;cursor:pointer}' +
 		'.s:hover{background:#F6F5F3}' +
-		'.s.now{background:#F6F5F3;border-inline-start-color:#0F0F10}' +
+		'.s.now{background:#F6F5F3;border-left-color:#0F0F10}' +
 		'.tm{font:600 12px/1 ' + FONT + ';color:#4A4847;background:#fff;border:1px solid #E6E3DF;border-radius:6px;padding:4px 6px;cursor:pointer;flex:none;margin-top:2px;font-variant-numeric:tabular-nums}' +
 		'.tm:hover{border-color:#0F0F10}' +
-		'.tx{flex:1;min-width:0;font-size:15px;line-height:1.65;user-select:text;text-align:left}' +
-		'.rep{flex:none;border:0;background:transparent;color:#8A8584;cursor:pointer;padding:2px 4px;border-radius:6px;line-height:0;margin-top:2px}' +
+		'.body{flex:1;min-width:0}' +
+		'.tx{font-size:15px;line-height:1.65;user-select:text}' +
+		'.trs{font:13.5px/1.6 ' + AR + ';color:#4A4847;direction:rtl;text-align:left;margin-top:2px;transition:filter .15s}' +
+		':host(.no-tr) .trs{display:none}:host(.blur-tr) .trs{filter:blur(5px)}:host(.blur-tr) .trs:hover{filter:none}' +
+		':host(.blur-en) .tx{filter:blur(5px)}:host(.blur-en) .s:hover .tx{filter:none}' +
+		'.snd{margin-top:6px;padding:8px 10px;background:#F6F5F3;border-radius:8px;font-size:13px;color:#4A4847;cursor:auto}.snd b{color:#0F0F10}.snd .sl{font-weight:600;color:#0F0F10}.snd ul{margin:4px 0 0;padding-left:16px}.snd li{margin-top:3px}' +
+		'.acts{flex:none;display:flex;flex-direction:column;gap:2px}' +
+		'.rep{border:0;background:transparent;color:#8A8584;cursor:pointer;padding:3px 4px;border-radius:6px;line-height:0}' +
 		'.rep:hover{color:#0F0F10;background:#fff}.rep svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}' +
 		'.wd{border-radius:3px;padding:0 1px}' +
 		'.wd:hover{background:#0F0F10;color:#fff;text-decoration:none}' +
 		':host(.colors) .wd.next{text-decoration:underline;text-decoration-color:#15803D;text-decoration-thickness:2px;text-underline-offset:4px}' +
 		':host(.colors) .wd.hard{text-decoration:underline;text-decoration-color:#E3262B;text-decoration-thickness:2px;text-underline-offset:4px}' +
 		':host(.colors) .wd.learning{background:#FDE68A;box-shadow:0 0 0 1px #B45309}' +
-		'.empty{padding:16px;color:#8A8584;direction:rtl;text-align:right}' +
-		'.foot{padding:8px 12px;border-top:1px solid #E6E3DF;font-size:12px;color:#8A8584;direction:rtl}' +
 		'.fx{background:#EDE9FE;box-shadow:0 0 0 1px #A78BFA;border-radius:3px}' +
-		'.focus{display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid #E6E3DF;direction:rtl;font-size:12.5px}' +
-		'.focus label{color:#4A4847;font-weight:600;white-space:nowrap}' +
-		'.fsel{flex:1;min-width:0;font:600 13px/1.2 ' + FONT + ';border:1px solid #E6E3DF;border-radius:8px;padding:6px 8px;background:#fff;color:#0F0F10;direction:rtl}' +
-		'.fbar{display:none;padding:8px 12px;border-bottom:1px solid #E6E3DF;background:#F5F3FF;direction:rtl;font-size:12.5px;color:#4A4847}' +
-		'.fbar.on{display:block}.fbar .rule{margin-top:2px}.fbar .row{display:flex;align-items:center;justify-content:space-between;gap:8px}' +
-		'.fbar b{color:#0F0F10}.fbar .sw2{display:inline-block;width:18px;height:10px;background:#EDE9FE;outline:1px solid #A78BFA;margin-inline-end:6px;vertical-align:0}' +
-		'.fnav{display:flex;gap:4px}.fnav button{font:600 12px/1 ' + FONT + ';border:1px solid #E6E3DF;background:#fff;border-radius:6px;padding:5px 9px;cursor:pointer}.fnav button:hover{border-color:#0F0F10}' +
+		'.empty{padding:16px;color:#8A8584}' +
+		'.foot{padding:8px 12px;border-top:1px solid #E6E3DF;font-size:12px;color:#8A8584}.foot kbd{font:600 11px/1 ' + FONT + ';border:1px solid #E6E3DF;border-bottom-width:2px;border-radius:4px;padding:1px 5px;color:#0F0F10}' +
 		':host(.min) .legend,:host(.min) .list,:host(.min) .foot,:host(.min) .focus,:host(.min) .fbar{display:none!important}';
 
 	var REPEAT = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17 2l3 3-3 3M4 11V9a4 4 0 0 1 4-4h12M7 22l-3-3 3-3M20 13v2a4 4 0 0 1-4 4H4"/></svg>';
+	var WAVE = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h2M7 8v8M11 5v14M15 8v8M19 11v2"/></svg>';
 
-	var S = { videoId: '', cues: [], lines: null, sents: [], sentToks: null, grade: null, idx: -1, sIdx: -1, host: null, root: null, side: null, sRoot: null, video: null, pausedByUs: false, raf: 0, primed: '', stopAt: 0, follow: true, scrolledAt: 0 };
-	var prefs = { sidebar: true, colors: true, pauseOnHover: true, sideMin: false, focus: '' };
-	chrome.storage.local.get(['sidebar', 'lensColors', 'pauseOnHover', 'sideMin', 'focus'], function (o) {
+	var S = { videoId: '', cues: [], lines: null, sents: [], sentToks: null, tcues: [], cueTr: null, sentTr: null, grade: null, idx: -1, sIdx: -1, host: null, root: null, side: null, sRoot: null, video: null, pausedByUs: false, raf: 0, primed: '', stopAt: 0, follow: true, scrolledAt: 0, sounds: {} };
+	var prefs = { sidebar: true, colors: true, pauseOnHover: true, sideMin: false, focus: '', showTrans: true, blurCaptions: false, blurTrans: false, barPos: 0.12, autoPause: false };
+	var PREF_KEYS = ['sidebar', 'lensColors', 'pauseOnHover', 'sideMin', 'focus', 'showTrans', 'blurCaptions', 'blurTrans', 'barPos', 'autoPause'];
+	function readPrefs(o) {
 		prefs.sidebar = o.sidebar !== false;
 		prefs.colors = o.lensColors !== false;
 		prefs.pauseOnHover = o.pauseOnHover !== false;
 		prefs.sideMin = !!o.sideMin;
 		prefs.focus = o.focus || '';
+		prefs.showTrans = o.showTrans !== false;
+		prefs.blurCaptions = !!o.blurCaptions;
+		prefs.blurTrans = !!o.blurTrans;
+		prefs.barPos = typeof o.barPos === 'number' ? o.barPos : 0.12;
+		prefs.autoPause = !!o.autoPause;
+	}
+	chrome.storage.local.get(PREF_KEYS, function (o) {
+		readPrefs(o);
 		applyPrefs();
 	});
 
-	/* ------------------------------------------------------------ captions from the page script */
+	/* ------------------------------------------------------------ captions + translation from the page script */
 	window.addEventListener('message', function (e) {
-		if (e.source !== window || !e.data || e.data.source !== 'sawa-lens-main' || e.data.type !== 'captions') return;
+		if (e.source !== window || !e.data || e.data.source !== 'sawa-lens-main') return;
 		var d = e.data;
 		if (d.videoId !== currentVideoId()) return;
+		if (d.type === 'translation') {
+			S.tcues = parse(d.body, false);
+			alignTranslation();
+			paintSide();
+			S.idx = -1;
+			tick(true);
+			return;
+		}
+		if (d.type !== 'captions') return;
 		if (d.none) {
 			S.videoId = d.videoId;
 			S.cues = [];
 			S.sents = [];
 			mount();
 			paintSide();
-			say('هذا الفيديو لا يحتوي على نص إنجليزي.');
+			say('This video has no English captions.');
 			return;
 		}
 		// Keep hand-made captions over auto-generated ones if both arrive.
@@ -119,6 +160,8 @@
 		S.cues = cues;
 		S.kind = d.kind;
 		S.sents = sentences(cues, d.kind === 'asr');
+		S.sounds = {};
+		alignTranslation();
 		mount();
 		S.fxCues = S.fxSents = null;
 		analyse();
@@ -161,7 +204,7 @@
 		var words = [];
 		cues.forEach(function (c) {
 			if (c.words) {
-				c.words.forEach(function (w, k) { words.push({ t: w.t, text: w.text, cueEnd: c.end, gapAfter: 0 }); });
+				c.words.forEach(function (w) { words.push({ t: w.t, text: w.text, cueEnd: c.end, gapAfter: 0 }); });
 			} else {
 				var parts = c.text.split(' '), len = c.text.length, pos = 0;
 				parts.forEach(function (p) {
@@ -197,6 +240,24 @@
 		return out;
 	}
 
+	/** Match YouTube's translated lines to our caption lines and sentences by time. */
+	function alignTranslation() {
+		S.cueTr = S.sentTr = null;
+		if (!S.tcues.length || !S.cues.length) return;
+		S.cueTr = S.cues.map(function (c) {
+			var best = '', bestOv = 0;
+			S.tcues.forEach(function (t) {
+				var ov = Math.min(c.end, t.end) - Math.max(c.start, t.start);
+				if (ov > bestOv) { bestOv = ov; best = t.text; }
+			});
+			return best;
+		});
+		S.sentTr = S.sents.map(function (s) {
+			return S.tcues.filter(function (t) { var mid = (t.start + t.end) / 2; return mid >= s.start - 200 && mid < s.end + 200; })
+				.map(function (t) { return t.text; }).join(' ');
+		});
+	}
+
 	function currentVideoId() {
 		var m = location.search.match(/[?&]v=([\w-]{11})/);
 		return m ? m[1] : '';
@@ -230,21 +291,33 @@
 			clearTimeout(reT);
 			reT = setTimeout(analyse, 300);
 		}
-		if (ch.sidebar) prefs.sidebar = ch.sidebar.newValue !== false;
-		if (ch.lensColors) prefs.colors = ch.lensColors.newValue !== false;
-		if (ch.pauseOnHover) prefs.pauseOnHover = ch.pauseOnHover.newValue !== false;
-		if (ch.sideMin) prefs.sideMin = !!ch.sideMin.newValue;
-		if (ch.focus) {
-			prefs.focus = ch.focus.newValue || '';
-			runFocus();
-		}
-		if (ch.sidebar || ch.lensColors || ch.sideMin) applyPrefs();
+		if (ch.words || ch.vocabTest) paintGoal();
+		var touched = PREF_KEYS.some(function (k) { return ch[k]; });
+		if (!touched) return;
+		chrome.storage.local.get(PREF_KEYS, function (o) {
+			var oldFocus = prefs.focus;
+			readPrefs(o);
+			applyPrefs();
+			if (oldFocus !== prefs.focus) runFocus();
+		});
 	});
 
 	function applyPrefs() {
-		if (S.host) S.host.classList.toggle('colors', prefs.colors);
+		[S.host, S.side].forEach(function (h) {
+			if (!h) return;
+			h.classList.toggle('colors', prefs.colors);
+			h.classList.toggle('no-tr', !prefs.showTrans);
+			h.classList.toggle('blur-en', prefs.blurCaptions);
+			h.classList.toggle('blur-tr', prefs.blurTrans);
+		});
+		if (S.host) {
+			var bar = S.root.querySelector('.bar');
+			bar.style.setProperty('--pos', Math.round(prefs.barPos * 1000) / 10 + '%');
+			S.root.querySelectorAll('[data-pref]').forEach(function (i) { i.checked = !!prefs[i.dataset.pref]; });
+			var ap = S.root.querySelector('[data-a=autopause]');
+			if (ap) ap.classList.toggle('on', prefs.autoPause);
+		}
 		if (S.side) {
-			S.side.classList.toggle('colors', prefs.colors);
 			S.side.classList.toggle('min', prefs.sideMin);
 			S.side.style.display = prefs.sidebar ? '' : 'none';
 			var cb = S.sRoot.querySelector('[data-a=colors]');
@@ -253,12 +326,13 @@
 		if (prefs.sidebar && S.videoId && !S.side) mountSide();
 	}
 
-	/* ------------------------------------------------------------ word markup */
-	function markup(text, toks, spans) {
-		return U.markup(text, toks, spans);
+	function setPref(key, value) {
+		var o = {};
+		o[key] = value;
+		chrome.storage.local.set(o);
 	}
 
-	/* ------------------------------------------------------------ grammar focus */
+	/* ------------------------------------------------------------ grammar / pronunciation focus */
 	function runFocus() {
 		var vid = S.videoId, f = prefs.focus;
 		if (!f || !S.cues.length) {
@@ -283,7 +357,7 @@
 		}, function () {});
 	}
 
-	/** Jump to the previous/next sentence that has the focused structure. */
+	/** Jump to the previous/next sentence that has the focused feature. */
 	function jumpFocus(dir) {
 		if (!S.fxSents) return;
 		var from = S.sIdx < 0 ? (dir > 0 ? -1 : S.sents.length) : S.sIdx;
@@ -295,7 +369,7 @@
 		}
 	}
 
-	/* ------------------------------------------------------------ caption overlay */
+	/* ------------------------------------------------------------ caption box on the video */
 	function mount() {
 		var player = document.querySelector('#movie_player');
 		if (!player) return;
@@ -307,23 +381,62 @@
 			S.root = S.host.attachShadow({ mode: 'open' });
 			S.root.innerHTML = '<style>' + CSS + '</style>' +
 				'<button class="chip" hidden></button><div class="panel"></div>' +
-				'<div class="bar"><div class="line"></div><div class="tools">' +
-				'<button class="t" data-a="prev">السابق</button><button class="t" data-a="save">احفظ الجملة</button><button class="t" data-a="next">التالي</button><button class="t" data-a="side">النص الكامل</button></div></div>';
+				'<div class="bar"><div class="grip" title="Drag to move the captions up or down">⋮⋮</div><div class="box"><div class="line en"></div><div class="line tr"></div></div>' +
+				'<div class="tools">' +
+				'<button class="t" data-a="prev" title="Previous sentence">◀<kbd>A</kbd></button>' +
+				'<button class="t" data-a="repeat" title="Repeat sentence">↻<kbd>S</kbd></button>' +
+				'<button class="t" data-a="next" title="Next sentence">▶<kbd>D</kbd></button>' +
+				'<button class="t" data-a="autopause" title="Pause after every sentence">Auto-pause<kbd>Q</kbd></button>' +
+				'<button class="t" data-a="save">Save sentence</button>' +
+				'<button class="t" data-a="side">Transcript</button>' +
+				'<span style="position:relative"><button class="t" data-a="menu">Display ▾</button><div class="menu">' +
+				'<label><input type="checkbox" data-pref="showTrans"> Show translation</label>' +
+				'<label><input type="checkbox" data-pref="blurCaptions"> Blur captions until hover</label>' +
+				'<label><input type="checkbox" data-pref="blurTrans"> Blur translation until hover</label>' +
+				'<label><input type="checkbox" data-pref="colors"> Colour words</label>' +
+				'<label><input type="checkbox" data-pref="pauseOnHover"> Pause when I hover a word</label>' +
+				'</div></span></div></div>';
 			player.appendChild(S.host);
 			player.classList.add('sawa-lens-on');
 			hideNativeCaptions();
 			S.root.addEventListener('mouseover', function (e) { onOver(e, 'bar'); });
 			S.root.addEventListener('mouseout', onOut);
 			S.root.addEventListener('click', onClick);
+			S.root.addEventListener('change', function (e) {
+				var k = e.target.dataset.pref;
+				if (k) setPref(k === 'colors' ? 'lensColors' : k, e.target.checked);
+			});
 			S.root.addEventListener('mouseup', function (e) { onSelect(e, S.root, 'bar'); });
-			new MutationObserver(function () {
-				S.host.classList.toggle('ctrl', !player.classList.contains('ytp-autohide'));
-			}).observe(player, { attributes: true, attributeFilter: ['class'] });
+			setupDrag(player);
 			S.video = player.querySelector('video');
+			// Also check on the video's own time updates: screen refreshes slow down when the tab is in the background.
+			S.video.addEventListener('timeupdate', checkStop);
 			loop();
 		}
 		applyPrefs();
 		if (prefs.sidebar) mountSide();
+	}
+
+	/** Drag the grip to move the caption box up or down; the position is remembered. */
+	function setupDrag(player) {
+		var grip = S.root.querySelector('.grip'), bar = S.root.querySelector('.bar');
+		grip.addEventListener('mousedown', function (e) {
+			e.preventDefault();
+			e.stopPropagation();
+			var rect = player.getBoundingClientRect(), pos = prefs.barPos;
+			function move(ev) {
+				var fromBottom = rect.bottom - ev.clientY - bar.offsetHeight / 2;
+				pos = Math.max(0.02, Math.min(0.85, fromBottom / rect.height));
+				bar.style.setProperty('--pos', Math.round(pos * 1000) / 10 + '%');
+			}
+			function up() {
+				document.removeEventListener('mousemove', move, true);
+				document.removeEventListener('mouseup', up, true);
+				setPref('barPos', pos);
+			}
+			document.addEventListener('mousemove', move, true);
+			document.addEventListener('mouseup', up, true);
+		});
 	}
 
 	function hideNativeCaptions() {
@@ -336,23 +449,21 @@
 
 	function say(text) {
 		if (!S.root) return;
-		var line = S.root.querySelector('.line');
-		line.textContent = '';
 		var m = S.root.querySelector('.msg') || S.root.appendChild(document.createElement('div'));
 		m.className = 'msg';
 		m.textContent = text;
 		clearTimeout(S.sayT);
-		S.sayT = setTimeout(function () { m.remove(); }, 6000);
+		S.sayT = setTimeout(function () { m.remove(); }, 2600);
 	}
 
-	var BAND = { easy: 'سهل', good: 'مناسب', hard: 'صعب', 'too-hard': 'صعب جدًا' };
+	var BAND = { easy: 'Easy', good: 'Good level', hard: 'Hard', 'too-hard': 'Too hard' };
 	function paintChip() {
 		var c = S.root && S.root.querySelector('.chip');
 		if (!c || !S.grade) return;
 		c.hidden = false;
 		c.className = 'chip ' + S.grade.band;
-		c.innerHTML = '<span class="dot"></span>تعرف <b dir="ltr">' + S.grade.percent + '%</b> · ' + BAND[S.grade.band];
-		c.title = 'Language Lens: نسبة الكلمات التي تعرفها في هذا الفيديو';
+		c.innerHTML = '<span class="dot"></span>You know<b>' + S.grade.percent + '%</b>· ' + BAND[S.grade.band];
+		c.title = 'Language Lens: share of the words in this video you know';
 		if (S.root.querySelector('.panel').classList.contains('on')) paintPanel();
 	}
 
@@ -360,21 +471,23 @@
 		var p = S.root.querySelector('.panel'), g = S.grade, u = U.esc;
 		if (!g) return;
 		var lv = U.LEVEL_NAMES[(S.level || 2) - 1];
-		p.innerHTML = '<h3>كلمات جديدة في هذا الفيديو</h3>' +
-			'<div class="sub">تعرف <bdi>' + g.percent + '%</bdi> من الكلمات (مستواك ' + lv + '). ' + (g.unknownLemmas ? 'تعلّم هذه أولًا:' : 'لا توجد كلمات جديدة.') + '</div><ul>' +
+		p.innerHTML = '<h3>New words in this video</h3>' +
+			'<div class="sub">You know ' + g.percent + '% of the words (your level: ' + lv + '). ' + (g.unknownLemmas ? 'Learn these first:' : 'No new words.') + '</div><ul>' +
 			g.top.map(function (w) {
 				return '<li><div><span class="en">' + u(w.lemma) + '</span>' + (w.level ? '<span class="lv">' + U.LEVEL_NAMES[w.level - 1] + '</span>' : '') +
-					(w.ar ? '<div class="ar">' + u(w.ar) + '</div>' : '') + '</div><button class="k" data-a="know" data-l="' + u(w.lemma) + '">أعرفها</button></li>';
+					(w.ar ? '<div class="ar">' + u(w.ar) + '</div>' : '') + '</div><button class="k" data-a="know" data-l="' + u(w.lemma) + '">I know it</button></li>';
 			}).join('') + '</ul>';
 	}
 
 	function paintLine(i) {
-		var line = S.root.querySelector('.line');
+		var en = S.root.querySelector('.line.en'), tr = S.root.querySelector('.line.tr');
 		if (i < 0 || !S.cues[i]) {
-			line.innerHTML = '';
+			en.innerHTML = '';
+			tr.textContent = '';
 			return;
 		}
-		line.innerHTML = markup(S.cues[i].text, S.lines ? S.lines[i] : null, S.fxCues ? S.fxCues[i] : null);
+		en.innerHTML = U.markup(S.cues[i].text, S.lines ? S.lines[i] : null, S.fxCues ? S.fxCues[i] : null);
+		tr.textContent = S.cueTr ? S.cueTr[i] || '' : '';
 	}
 
 	/* ------------------------------------------------------------ transcript sidebar */
@@ -388,13 +501,14 @@
 		S.sRoot = S.side.attachShadow({ mode: 'open' });
 		S.sRoot.innerHTML = '<style>' + SIDE_CSS + '</style><div class="side">' +
 			'<div class="head"><div class="ttl">Language Lens <small class="g"></small></div><div class="hb">' +
-			'<button class="ib" data-a="follow" title="تتبّع الجملة الحالية">تتبّع</button>' +
-			'<button class="ib" data-a="colors" title="تلوين الكلمات">الألوان</button>' +
-			'<button class="ib" data-a="min" title="تصغير">—</button></div></div>' +
-			'<div class="legend"><span><i class="sw known"></i>أعرفها</span><span><i class="sw next"></i>تستحق المراجعة</span><span><i class="sw hard"></i>فوق مستواك أو نادرة</span><span><i class="sw learning"></i>أتعلّمها</span></div>' +
-			'<div class="focus"><label for="fsel">ركّز على</label><select class="fsel" id="fsel"><option value="">— بدون —</option></select></div>' +
-			'<div class="fbar"><div class="row"><div><i class="sw2"></i><b class="fname"></b> · <span class="fcount"></span></div><div class="fnav"><button data-a="fprev" title="المثال السابق">▲</button><button data-a="fnext" title="المثال التالي">▼</button></div></div><div class="rule"></div></div>' +
-			'<div class="list"></div><div class="foot">اضغط على جملة لتشغيلها، أو ' + '↻' + ' لتشغيل الجملة وحدها. حدّد كلمات لحفظها كتعبير أو قاعدة.</div></div>';
+			'<button class="ib" data-a="follow" title="Follow the current sentence">Follow</button>' +
+			'<button class="ib" data-a="colors" title="Colour words">Colours</button>' +
+			'<button class="ib" data-a="min" title="Collapse">—</button></div></div>' +
+			'<div class="goal"></div>' +
+			'<div class="legend"><span><i class="sw known"></i>Known</span><span><i class="sw next"></i>Worth checking</span><span><i class="sw hard"></i>Above your level / rare</span><span><i class="sw learning"></i>Learning</span></div>' +
+			'<div class="focus"><label for="fsel">Focus on</label><select class="fsel" id="fsel"><option value="">— none —</option></select></div>' +
+			'<div class="fbar"><div class="row"><div><i class="sw2"></i><b class="fname"></b> · <span class="fcount"></span></div><div class="fnav"><button data-a="fprev" title="Previous example">▲</button><button data-a="fnext" title="Next example">▼</button></div></div><div class="rule"></div></div>' +
+			'<div class="list"></div><div class="foot">Click a sentence to play it. <kbd>A</kbd> previous · <kbd>S</kbd> repeat · <kbd>D</kbd> next · <kbd>Q</kbd> auto-pause. Select words to translate, hear or save them.</div></div>';
 		col.insertBefore(S.side, col.firstChild);
 		S.sRoot.addEventListener('mouseover', function (e) { onOver(e, 'side'); });
 		S.sRoot.addEventListener('mouseout', onOut);
@@ -405,12 +519,38 @@
 		list.addEventListener('touchmove', function () { S.scrolledAt = Date.now(); }, { passive: true });
 		var fsel = S.sRoot.querySelector('.fsel');
 		U.send('focusList').then(function (fl) {
-			fsel.innerHTML = '<option value="">— بدون —</option>' + fl.map(function (f) { return '<option value="' + f.key + '">' + U.esc(f.name) + '</option>'; }).join('');
+			var groups = {};
+			fl.forEach(function (f) { (groups[f.group] = groups[f.group] || []).push(f); });
+			fsel.innerHTML = '<option value="">— none —</option>' + Object.keys(groups).map(function (gname) {
+				return '<optgroup label="' + gname + '">' + groups[gname].map(function (f) { return '<option value="' + f.key + '">' + U.esc(f.name) + '</option>'; }).join('') + '</optgroup>';
+			}).join('');
 			fsel.value = prefs.focus || '';
 		}, function () {});
 		fsel.addEventListener('change', function () { U.send('setPref', { key: 'focus', value: fsel.value }).catch(function () {}); });
 		applyPrefs();
 		paintSide();
+		paintGoal();
+	}
+
+	/** "Top 1,000 words: 812 known" — the vocabulary goal at the top of the sidebar. */
+	function paintGoal() {
+		if (!S.sRoot) return;
+		U.send('goal').then(function (g) {
+			var el = S.sRoot && S.sRoot.querySelector('.goal');
+			if (!el) return;
+			if (!g.tested && !g.known) {
+				el.innerHTML = '<div class="gl"><span>Find your level: a 3-minute vocabulary test.</span><a href="#" data-a="test">Start</a></div>';
+				return;
+			}
+			var n = g.goal.toLocaleString('en-US'), k = Math.round(g.have), pk = Math.min(100, (g.have / g.goal) * 100), pl = Math.min(100 - pk, (g.learning / g.goal) * 100);
+			el.innerHTML = '<div class="gl"><span>Goal: the top <b>' + n + '</b> words</span><span><b>' + k.toLocaleString('en-US') + '</b> / ' + n + (g.learning ? ' · ' + g.learning + ' learning' : '') + '</span></div>' +
+				'<div class="gbar"><i style="width:' + pk + '%"></i><i class="lr" style="left:' + pk + '%;width:' + pl + '%"></i></div>';
+		}, function () {});
+	}
+
+	function fmt(ms) {
+		var s = Math.floor(ms / 1000), h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), x = s % 60;
+		return (h ? h + ':' + String(m).padStart(2, '0') : m) + ':' + String(x).padStart(2, '0');
 	}
 
 	function paintFocusBar() {
@@ -421,29 +561,39 @@
 		if (!S.fxInfo) return;
 		bar.querySelector('.fname').textContent = S.fxInfo.name;
 		var n = S.fxInfo.count, inS = S.fxSents ? S.fxSents.filter(function (x) { return x && x.length; }).length : 0;
-		bar.querySelector('.fcount').textContent = n ? n + ' مثال في ' + inS + ' جملة' : 'لا توجد أمثلة في هذا الفيديو';
+		bar.querySelector('.fcount').textContent = n ? n + ' examples in ' + inS + ' sentences' : 'none in this video';
 		bar.querySelector('.rule').textContent = S.fxInfo.rule;
 	}
 
-	function fmt(ms) {
-		var s = Math.floor(ms / 1000), h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), x = s % 60;
-		return (h ? h + ':' + String(m).padStart(2, '0') : m) + ':' + String(x).padStart(2, '0');
+	function soundBox(r) {
+		var u = U.esc;
+		if (r === 'loading') return '<div class="snd">Listening closely…</div>';
+		if (r.error) return '<div class="snd" style="color:#E3262B">' + u(r.error) + '</div>';
+		return '<div class="snd"><div><b>Sounds like:</b> <span class="sl">' + u(r.soundsLike) + '</span></div>' +
+			(r.features && r.features.length ? '<ul>' + r.features.map(function (f) { return '<li><b>' + u(f.where) + '</b> · ' + u(f.feature) + ': ' + u(f.why) + '</li>'; }).join('') + '</ul>' : '') + '</div>';
+	}
+
+	function rowHtml(s, i) {
+		var tr = S.sentTr && S.sentTr[i] ? '<div class="trs">' + U.esc(S.sentTr[i]) + '</div>' : '';
+		return '<div class="s" data-i="' + i + '"><button class="tm" data-a="seek">' + fmt(s.start) + '</button><div class="body"><div class="tx">' +
+			U.markup(s.text, S.sentToks ? S.sentToks[i] : null, S.fxSents ? S.fxSents[i] : null) + '</div>' + tr +
+			(S.sounds[i] ? soundBox(S.sounds[i]) : '') + '</div>' +
+			'<div class="acts"><button class="rep" data-a="once" title="Play only this sentence">' + REPEAT + '</button><button class="rep" data-a="sound" title="How it sounds in fast speech">' + WAVE + '</button></div></div>';
 	}
 
 	function paintSide() {
 		if (!S.sRoot) return;
 		var list = S.sRoot.querySelector('.list'), g = S.sRoot.querySelector('.g');
-		g.textContent = S.grade ? 'تعرف ' + S.grade.percent + '%' : '';
+		g.textContent = S.grade ? 'you know ' + S.grade.percent + '%' : '';
 		S.sRoot.querySelector('[data-a=follow]').classList.toggle('on', S.follow);
 		paintFocusBar();
 		if (!S.sents.length) {
-			list.innerHTML = '<div class="empty">' + (S.cues.length || !S.videoId ? 'جارٍ تجهيز النص…' : 'هذا الفيديو لا يحتوي على نص إنجليزي.') + '</div>';
+			list.innerHTML = '<div class="empty">' + (S.cues.length || !S.videoId ? 'Preparing the transcript…' : 'This video has no English captions.') + '</div>';
 			return;
 		}
-		list.innerHTML = S.sents.map(function (s, i) {
-			return '<div class="s" data-i="' + i + '"><button class="tm" data-a="seek">' + fmt(s.start) + '</button><div class="tx">' + markup(s.text, S.sentToks ? S.sentToks[i] : null, S.fxSents ? S.fxSents[i] : null) +
-				'</div><button class="rep" data-a="once" title="شغّل هذه الجملة فقط">' + REPEAT + '</button></div>';
-		}).join('');
+		var top = list.scrollTop;
+		list.innerHTML = S.sents.map(rowHtml).join('');
+		list.scrollTop = top;
 		S.sIdx = -1;
 	}
 
@@ -455,23 +605,47 @@
 				S.follow = !S.follow;
 				S.scrolledAt = 0;
 				b.classList.toggle('on', S.follow);
-			} else if (a === 'colors') chrome.storage.local.set({ lensColors: !prefs.colors });
-			else if (a === 'min') chrome.storage.local.set({ sideMin: !prefs.sideMin });
+			} else if (a === 'colors') setPref('lensColors', !prefs.colors);
+			else if (a === 'min') setPref('sideMin', !prefs.sideMin);
+			return;
+		}
+		if (b && b.dataset.a === 'test') {
+			e.preventDefault();
+			U.send('openTest').catch(function () {});
 			return;
 		}
 		if (b && (b.dataset.a === 'fprev' || b.dataset.a === 'fnext')) {
 			jumpFocus(b.dataset.a === 'fnext' ? 1 : -1);
 			return;
 		}
-		if (e.target.closest('.focus')) return;
+		if (e.target.closest('.focus,.goal,.snd')) return;
 		var row = e.target.closest('.s');
 		if (!row || !S.video) return;
+		var i = +row.dataset.i, s = S.sents[i];
+		if (b && b.dataset.a === 'sound') {
+			if (S.sounds[i] && S.sounds[i] !== 'loading') {
+				delete S.sounds[i];
+				row.outerHTML = rowHtml(s, i);
+				return;
+			}
+			S.sounds[i] = 'loading';
+			row.outerHTML = rowHtml(s, i);
+			U.send('sound', { text: s.text }).then(function (r) { S.sounds[i] = r; repaintRow(i); }, function (err) { S.sounds[i] = { error: U.errText(err) }; repaintRow(i); });
+			return;
+		}
 		// Selecting text to save an expression shouldn't jump the video.
 		var sel = S.sRoot.getSelection ? S.sRoot.getSelection() : window.getSelection();
 		if (sel && !sel.isCollapsed && String(sel).trim().length > 1) return;
-		var s = S.sents[+row.dataset.i];
 		if (b && b.dataset.a === 'once') play(s.start, s.end);
 		else play(s.start, 0);
+	}
+
+	function repaintRow(i) {
+		var row = S.sRoot && S.sRoot.querySelector('.s[data-i="' + i + '"]');
+		if (!row) return;
+		var now = row.classList.contains('now');
+		row.outerHTML = rowHtml(S.sents[i], i);
+		if (now) S.sRoot.querySelector('.s[data-i="' + i + '"]').classList.add('now');
 	}
 
 	/** Play from startMs; stop at endMs if given (0 = keep playing). */
@@ -482,6 +656,11 @@
 		var p = S.video.play();
 		if (p && p.catch) p.catch(function () {});
 		S.scrolledAt = 0;
+	}
+
+	/** The sentence playing now (or the last one before now). */
+	function currentSentence() {
+		return S.video ? find(S.sents, S.video.currentTime * 1000 + 30, null) : -1;
 	}
 
 	/* ------------------------------------------------------------ playback sync */
@@ -496,6 +675,13 @@
 		}
 		if (ans >= 0 && slack != null && ms > arr[ans].end + slack) return -1;
 		return ans;
+	}
+
+	function checkStop() {
+		if (S.stopAt && S.video && S.video.currentTime * 1000 >= S.stopAt - 120) {
+			S.stopAt = 0;
+			S.video.pause();
+		}
 	}
 
 	function tick(force) {
@@ -518,17 +704,21 @@
 			S.idx = i;
 			paintLine(i);
 		}
-		if (S.sRoot && S.sents.length) {
+		if (S.sents.length) {
 			var j = find(S.sents, ms, null);
 			if (j !== S.sIdx) {
-				var prev = S.sRoot.querySelector('.s.now');
-				if (prev) prev.classList.remove('now');
-				var row = S.sRoot.querySelector('.s[data-i="' + j + '"]');
-				if (row) {
-					row.classList.add('now');
-					if (S.follow && Date.now() - S.scrolledAt > 5000 && !Card.isOpen()) {
-						var list = S.sRoot.querySelector('.list');
-						list.scrollTo({ top: row.offsetTop - list.clientHeight / 3, behavior: 'smooth' });
+				// Auto-pause: stop at the end of every sentence.
+				if (prefs.autoPause && j >= 0 && !S.video.paused && !S.stopAt) S.stopAt = S.sents[j].end;
+				if (S.sRoot) {
+					var prev = S.sRoot.querySelector('.s.now');
+					if (prev) prev.classList.remove('now');
+					var row = S.sRoot.querySelector('.s[data-i="' + j + '"]');
+					if (row) {
+						row.classList.add('now');
+						if (S.follow && Date.now() - S.scrolledAt > 5000 && !Card.isOpen()) {
+							var list = S.sRoot.querySelector('.list');
+							list.scrollTo({ top: row.offsetTop - list.clientHeight / 3, behavior: 'smooth' });
+						}
 					}
 				}
 				S.sIdx = j;
@@ -547,6 +737,30 @@
 			S.raf = requestAnimationFrame(f);
 		})(0);
 	}
+
+	/* ------------------------------------------------------------ hotkeys: A previous · S repeat · D next · Q auto-pause */
+	document.addEventListener('keydown', function (e) {
+		if (!S.sents.length || !S.video || e.ctrlKey || e.metaKey || e.altKey) return;
+		var t = e.target;
+		if (t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))) return;
+		var k = e.key.toLowerCase(), j = currentSentence();
+		if (k === 'a') {
+			// Within the first second of a sentence go to the previous one, otherwise restart this one.
+			var s = S.sents[j];
+			var target = s && S.video.currentTime * 1000 - s.start > 1200 ? j : Math.max(0, j - 1);
+			play(S.sents[target].start, prefs.autoPause ? S.sents[target].end : 0);
+		} else if (k === 'd') {
+			var n = Math.min(S.sents.length - 1, j + 1);
+			play(S.sents[n].start, prefs.autoPause ? S.sents[n].end : 0);
+		} else if (k === 's') {
+			if (j >= 0) play(S.sents[j].start, S.sents[j].end);
+		} else if (k === 'q') {
+			setPref('autoPause', !prefs.autoPause);
+			say(!prefs.autoPause ? 'Auto-pause on: the video stops after each sentence' : 'Auto-pause off');
+		} else return;
+		e.preventDefault();
+		e.stopPropagation();
+	}, true);
 
 	/* ------------------------------------------------------------ hover, select, clicks */
 	var overT = null;
@@ -603,7 +817,7 @@
 		S.pausedByUs = false;
 	}
 
-	/** Words selected in the caption line or the transcript: save as a sentence, an expression or a grammar point. */
+	/** Words selected in the caption box or the transcript: translate, hear, or save them. */
 	function onSelect(e, root, where) {
 		setTimeout(function () {
 			var sel = root.getSelection ? root.getSelection() : window.getSelection();
@@ -646,19 +860,21 @@
 			if (p.classList.contains('on')) paintPanel();
 			return;
 		}
-		var a = b.dataset.a;
+		var a = b.dataset.a, j = currentSentence();
 		if (a === 'prev' || a === 'next') {
-			var i = Math.max(0, Math.min(S.cues.length - 1, (S.idx < 0 ? find(S.cues, S.video.currentTime * 1000, null) : S.idx) + (a === 'prev' ? -1 : 1)));
-			if (S.cues[i]) {
-				S.video.currentTime = S.cues[i].start / 1000 + 0.01;
-				tick(true);
-			}
+			var n = a === 'next' ? Math.min(S.sents.length - 1, j + 1) : Math.max(0, j - 1);
+			if (S.sents[n]) play(S.sents[n].start, prefs.autoPause ? S.sents[n].end : 0);
+		} else if (a === 'repeat') {
+			if (S.sents[j]) play(S.sents[j].start, S.sents[j].end);
+		} else if (a === 'autopause') {
+			setPref('autoPause', !prefs.autoPause);
+		} else if (a === 'menu') {
+			S.root.querySelector('.menu').classList.toggle('on');
 		} else if (a === 'side') {
 			chrome.storage.local.set({ sidebar: !prefs.sidebar, sideMin: false });
 		} else if (a === 'save') {
-			var cue = S.cues[S.idx];
-			if (!cue) return;
-			var si = find(S.sents, cue.start + 1, null), s = S.sents[si] || cue;
+			var s = S.sents[j];
+			if (!s) return;
 			b.disabled = true;
 			U.send('saveSentence', {
 				text: s.text,
@@ -668,9 +884,9 @@
 				startMs: s.start,
 				endMs: s.end
 			}).then(function () {
-				b.textContent = 'تم الحفظ ✓';
+				b.textContent = 'Saved ✓';
 				setTimeout(function () {
-					b.textContent = 'احفظ الجملة';
+					b.textContent = 'Save sentence';
 					b.disabled = false;
 				}, 1800);
 			}, function (err) {
@@ -707,12 +923,15 @@
 		S.primed = vid;
 		S.cues = [];
 		S.sents = [];
+		S.tcues = [];
+		S.cueTr = S.sentTr = null;
 		S.lines = null;
 		S.sentToks = null;
 		S.grade = null;
 		S.idx = -1;
 		S.sIdx = -1;
 		S.stopAt = 0;
+		S.sounds = {};
 		var tries = 0;
 		(function wait() {
 			if (document.querySelector('#movie_player video')) {

@@ -1,0 +1,40 @@
+/* Vocabulary test: Sawa English identity (ink, white, smoke; red for the one key moment). */
+@import url('https://fonts.googleapis.com/css2?family=Changa:wght@600;800&family=IBM+Plex+Sans:wght@400;600&family=Instrument+Serif:ital@1&display=swap');
+* { box-sizing: border-box; }
+body { margin: 0; background: #F6F5F3; color: #0F0F10; font: 16px/1.6 'IBM Plex Sans', 'Segoe UI', system-ui, sans-serif; }
+.wrap { max-width: 640px; margin: 0 auto; padding: 0 20px; }
+.head { background: #0F0F10; color: #fff; padding: 16px 0; }
+.head .wrap { display: flex; align-items: baseline; gap: 10px; }
+.wm { font: 800 22px/1 Changa, sans-serif; }
+.by { color: #8A8584; font-size: 13px; }
+main { padding: 40px 20px 60px; }
+.card { background: #fff; border: 1px solid #E6E3DF; border-radius: 16px; padding: 32px; }
+h1 { font: 800 clamp(28px, 5vw, 40px)/1.15 Changa, sans-serif; margin: 0 0 12px; }
+.serif { font: italic 24px/1.2 'Instrument Serif', serif; color: #8A8584; margin: 0 0 16px; }
+p { margin: 0 0 12px; color: #4A4847; }
+ul.how { margin: 0 0 20px; padding-left: 20px; color: #4A4847; }
+ul.how li { margin-top: 6px; }
+.btn { display: inline-block; font: 600 16px/1 'IBM Plex Sans', sans-serif; border: 1px solid #0F0F10; background: #0F0F10; color: #fff; border-radius: 12px; padding: 16px 22px; cursor: pointer; text-decoration: none; }
+.btn.ghost { background: #fff; color: #0F0F10; border-color: #E6E3DF; }
+.btn.ghost:hover { border-color: #0F0F10; }
+.btn.red { background: #E3262B; border-color: #E3262B; }
+.btn:disabled { opacity: .5; cursor: default; }
+.row { display: flex; gap: 10px; flex-wrap: wrap; }
+.prog { height: 6px; background: #EFEDEA; border-radius: 99px; overflow: hidden; margin-bottom: 28px; }
+.prog i { display: block; height: 100%; background: #0F0F10; transition: width .2s; }
+.count { font-size: 13px; color: #8A8584; margin-bottom: 8px; }
+.word { font: 800 clamp(40px, 9vw, 64px)/1.1 Changa, sans-serif; text-align: center; margin: 24px 0 36px; word-break: break-word; }
+.answer { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.answer .btn { width: 100%; padding: 20px; font-size: 17px; }
+.keys { text-align: center; font-size: 13px; color: #8A8584; margin-top: 14px; }
+kbd { font: 600 12px/1 'IBM Plex Sans', sans-serif; border: 1px solid #E6E3DF; border-bottom-width: 2px; border-radius: 4px; padding: 2px 6px; background: #fff; color: #0F0F10; }
+.big { font: 800 64px/1 Changa, sans-serif; margin: 8px 0; }
+.bands { margin: 20px 0; }
+.band { display: grid; grid-template-columns: 110px 1fr 46px; gap: 10px; align-items: center; font-size: 14px; margin-top: 8px; }
+.band .bar { height: 10px; background: #EFEDEA; border-radius: 99px; overflow: hidden; }
+.band .bar i { display: block; height: 100%; background: #0F0F10; }
+.band b { text-align: right; }
+.warn { background: #FFF7ED; border: 1px solid #FDBA74; border-radius: 10px; padding: 10px 14px; font-size: 14px; color: #7C2D12; margin: 12px 0; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0 16px; }
+.chips span { border: 1px solid #E6E3DF; border-radius: 999px; padding: 4px 10px; font-size: 14px; background: #fff; }
+.muted { color: #8A8584; font-size: 14px; }

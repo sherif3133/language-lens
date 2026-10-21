@@ -52,12 +52,12 @@
 	}
 
 	var ERR = {
-		signed_out: 'سجّل الدخول بحساب سوا انجليش من أيقونة Language Lens.',
-		reload: 'تم تحديث Language Lens. حدّث الصفحة (F5).'
+		signed_out: 'Sign in with your Sawa English account from the Language Lens icon.',
+		reload: 'Language Lens was updated. Refresh this page (F5).'
 	};
 	function errText(e) {
 		var m = e && e.message;
-		return ERR[m] || m || 'حدثت مشكلة. حاول مرة أخرى.';
+		return ERR[m] || m || 'Something went wrong. Try again.';
 	}
 
 	var LEVEL_NAMES = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'];
