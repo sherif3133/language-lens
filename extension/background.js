@@ -414,6 +414,15 @@ async function enableSite(origin, tabId) {
 	if (tabId) await injectInto(tabId);
 }
 
+/* Websites: Language Lens runs everywhere by default (manifest content script); a site can be paused. */
+async function pauseSite(origin, paused) {
+	const o = await chrome.storage.local.get('pausedSites');
+	const list = (o.pausedSites || []).filter((x) => x !== origin);
+	if (paused) list.push(origin);
+	await chrome.storage.local.set({ pausedSites: list });
+	return { paused: list.includes(origin) };
+}
+
 async function disableSite(origin) {
 	const { sites } = await get('sites');
 	await set({ sites: sites.filter((o) => o !== origin) });
@@ -511,6 +520,8 @@ const handlers = {
 	},
 	distractors: ({ lemma, n }) => distractors(lemma, n || 2),
 	enableSite: ({ origin, tabId }) => enableSite(origin, tabId),
+	pauseSite: ({ origin, paused }) => pauseSite(origin, paused),
+	pausedSites: async () => (await chrome.storage.local.get('pausedSites')).pausedSites || [],
 	disableSite: ({ origin }) => disableSite(origin)
 };
 

@@ -73,7 +73,8 @@ async function render() {
 	const todayWords = Math.max(st.local.words || 0, p.todayWords || 0);
 	const todaySent = Math.max(st.local.sentences || 0, p.todaySentences || 0);
 	const me = st.me || {};
-	const enabled = st.sites.includes(origin);
+	const paused = (await send('pausedSites').catch(() => [])).includes(origin);
+	const enabled = !paused; // on by default everywhere; the switch pauses a site
 	const groups = {};
 	(st.focusList || []).forEach((f) => { (groups[f.group] = groups[f.group] || []).push(f); });
 
@@ -112,7 +113,7 @@ async function render() {
 			${isYT ? toggle('pause', 'Pause when I hover a word', 'On YouTube captions.', st.pauseOnHover)
 		: origin ? `<div class="row"><div style="min-width:0"><div class="t">On this site</div><div class="site">${esc(origin.replace(/^https?:\/\//, ''))}</div></div>
 				<label class="switch"><input type="checkbox" id="site" ${enabled ? 'checked' : ''}><span></span></label></div>
-				<p class="hint">${enabled ? 'Hover any word for its meaning. Select words to translate, hear or save them.' : 'Switch on to use Language Lens on this site.'}</p>`
+				<p class="hint">${enabled ? 'Hover any word for its meaning. Select words to translate, hear or save them.' : 'Paused on this site. Switch on to use Language Lens here again.'}</p>`
 		: '<p class="muted">Open YouTube or any page with English text.</p>'}
 			<p class="err" id="err" hidden></p>
 		</div>
@@ -171,17 +172,8 @@ async function render() {
 	if (site) {
 		site.onchange = async () => {
 			try {
-				if (site.checked) {
-					const ok = await chrome.permissions.request({ origins: [origin + '/*'] });
-					if (!ok) {
-						site.checked = false;
-						return;
-					}
-					await send('enableSite', { origin, tabId: tab.id });
-				} else {
-					await send('disableSite', { origin });
-					chrome.tabs.reload(tab.id);
-				}
+				await send('pauseSite', { origin, paused: !site.checked });
+				chrome.tabs.reload(tab.id);
 				render();
 			} catch (e) {
 				const er = $('#err');

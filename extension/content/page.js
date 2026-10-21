@@ -6,6 +6,9 @@
 	'use strict';
 	if (window.__sawaLensPage) return;
 	window.__sawaLensPage = true;
+	// On by default on every site; the learner can pause it for a site in the popup.
+	var PAUSED = false;
+	chrome.storage.local.get('pausedSites', function (o) { PAUSED = (o.pausedSites || []).indexOf(location.origin) >= 0; });
 	var U = window.LensUI, Card = window.LensCard;
 	var WORDCH = /[A-Za-z'’-]/;
 
@@ -71,7 +74,7 @@
 	chrome.storage.local.get('hoverMode', function (o) { mode = o.hoverMode || 'hover'; });
 
 	document.addEventListener('mousemove', function (e) {
-		if (e.buttons) return;
+		if (PAUSED || e.buttons) return;
 		if (mode === 'alt' && !e.altKey) return;
 		if (Card.selectOpen()) return;
 		clearTimeout(timer);
@@ -92,6 +95,7 @@
 
 	/* ------------------------------------------------------------ select → save */
 	document.addEventListener('mouseup', function (e) {
+		if (PAUSED) return;
 		if (e.composedPath().some(function (n) { return n.tagName && /^SAWA-LENS/.test(n.tagName); })) return;
 		setTimeout(function () {
 			var sel = window.getSelection();
@@ -184,6 +188,7 @@
 			return;
 		}
 		lastGrade = Date.now();
+		if (PAUSED) { chip.classList.remove('on'); clearHighlights(); return; }
 		var nodes = textNodes(mainEl());
 		var text = nodes.map(function (n) { return n.data; }).join(' ');
 		var letters = (text.match(/[A-Za-z]/g) || []).length;
