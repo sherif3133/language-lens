@@ -20,7 +20,7 @@
 	var FONT = '"IBM Plex Sans","IBM Plex Sans Arabic","Segoe UI",system-ui,sans-serif';
 	var AR = '"IBM Plex Sans Arabic","Segoe UI",Tahoma,sans-serif';
 	var CSS = '' +
-		':host{all:initial}*{box-sizing:border-box}' +
+		':host{all:initial}*{box-sizing:border-box}:host(.gaming) .bar{visibility:hidden}' + // 🎮 no spoilers during the lyrics game
 		'.bar{position:absolute;left:50%;transform:translateX(-50%);bottom:var(--pos,12%);z-index:60;max-width:min(94%,1000px);width:max-content;pointer-events:auto;' +
 		'font:600 clamp(16px,2.2vw,26px)/1.45 ' + FONT + ';color:#fff;text-align:center;display:flex;align-items:center;gap:6px}' +
 		'.grip{flex:none;align-self:stretch;display:flex;align-items:center;cursor:ns-resize;color:rgba(255,255,255,.55);font-size:16px;padding:0 4px;opacity:0;transition:opacity .15s;user-select:none}' +
@@ -274,6 +274,8 @@
 			var sec = S.root.querySelector('.lmmusic'), gen = S.root.querySelector('.lmmusic .gen');
 			if (sec) sec.hidden = !song && !vocals;
 			if (gen) { gen.hidden = !song; if (song) gen.href = LensMusic.genius(S.media); }
+			var gm = S.root.querySelector('.lmmusic [data-a=game]');
+			if (gm) gm.hidden = !canGame();
 		}
 		if (!S.sRoot) return;
 		var el = S.sRoot.querySelector('.music');
@@ -291,8 +293,29 @@
 		el.hidden = false;
 		el.innerHTML = '<div class="mh">🎵 Music</div><div class="mr">' + U.esc(src) +
 			(S.kind === 'lyrics' ? ' <span class="nud"><button class="ib2" data-a="ly-" title="Lyrics too late: show them earlier">−0.5s</button><button class="ib2" data-a="ly+" title="Lyrics too early: show them later">+0.5s</button></span>' : '') + other + '</div>' +
+			(canGame() ? '<div class="mr"><button class="ib2 on" data-a="game" style="margin-left:0">🎮 Lyrics game</button><span style="color:#8A8584">fill in the missing words</span></div>' : '') +
 			'<div class="mr"><a class="gen" href="' + U.esc(LensMusic.genius(S.media)) + '" target="_blank" rel="noopener">Check the lyrics on Genius ↗</a>' +
 			'<span class="ll">💡 Explanations in <button class="ib2' + (ar ? '' : ' on') + '" data-a="ll-en">English</button><button class="ib2' + (ar ? ' on' : '') + '" data-a="ll-ar">عربي</button></span></div>';
+	}
+	/** 🎮 The lyrics game needs a song with timed lyrics (LRCLIB or the uploader's subtitles, not auto captions). */
+	function canGame() {
+		return !!(window.LensGame && isSong() && S.kind && S.kind !== 'asr' && S.sents.length >= 4);
+	}
+	function startGame() {
+		if (!canGame() || !S.video) return;
+		if (!S.sRoot || !S.side || !S.side.isConnected) {
+			if (!prefs.sidebar) chrome.storage.local.set({ sidebar: true, sideMin: false });
+			return setTimeout(function () { if (S.sRoot) startGame(); }, 600);
+		}
+		if (prefs.sideMin) setPref('sideMin', false);
+		var menu = S.root && S.root.querySelector('.lensmenu');
+		if (menu) menu.classList.remove('on');
+		LensGame.start({
+			root: S.sRoot, video: S.video, lines: S.sents, toks: S.sentToks, videoId: S.videoId, touch: TOUCH,
+			esc: U.esc, send: U.send, errText: U.errText,
+			onStart: function () { S.gaming = true; S.stopAt = 0; if (S.host) S.host.classList.add('gaming'); S.side.scrollIntoView({ block: MOBILE ? 'start' : 'nearest', behavior: 'smooth' }); },
+			onExit: function () { S.gaming = false; if (S.host) S.host.classList.remove('gaming'); }
+		});
 	}
 	/** One lyric line explained: meaning, slang and idioms, the line in plain English. */
 	function lyricBox(r) {
@@ -539,6 +562,7 @@
 				'<div class="lmmusic" hidden><div class="lmh">🎵 Music</div>' +
 				// Computers only (content/vocals.js decides): hear the singer without the music.
 				(window.LensVocals && LensVocals.supported() ? '<button class="t" data-a="vocals" title="Hear only the singer’s voice: the music is removed on your computer (test)">🎤 Vocals only<span class="vst"></span></button>' : '') +
+				'<button class="t" data-a="game" hidden>🎮 Lyrics game</button>' +
 				'<a class="t gen" target="_blank" rel="noopener" hidden>Check the lyrics on Genius ↗</a></div>' +
 				'<div class="lmh">Display</div><div class="menu on">' + OPTS + '</div></div>';
 			if (MOBILE) S.host.classList.add('mob');
@@ -901,6 +925,10 @@
 			jumpFocus(b.dataset.a === 'fnext' ? 1 : -1);
 			return;
 		}
+		if (b && b.dataset.a === 'game') {
+			startGame();
+			return;
+		}
 		if (b && b.dataset.a === 'ly-src') {
 			swapLyrics();
 			return;
@@ -1030,7 +1058,7 @@
 			}
 		}
 		// 2. A Learning word just said (at most one quiz every 3 minutes)
-		if (!prefs.wordQuiz || !S.sentToks || !S.sents.length) return;
+		if (!prefs.wordQuiz || S.gaming || !S.sentToks || !S.sents.length) return;
 		var ms = t * 1000, k = find(S.sents, ms, null);
 		var ended = k - 1;
 		if (k >= 0 && ms > S.sents[k].end) ended = k;
@@ -1160,7 +1188,7 @@
 			var j = find(S.sents, ms, null);
 			if (j !== S.sIdx) {
 				// Auto-pause: stop at the end of every sentence.
-				if (prefs.autoPause && j >= 0 && !S.video.paused && !S.stopAt) S.stopAt = S.sents[j].end;
+				if (prefs.autoPause && !S.gaming && j >= 0 && !S.video.paused && !S.stopAt) S.stopAt = S.sents[j].end;
 				if (S.sRoot) {
 					var prev = S.sRoot.querySelector('.s.now');
 					if (prev) prev.classList.remove('now');
@@ -1343,6 +1371,8 @@
 			setPref('autoPause', !prefs.autoPause);
 		} else if (a === 'menu') {
 			S.root.querySelector('.menu').classList.toggle('on');
+		} else if (a === 'game') {
+			startGame();
 		} else if (a === 'vocals') {
 			if (window.LensVocals) LensVocals.toggle();
 		} else if (a === 'side') {
@@ -1413,6 +1443,7 @@
 		S.lastEnded = -1;
 		S.music = null;
 		S.subs = null;
+		if (window.LensGame && LensGame.running()) LensGame.stop();
 		S.lyrExp = {};
 		var tries = 0;
 		(function wait() {

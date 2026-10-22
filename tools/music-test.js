@@ -2,7 +2,7 @@
    Usage: node music-test.js <outDir> [videoId,videoId,…]
    Never plays sound (--mute-audio, speechSynthesis stubbed). Not signed in: the 💡 explanation must fail politely.
    Checks: lyrics in the transcript (LRCLIB or the video's subtitles), Genius link, 🎵 Music in the player menu,
-   💡 on lyric lines, nudging the timing, nothing for a talk (not a song), and lyrics on the phone site too. */
+   💡 on lyric lines, nudging the timing, the 🎮 lyrics game, nothing for a talk (not a song), and lyrics on the phone site too. */
 'use strict';
 const fs = require('fs');
 const path = require('path');
@@ -90,6 +90,60 @@ async function open(page, vid) {
 					const m1 = await moved();
 					check(vid + ': +0.5s twice moves the lyrics 1 s later', Math.abs(m1 - m0 - 1) < 0.01, m0 + 's → ' + m1 + 's');
 				}
+				// 🎮 the lyrics game
+				const G = (fn, arg) => page.evaluate(fn, arg);
+				const gstate = () => G(() => {
+					const r = document.querySelector('sawa-lens-side').shadowRoot, g = r.querySelector('.game'), v = document.querySelector('#movie_player video');
+					return g && !g.hidden ? { text: g.textContent.replace(/\s+/g, ' ').slice(0, 160), gap: (r.querySelector('.game .gap.cur') || {}).textContent || '', opts: [...r.querySelectorAll('.game [data-g=opt]')].map((b) => b.dataset.w), input: !!r.querySelector('.game input'), paused: v.paused, t: v.currentTime, score: +((g.querySelector('.sc b') || {}).textContent || 0), res: !!g.querySelector('.res'), gaming: document.querySelector('sawa-lens-yt').classList.contains('gaming') } : null;
+				});
+				const waitFor = async (pred, secs) => { let st = null; for (let k = 0; k < secs * 2; k++) { await wait(500); st = await gstate(); if (st && pred(st)) return st; } return st; };
+				await G(() => document.querySelector('sawa-lens-side').shadowRoot.querySelector('[data-a=game]').click());
+				await wait(800);
+				let g = await gstate();
+				check(vid + ': 🎮 Lyrics game opens (Choose / Type it)', g && /Choose/.test(g.text) && /Type it/.test(g.text) && g.gaming, JSON.stringify(g));
+				await G(() => document.querySelector('sawa-lens-side').shadowRoot.querySelector('[data-g=go-choose]').click());
+				g = await waitFor((s) => s.paused && s.opts.length === 4, 40);
+				check(vid + ': video waits at the end of the line, 4 options, the answer among them', g && g.paused && g.opts.length === 4 && g.opts.some((o) => o.toLowerCase() === g.gap.toLowerCase().replace(/[^a-z']/g, '')), JSON.stringify(g));
+				await page.screenshot({ path: path.join(out, 'game-choose.png') });
+				if (g && g.opts.length) {
+					await G((w) => [...document.querySelector('sawa-lens-side').shadowRoot.querySelectorAll('.game [data-g=opt]')].find((b) => b.dataset.w.toLowerCase() === w).click(), g.gap.toLowerCase().replace(/[^a-z']/g, ''));
+					await wait(400);
+					const g2 = await gstate();
+					check(vid + ': right answer scores and the song goes on', g2 && g2.score >= 100 && /Right/.test(g2.text), JSON.stringify(g2));
+					const g3 = await waitFor((s) => s.paused && s.opts.length === 4 && s.t > g.t + 1, 40);
+					if (g3) {
+						await G((w) => [...document.querySelector('sawa-lens-side').shadowRoot.querySelectorAll('.game [data-g=opt]')].find((b) => b.dataset.w.toLowerCase() !== w).click(), g3.gap.toLowerCase().replace(/[^a-z']/g, ''));
+						await wait(400);
+						const g4 = await gstate();
+						check(vid + ': wrong answer shows the right word', g4 && /It’s “/.test(g4.text), JSON.stringify(g4));
+					}
+				}
+				// Type mode: typing goes into the box, not to YouTube's hotkeys (f = full screen)
+				await G(() => document.querySelector('sawa-lens-side').shadowRoot.querySelector('.game [data-g=exit]').click());
+				await G(() => document.querySelector('sawa-lens-side').shadowRoot.querySelector('[data-a=game]').click());
+				await wait(500);
+				await G(() => document.querySelector('sawa-lens-side').shadowRoot.querySelector('[data-g=go-type]').click());
+				const t1 = await waitFor((s) => s.input, 20);
+				if (t1 && t1.input) {
+					await G(() => document.querySelector('sawa-lens-side').shadowRoot.querySelector('.game input').focus());
+					await page.keyboard.type('f' + t1.gap.slice(1).toLowerCase().replace(/[^a-z']/g, ''));
+					const fs1 = await G(() => !!document.fullscreenElement);
+					const typed = await G(() => document.querySelector('sawa-lens-side').shadowRoot.querySelector('.game input').value);
+					check(vid + ': Type it: typing stays in the box (no YouTube hotkeys)', !fs1 && typed.length > 1, JSON.stringify({ fullscreen: fs1, typed, gap: t1.gap }));
+					await page.keyboard.press('Enter');
+					await wait(400);
+					const t2 = await gstate();
+					check(vid + ': Type it: a typed answer is checked', t2 && /Right|Almost|It’s “/.test(t2.text), t2 && t2.text.slice(0, 120));
+				} else check(vid + ': Type it shows a box', false, JSON.stringify(t1));
+				// the end: results with the words to practise
+				await G(() => { const v = document.querySelector('#movie_player video'); v.currentTime = v.duration - 1; v.play(); });
+				const end = await waitFor((s) => s.res, 20);
+				check(vid + ': song end shows the score and words to practise', end && end.res && /Song finished/.test(end.text), end && end.text);
+				await page.screenshot({ path: path.join(out, 'game-end.png') });
+				await G(() => document.querySelector('sawa-lens-side').shadowRoot.querySelector('.game [data-g=exit]').click());
+				await wait(300);
+				const back = await G(() => ({ list: getComputedStyle(document.querySelector('sawa-lens-side').shadowRoot.querySelector('.list')).display !== 'none', gaming: document.querySelector('sawa-lens-yt').classList.contains('gaming') }));
+				check(vid + ': closing the game brings the lyrics back', back.list && !back.gaming, JSON.stringify(back));
 			}
 		}
 		// a talk, not a song: no Music bar, no Genius

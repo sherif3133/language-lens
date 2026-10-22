@@ -12,6 +12,7 @@ Browser extension for Chrome and Edge. Learners hover any word in YouTube captio
   - `content/card.js`: the word card.
   - `content/vocals-main.js` + `content/vocals.js` + `vocals/`: 🎤 Vocals only (test, computers only): the singer's voice without the music, separated in the browser (`lib/ort/` = onnxruntime-web).
   - `content/music.js`: 🎵 Music: lyrics for songs (LRCLIB, lined up with the video's captions), a Genius link, and 💡 line explanations (server: `/lyric` in sawa-lens).
+  - `content/game.js`: 🎮 Lyrics game (fill in the missing words while the song plays).
   - `popup/`: the toolbar popup.
   - `data/lexicon.json`: built word list (do not edit by hand).
 - `tools/`: scripts that build the word list and icons, and the end-to-end tests (`mobile-test.js`, `vocals-test.js`, `music-test.js`).
