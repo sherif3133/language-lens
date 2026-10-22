@@ -19,7 +19,9 @@
 		'.game .row2{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}.game .row2 .gb{flex:1;padding:9px 8px;font-size:13px}.game input{font:600 16px/1.2 "IBM Plex Sans",sans-serif;width:100%;padding:11px 12px;border:2px solid #E6E3DF;border-radius:10px;margin-top:8px;box-sizing:border-box}' +
 		'.game input:focus{outline:none;border-color:#F59E0B}.game .fb{min-height:20px;font:600 13px/1.4 "IBM Plex Sans",sans-serif;margin-top:6px}.game .fb.ok{color:#047857}.game .fb.bad{color:#B91C1C}' +
 		'.game .res{text-align:center}.game .big{font:800 34px/1.1 Changa,"IBM Plex Sans",sans-serif;margin:6px 0}.game .ms{text-align:left;margin-top:10px;font-size:14px}.game .ms li{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:4px 0}' +
-		'.game .mode{display:flex;gap:8px;margin:8px 0}.game .mode .gb{flex:1}.game .hint{font-size:12.5px;color:#8A8584;margin-top:6px}.side.gaming .list,.side.gaming .legend,.side.gaming .focus,.side.gaming .fbar,.side.gaming .vprof,.side.gaming .goal,.side.gaming .lq,.side.gaming .adv{display:none}';
+		'.game .mode{display:flex;gap:8px;margin:8px 0}.game .mode .gb{flex:1}.game .hint{font-size:12.5px;color:#8A8584;margin-top:6px}.side.gaming .list,.side.gaming .legend,.side.gaming .focus,.side.gaming .fbar,.side.gaming .vprof,.side.gaming .goal,.side.gaming .lq,.side.gaming .adv{display:none}' +
+		'.game .trl{font:600 16px/1.6 "IBM Plex Sans Arabic","Segoe UI",Tahoma,sans-serif;color:#57534E;direction:rtl;text-align:right;min-height:0;margin:-4px 0 6px}.game .trl:empty{display:none}' +
+		'.game .tgs{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12.5px;color:#57534E;margin:6px 0}.game .tgs label{display:flex;gap:6px;align-items:center;cursor:pointer}.game .tgs input{width:16px;height:16px;margin:0}';
 
 	var G = null; // the running game
 
@@ -72,7 +74,7 @@
 		var pool = [];
 		blanks.forEach(function (b) { if (b) pool.push(b.text); });
 		(o.toks || []).forEach(function (ts) { (ts || []).forEach(function (t) { var w = norm(t.text); if (w.length >= 3 && !STOP[w] && t.status !== 'name') pool.push(t.text); }); });
-		G = { o: o, lines: lines, blanks: blanks, pool: pool, mode: o.mode || 'choose', phase: 'intro', i: -1, done: {}, score: 0, streak: 0, best: 0, right: 0, total: 0, missed: [], pausedByGame: false, timer: 0 };
+		G = { showTr: true, autoPause: false, released: {}, o: o, lines: lines, blanks: blanks, pool: pool, mode: o.mode || 'choose', phase: 'intro', i: -1, done: {}, score: 0, streak: 0, best: 0, right: 0, total: 0, missed: [], pausedByGame: false, timer: 0 };
 		var el = o.root.querySelector('.game');
 		if (!el) {
 			var st = document.createElement('style');
@@ -90,13 +92,45 @@
 		// typing must not reach YouTube's own hotkeys (f = full screen, k = pause …)
 		['keydown', 'keypress', 'keyup'].forEach(function (ev) { el.addEventListener(ev, function (e) { e.stopPropagation(); if (ev === 'keydown') onKey(e); }); });
 		el.addEventListener('click', onClick);
+		el.addEventListener('change', onToggle);
 		var playable = blanks.filter(Boolean).length;
 		el.innerHTML = '<div class="gh"><div class="gt">🎮 Lyrics game</div><button class="gb" data-g="exit" style="padding:6px 10px;font-size:12px;min-height:0">✕ Close</button></div>' +
 			'<div>Listen and fill in the missing word in each line (' + playable + ' lines). The video waits for you at the end of each line.</div>' +
+			toggles() +
 			'<div class="mode"><button class="gb pri" data-g="go-choose">Choose<br><small>4 options</small></button><button class="gb" data-g="go-type">Type it<br><small>harder</small></button></div>' +
 			'<div class="hint">Tip: turn on 🎤 Vocals only to hear the words more clearly.</div>';
 		if (o.onStart) o.onStart();
+		// the student's own choices, kept for next time
+		try {
+			chrome.storage.local.get(['gameTr', 'gamePause'], function (p) {
+				if (!G) return;
+				G.showTr = p.gameTr !== false;
+				G.autoPause = !!p.gamePause;
+				G.el.querySelectorAll('[data-gt]').forEach(function (c) { c.checked = c.dataset.gt === 'tr' ? G.showTr : G.autoPause; });
+			});
+		} catch (e) { /* defaults */ }
 		return true;
+	}
+	/** 🌐 the line's translation in the game · ⏸ the video stops after every line until "Next line". */
+	function toggles() {
+		return '<div class="tgs"><label><input type="checkbox" data-gt="tr"' + (G.showTr ? ' checked' : '') + '> 🌐 Show the translation</label>' +
+			'<label title="The video stops after every line: take your time to listen and read, then press ▶ Next line"><input type="checkbox" data-gt="pause"' + (G.autoPause ? ' checked' : '') + '> ⏸ Pause after every line</label></div>';
+	}
+	function onToggle(e) {
+		var c = e.target.closest('[data-gt]');
+		if (!c || !G) return;
+		if (c.dataset.gt === 'tr') G.showTr = c.checked; else G.autoPause = c.checked;
+		try { chrome.storage.local.set({ gameTr: G.showTr, gamePause: G.autoPause }); } catch (err) { /* */ }
+		// switching auto-pause off while the video waits: go on
+		if (!G.autoPause && G.pausedByGame && G.phase === 'play' && (!G.blanks[G.i] || G.done[G.i])) next();
+		else paint();
+	}
+	function next() {
+		if (!G) return;
+		G.released[G.i] = true;
+		G.pausedByGame = false;
+		G.o.video.play().catch(function () {});
+		paint();
 	}
 	function stop(silent) {
 		if (!G) return;
@@ -130,7 +164,7 @@
 		for (var k = G.i + 1; k < i; k++) if (!G.done[k]) G.done[k] = 'skipped';
 		if (i !== G.i) { G.i = i; G.typed = ''; paint(); }
 		var b = G.blanks[i];
-		if (b && !G.done[i] && t >= G.lines[i].end - 120 && !v.paused) {
+		if (!v.paused && t >= G.lines[i].end - 120 && ((b && !G.done[i]) || (G.autoPause && !G.released[i]))) {
 			v.pause();
 			G.pausedByGame = true;
 			G.waitAt = performance.now();
@@ -150,7 +184,7 @@
 		// carry on after a moment (longer when wrong, to read the right word)
 		setTimeout(function () {
 			if (!G || G.i !== i) return;
-			if (G.pausedByGame) { G.pausedByGame = false; G.o.video.play().catch(function () {}); }
+			if (G.pausedByGame && !G.autoPause) { G.pausedByGame = false; G.o.video.play().catch(function () {}); }
 		}, ok ? 700 : 1800);
 	}
 	function finish() {
@@ -181,7 +215,8 @@
 		}
 		var next = G.lines[i + 1] ? u(G.lines[i + 1].text).replace(/./g, function (c) { return c; }) : '';
 		var html = '<div class="gh"><div class="gt">🎮 Lyrics game</div><div class="sc">Score <b>' + G.score + '</b> · streak ' + G.streak + (G.streak >= 3 ? ' 🔥' : '') + '</div></div>' +
-			'<div class="ln">' + (line || '…') + '</div><div class="nx">' + (next ? 'Next: ' + maskNext(i + 1) : '') + '</div>';
+			toggles() +
+			'<div class="ln">' + (line || '…') + '</div>' + (G.showTr && G.o.trOf ? '<div class="trl">' + u(G.o.trOf(i) || '') + '</div>' : '') + '<div class="nx">' + (next ? 'Next: ' + maskNext(i + 1) : '') + '</div>';
 		if (b && !st) {
 			if (G.mode === 'choose') html += '<div class="opts2">' + options(b.text, G.pool, i).map(function (w, k) { return '<button class="gb" data-g="opt" data-w="' + u(w) + '">' + (G.o.touch ? '' : '<small style="color:#8A8584">' + (k + 1) + '</small> ') + u(w) + '</button>'; }).join('') + '</div>';
 			else html += '<input type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Type the missing word, then Enter" value="' + u(G.typed || '') + '">';
@@ -190,8 +225,10 @@
 		if (st === 'ok') fb = '<div class="fb ok">✓ Right! +' + (100 + Math.min(10, G.streak - 1) * 20) + '</div>';
 		else if (st === 'almost') fb = '<div class="fb ok">✓ Almost: it’s spelled “' + u(b.text) + '”</div>';
 		else if (st === 'bad') fb = '<div class="fb bad">✗ It’s “' + u(b.text) + '”' + (G.given ? ' (you chose “' + u(G.given) + '”)' : '') + '</div>';
-		else if (waiting) fb = '<div class="fb">⏸ The video is waiting for your answer.</div>';
-		html += fb + '<div class="row2"><button class="gb" data-g="replay">↻ Hear the line again</button>' + (b && !st ? '<button class="gb" data-g="skip">Skip</button>' : '') + '<button class="gb" data-g="exit">✕ Stop</button></div>';
+		else if (waiting && b) fb = '<div class="fb">⏸ The video is waiting for your answer.</div>';
+		var free = G.pausedByGame && G.autoPause && (!b || st);
+		if (free) fb += '<div class="fb">⏸ Take your time. Press ▶ Next line (or Enter) when you’re ready.</div>';
+		html += fb + '<div class="row2">' + (free ? '<button class="gb pri" data-g="next">▶ Next line</button>' : '') + '<button class="gb" data-g="replay">↻ Hear the line again</button>' + (b && !st ? '<button class="gb" data-g="skip">Skip</button>' : '') + '<button class="gb" data-g="exit">✕ Stop</button></div>';
 		G.el.innerHTML = html;
 		var inp = G.el.querySelector('input');
 		if (inp && !G.o.touch) inp.focus();
@@ -206,9 +243,11 @@
 		if (!G || G.phase !== 'play') return;
 		if (G.mode === 'type' && e.key === 'Enter') { var inp = G.el.querySelector('input'); if (inp && inp.value.trim()) answer(inp.value.trim()); e.preventDefault(); }
 		else if (G.mode === 'choose' && /^[1-4]$/.test(e.key)) { var bs = G.el.querySelectorAll('[data-g=opt]'); if (bs[+e.key - 1]) answer(bs[+e.key - 1].dataset.w); }
+		else if (e.key === 'Enter' && G.pausedByGame && (!G.blanks[G.i] || G.done[G.i])) { e.preventDefault(); next(); }
 	}
-	// number keys work without clicking into the panel first
+	// number keys (and Enter for the next line) work without clicking into the panel first
 	document.addEventListener('keydown', function (e) {
+		if (G && G.phase === 'play' && e.key === 'Enter' && G.pausedByGame && (!G.blanks[G.i] || G.done[G.i])) { e.stopPropagation(); e.preventDefault(); return next(); }
 		if (!G || G.phase !== 'play' || G.mode !== 'choose' || !/^[1-4]$/.test(e.key) || /input|textarea/i.test((e.target && e.target.tagName) || '')) return;
 		var bs = G.el.querySelectorAll('[data-g=opt]');
 		if (!bs.length) return;
@@ -223,7 +262,8 @@
 		if (a === 'go-choose') begin('choose');
 		else if (a === 'go-type') begin('type');
 		else if (a === 'opt') answer(b.dataset.w);
-		else if (a === 'skip') { G.done[G.i] = 'bad'; G.total++; G.streak = 0; var bl = G.blanks[G.i]; G.missed.push({ word: bl.text, lemma: bl.lemma, line: G.lines[G.i].text, startMs: G.lines[G.i].start }); G.given = ''; paint(); setTimeout(function () { if (G && G.pausedByGame) { G.pausedByGame = false; v.play().catch(function () {}); } }, 1500); }
+		else if (a === 'next') next();
+		else if (a === 'skip') { G.done[G.i] = 'bad'; G.total++; G.streak = 0; var bl = G.blanks[G.i]; G.missed.push({ word: bl.text, lemma: bl.lemma, line: G.lines[G.i].text, startMs: G.lines[G.i].start }); G.given = ''; paint(); setTimeout(function () { if (G && G.pausedByGame && !G.autoPause) { G.pausedByGame = false; v.play().catch(function () {}); } }, 1500); }
 		else if (a === 'replay') {
 			var L = G.lines[G.i] || G.lines[0];
 			v.currentTime = Math.max(0, L.start / 1000 - 0.3);
@@ -238,5 +278,5 @@
 		} else if (a === 'exit') stop();
 	}
 
-	window.LensGame = { start: start, stop: stop, running: function () { return !!G; }, _pick: pick, _options: options, state: function () { return G && { phase: G.phase, i: G.i, score: G.score, right: G.right, total: G.total, streak: G.streak, mode: G.mode, waiting: G.pausedByGame, blank: G.blanks[G.i] && G.blanks[G.i].text, lines: G.lines.length }; } };
+	window.LensGame = { start: start, stop: stop, running: function () { return !!G; }, _pick: pick, _options: options, state: function () { return G && { phase: G.phase, i: G.i, score: G.score, right: G.right, total: G.total, streak: G.streak, mode: G.mode, waiting: G.pausedByGame, autoPause: G.autoPause, showTr: G.showTr, blank: G.blanks[G.i] && G.blanks[G.i].text, lines: G.lines.length }; } };
 })();

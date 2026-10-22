@@ -370,6 +370,7 @@
 		LensGame.start({
 			root: S.sRoot, video: S.video, lines: S.sents, toks: S.sentToks, videoId: S.videoId, touch: TOUCH,
 			esc: U.esc, send: U.send, errText: U.errText,
+			trOf: function (i) { return S.sentTr ? S.sentTr[i] || '' : ''; }, // 🌐 the line's meaning (song translation, or YouTube's)
 			onStart: function () { S.gaming = true; S.stopAt = 0; if (S.host) S.host.classList.add('gaming'); S.side.scrollIntoView({ block: MOBILE ? 'start' : 'nearest', behavior: 'smooth' }); },
 			onExit: function () { S.gaming = false; if (S.host) S.host.classList.remove('gaming'); }
 		});

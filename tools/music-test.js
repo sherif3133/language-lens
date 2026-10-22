@@ -136,7 +136,7 @@ async function open(page, vid) {
 				const G = (fn, arg) => page.evaluate(fn, arg);
 				const gstate = () => G(() => {
 					const r = document.querySelector('sawa-lens-side').shadowRoot, g = r.querySelector('.game'), v = document.querySelector('#movie_player video');
-					return g && !g.hidden ? { text: g.textContent.replace(/\s+/g, ' ').slice(0, 160), gap: (r.querySelector('.game .gap.cur') || {}).textContent || '', opts: [...r.querySelectorAll('.game [data-g=opt]')].map((b) => b.dataset.w), input: !!r.querySelector('.game input'), paused: v.paused, t: v.currentTime, score: +((g.querySelector('.sc b') || {}).textContent || 0), res: !!g.querySelector('.res'), gaming: document.querySelector('sawa-lens-yt').classList.contains('gaming') } : null;
+					return g && !g.hidden ? { text: g.textContent.replace(/\s+/g, ' ').slice(0, 600), gap: (r.querySelector('.game .gap.cur') || {}).textContent || '', opts: [...r.querySelectorAll('.game [data-g=opt]')].map((b) => b.dataset.w), input: !!r.querySelector('.game input'), paused: v.paused, t: v.currentTime, score: +((g.querySelector('.sc b') || {}).textContent || 0), res: !!g.querySelector('.res'), gaming: document.querySelector('sawa-lens-yt').classList.contains('gaming') } : null;
 				});
 				const waitFor = async (pred, secs) => { let st = null; for (let k = 0; k < secs * 2; k++) { await wait(500); st = await gstate(); if (st && pred(st)) return st; } return st; };
 				await G(() => document.querySelector('sawa-lens-side').shadowRoot.querySelector('[data-a=game]').click());
@@ -160,6 +160,20 @@ async function open(page, vid) {
 						check(vid + ': wrong answer shows the right word', g4 && /It’s “/.test(g4.text), JSON.stringify(g4));
 					}
 				}
+				// 🌐 translation in the game, ⏸ pause after every line (own pace)
+				const tg = await G(() => { const r = document.querySelector('sawa-lens-side').shadowRoot; return { toggles: r.querySelectorAll('.game [data-gt]').length, trl: (r.querySelector('.game .trl') || {}).textContent || '' }; });
+				check(vid + ': game shows the line’s translation (🌐 switch) and has ⏸ auto-pause', tg.toggles === 2 && /ترجمة المعنى/.test(tg.trl), JSON.stringify(tg));
+				await G(() => { const c = document.querySelector('sawa-lens-side').shadowRoot.querySelector('.game [data-gt=pause]'); c.checked = true; c.dispatchEvent(new Event('change', { bubbles: true })); });
+				const g5 = await waitFor((s) => s.paused && /Next line|waiting for your answer/.test(s.text), 40);
+				if (g5 && g5.opts.length) await G((w) => [...document.querySelector('sawa-lens-side').shadowRoot.querySelectorAll('.game [data-g=opt]')].find((b) => b.dataset.w.toLowerCase() === w).click(), g5.gap.toLowerCase().replace(/[^a-z']/g, ''));
+				await wait(2500);
+				const g6 = await gstate();
+				check(vid + ': ⏸ auto-pause: after the line the video waits for ▶ Next line', g6 && g6.paused && /Next line/.test(g6.text), g6 && g6.text.slice(0, 160));
+				await G(() => document.querySelector('sawa-lens-side').shadowRoot.querySelector('.game [data-g=next]').click());
+				await wait(1000);
+				const g7 = await gstate();
+				check(vid + ': ▶ Next line plays on', g7 && !g7.paused, JSON.stringify({ paused: g7 && g7.paused, t: g7 && g7.t }));
+				await G(() => { const c = document.querySelector('sawa-lens-side').shadowRoot.querySelector('.game [data-gt=pause]'); c.checked = false; c.dispatchEvent(new Event('change', { bubbles: true })); });
 				// Type mode: typing goes into the box, not to YouTube's hotkeys (f = full screen)
 				await G(() => document.querySelector('sawa-lens-side').shadowRoot.querySelector('.game [data-g=exit]').click());
 				await G(() => document.querySelector('sawa-lens-side').shadowRoot.querySelector('[data-a=game]').click());
