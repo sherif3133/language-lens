@@ -1,7 +1,7 @@
-/* ⏬ Prepared songs — silent check with the extension loaded (computer).
-   Usage: node prepare-test.js <outDir> [videoId]
+/* 🎧 Voice-only playlist — silent check with the extension loaded (computer).
+   Usage: node prepare-test.js <outDir> [videoId] [ui]   (ui: stop after the page checks, before getting the song)
    Never plays sound: --mute-audio, and the capture tab is muted by the extension itself (checked).
-   Clicks "⏬ Prepare this song ahead" on YouTube, waits until the Prepared songs page says ✓ Ready
+   Opens 🎧 Voice-only playlist from the player menu, pastes the song's link, waits until the Prepared songs page says ✓ Ready
    (capture in a muted background tab, then the best voice model), checks the original sound wasn't kept,
    then plays the song with 🎤 Vocals only: the prepared voice must start at once. */
 'use strict';
@@ -12,7 +12,7 @@ const { spawn } = require('child_process');
 const puppeteer = require('puppeteer');
 
 const out = process.argv[2] || path.join(os.tmpdir(), 'lens-prepare');
-const vid = process.argv[3] || 'DyDfgMOUjCI';
+const vid = process.argv[3] || 'DyDfgMOUjCI', uiOnly = process.argv[4] === 'ui';
 const ext = path.join(__dirname, '../extension');
 fs.mkdirSync(out, { recursive: true });
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -65,14 +65,23 @@ async function clickMenu(page, action) {
 		await page.goto('https://www.youtube.com/watch?v=' + vid, { waitUntil: 'domcontentloaded' });
 		await wait(5000);
 		const prepTarget = browser.waitForTarget((t) => /vocals\/prepare\.html/.test(t.url()), { timeout: 30000 }).catch(() => null);
-		const btn = await clickMenu(page, 'prep');
-		check('🎵 Music menu: "⏬ Prepare this song ahead"', btn, btn && btn.text);
+		const btn = await clickMenu(page, 'vplist');
+		check('🎵 Music menu: "🎧 Voice-only playlist" (no single-song button any more)', btn && !(await page.evaluate(() => !!document.querySelector('sawa-lens-yt').shadowRoot.querySelector('[data-a=prep]'))), btn && btn.text);
 		const tgt = await prepTarget;
-		check('the Prepared songs page opens', tgt);
+		check('the Voice-only playlist page opens', tgt);
 		if (!tgt) return;
 		const pp = await tgt.page();
 		pp.on('console', (m) => { if (m.type() === 'error') console.log('  [prepare page]', m.text().slice(0, 200)); });
 		await page.evaluate(() => { const v = document.querySelector('#movie_player video'); if (v) v.pause(); });
+		await pp.waitForFunction(() => window.__prepare && document.querySelector('#addBtn').onclick, { timeout: 20000 }).catch(() => {});
+		// paste two links (the same song twice: added once) and add them
+		await pp.evaluate((v) => { document.querySelector('#link').value = 'https://www.youtube.com/watch?v=' + v + ' https://youtu.be/' + v; document.querySelector('#addBtn').click(); }, vid);
+		let ui = null;
+		for (let i = 0; i < 20; i++) { await wait(500); ui = await pp.evaluate(() => ({ msg: document.querySelector('#addMsg').textContent, sum: document.querySelector('#sum').textContent, rows: document.querySelectorAll('#songs li').length, pinned: null })); if (/added/.test(ui.msg) && ui.rows) break; }
+		const pin = await pp.evaluate(async () => { const t = await chrome.tabs.getCurrent(); return t && t.pinned; });
+		check('paste links → songs added once, summary shown, page pinned', ui && /1 song added/.test(ui.msg) && ui.rows === 1 && /of 1 ready/.test(ui.sum) && pin, JSON.stringify(Object.assign(ui || {}, { pinned: pin })));
+		await pp.screenshot({ path: path.join(out, 'voice-playlist-page.png') });
+		if (uiOnly) return;
 		// capture tab: muted by the extension
 		let mutedSeen = null, st = '';
 		for (let i = 0; i < 1200; i++) {

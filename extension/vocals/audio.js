@@ -1,4 +1,4 @@
-/* Vocals only — shared by the engine page (vocals.js) and the Prepared songs page (prepare.js):
+/* Vocals only — shared by the engine page (vocals.js) and the Voice-only playlist page (prepare.js):
    decoding Opus packets to samples, and the songs kept on this computer (IndexedDB "sawa-vocals").
    Stores: "audio" = a song's sound while it waits to be separated (deleted afterwards);
            "voice" = a prepared song: the singer's voice only, Opus-encoded, with its title and date. */

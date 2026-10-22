@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Prepared songs · Language Lens</title>
+<title>Voice-only playlist · Language Lens</title>
 <link rel="stylesheet" href="../popup/popup.css">
 <style>
 body { width: auto; max-width: 760px; margin: 0 auto; background: #F6F5F3; }
@@ -11,7 +11,11 @@ main { background: #fff; min-height: 100vh; }
 .intro { padding: 16px; }
 .intro p { color: #57534E; margin-top: 6px; }
 .add { display: flex; gap: 8px; padding: 0 16px 16px; }
-.add input { flex: 1; font: 14px 'IBM Plex Sans', sans-serif; padding: 10px 12px; border: 1px solid #E6E3DF; border-radius: 10px; }
+.add { flex-direction: column; }
+.add textarea { font: 14px/1.5 'IBM Plex Sans', sans-serif; padding: 10px 12px; border: 1px solid #E6E3DF; border-radius: 10px; min-height: 70px; resize: vertical; }
+.add .row3 { display: flex; gap: 8px; justify-content: space-between; align-items: center; }
+.sum { margin: 0 16px 12px; display: flex; gap: 10px; align-items: center; justify-content: space-between; flex-wrap: wrap; }
+.sum b { font: 800 18px/1.2 Changa, sans-serif; }
 .note { margin: 0 16px 12px; padding: 10px 12px; border-radius: 10px; background: #FFFBEB; border: 1px solid #FDE68A; font-size: 13px; }
 .songs { list-style: none; margin: 0; padding: 0; border-top: 1px solid #E6E3DF; }
 .songs li { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-bottom: 1px solid #E6E3DF; }
@@ -30,11 +34,12 @@ main { background: #fff; min-height: 100vh; }
 <header class="head"><div class="brand"><span class="wm">Language Lens</span><span class="by">Sawa English</span></div></header>
 <main>
 	<div class="intro">
-		<h1>⏬ Prepared songs</h1>
-		<p>Language Lens takes the music out of these songs ahead of time, with its best voice model. Then, when you play one on YouTube with 🎤 Vocals only on, the voice starts at once and has less music in it.</p>
+		<h1>🎧 Voice-only playlist</h1>
+		<p>Add songs or whole YouTube playlists. Language Lens takes the music out in the background with its best voice model and keeps only the singer’s voice on this computer. Then play them on YouTube with 🎤 Vocals only: the voice starts at once, with less music left than live.</p>
 	</div>
-	<div class="add"><input id="link" placeholder="Paste a YouTube song or playlist link" autocomplete="off"><button class="btn sm" id="addBtn">Add</button></div>
-	<div class="note" id="note">Keep this tab open while songs are being prepared. Each song opens for a moment in a small muted window, then closes by itself.</div>
+	<div class="add"><textarea id="link" placeholder="Paste YouTube links: songs or playlists, one per line"></textarea><div class="row3"><span class="muted" id="addMsg"></span><button class="btn sm" id="addBtn">➕ Add to the playlist</button></div></div>
+	<div class="sum" id="sum"></div>
+	<div class="note" id="note">This page works in the background (it stays pinned on the left of your tabs). Each song opens for a moment in a small muted window, then closes by itself.</div>
 	<ul class="songs" id="songs"></ul>
 	<div class="foot2" id="foot"></div>
 </main>

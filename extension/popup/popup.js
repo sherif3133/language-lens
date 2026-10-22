@@ -153,7 +153,7 @@ async function render() {
 			<div class="label">🎵 Music</div>
 			${toggle('songlyrics', 'Lyrics for songs', 'On YouTube songs, the transcript shows the lyrics (from the video, or LRCLIB) with a link to Genius. Click 💡 on a line to have it explained.', vo.songLyrics !== false)}
 			${computer ? (vo.vocalsSlow ? '<p class="hint">🎤 Vocals only is off: this computer was too slow for it.</p>' : toggle('vocalsonly', '🎤 Vocals only (test)', 'On songs: hear only the singer’s voice. The music is removed on your computer by an AI model (39 MB download, once).', vo.vocalsOnly === true)) : ''}
-			${computer && !vo.vocalsSlow ? '<div class="row"><div><div class="t">⏬ Prepared songs</div><div class="d">Take the music out ahead of time with the best voice model: better voice, starts at once.</div></div><button class="btn sm ghost" id="prepared">Open</button></div>' : ''}
+			${computer && !vo.vocalsSlow ? '<div class="row"><div><div class="t">🎧 Voice-only playlist</div><div class="d">Add songs or YouTube playlists: the music is taken out in the background with the best voice model, and they play with the voice only, at once.</div></div><button class="btn sm ghost" id="prepared">Open</button></div>' : ''}
 		</div>
 		<div class="sec">
 			<div class="label">Focus</div>

@@ -303,7 +303,7 @@
 	} catch (e) { /* ignore */ }
 
 	/* ------------------------------------------------------------ preparing songs ahead (vocals/prepare.html) */
-	/** Add songs [{id, title}] to the list to prepare, and open the Prepared songs page. */
+	/** Add songs [{id, title}] to the list to prepare, and open the Voice-only playlist page. */
 	function prepare(songs) {
 		chrome.storage.local.get('vocalsQueue', function (o) {
 			var q = o.vocalsQueue || [], have = {};
@@ -321,7 +321,7 @@
 		});
 		return out;
 	}
-	/** Capture mode: this muted background tab was opened by the Prepared songs page to collect one song's sound.
+	/** Capture mode: this muted background tab was opened by the Voice-only playlist page to collect one song's sound.
 	    The video plays at double speed until YouTube has sent the whole song, then the sound is kept for that page.
 	    Ads play as they are (the tab is muted). */
 	var CAPTURE = CAN && (/[?&]sawa_prepare=1/.test(location.search) || sessionStorage.getItem('sawaPrepare') === '1');
@@ -334,7 +334,7 @@
 				cap.done = !!m.ok;
 				var vv = document.querySelector('#movie_player video');
 				if (vv && cap.muted) { vv.pause(); vv.muted = cap.wasMuted; } // YouTube remembers mute: leave it as the student had it
-				show(m.ok ? 'playing' : 'error', m.ok ? '⏬ Song ready for the Prepared songs page ✓' : 'Could not keep this song: ' + (m.msg || ''));
+				show(m.ok ? 'playing' : 'error', m.ok ? '🎧 Song ready for the Voice-only playlist ✓' : 'Could not keep this song: ' + (m.msg || ''));
 			}
 		};
 		var capTick = setInterval(function () {
@@ -342,7 +342,7 @@
 			if (!v || !(v.duration > 0)) return;
 			if (!V.frame) {
 				engine(function () { V.port.postMessage({ t: 'capture', id: videoId(), title: document.title.replace(/ - YouTube$/, '') }); });
-				show('playing', '⏬ Getting this song for Vocals only (Prepared songs). This window closes by itself.');
+				show('playing', '🎧 Getting this song for the Voice-only playlist. This window closes by itself.');
 			}
 			if (cap.done) { clearInterval(capTick); v.pause(); return; }
 			if (adShowing()) return;

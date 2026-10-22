@@ -330,9 +330,9 @@
 			var gm = S.root.querySelector('.lmmusic [data-a=game]');
 			if (gm) gm.hidden = !canGame();
 			// ⏬ preparing songs ahead: computers that can do Vocals only
-			var pp = S.root.querySelector('.lmmusic [data-a=prep]'), pl = S.root.querySelector('.lmmusic [data-a=prepList]'), n = vocals && /[?&]list=/.test(location.search) ? LensVocals.playlist().length : 0;
-			if (pp) pp.hidden = !(vocals && song);
-			if (pl) { pl.hidden = n < 2; pl.textContent = '⏬ Prepare the whole playlist (' + n + ' songs)'; }
+			var pp = S.root.querySelector('.lmmusic [data-a=vplist]'), pl = S.root.querySelector('.lmmusic [data-a=prepList]'), n = vocals && /[?&]list=/.test(location.search) ? LensVocals.playlist().length : 0;
+			if (pp) pp.hidden = !vocals;
+			if (pl) { pl.hidden = n < 2; pl.textContent = '➕ Add these ' + n + ' songs to the Voice-only playlist'; }
 		}
 		if (!S.sRoot) return;
 		var el = S.sRoot.querySelector('.music');
@@ -621,8 +621,8 @@
 				// Computers only (content/vocals.js decides): hear the singer without the music.
 				(window.LensVocals && LensVocals.supported() ? '<button class="t" data-a="vocals" title="Hear only the singer’s voice: the music is removed on your computer (test)">🎤 Vocals only<span class="vst"></span></button>' : '') +
 				'<button class="t" data-a="game" hidden>🎮 Lyrics game</button>' +
-				'<button class="t" data-a="prep" hidden title="Take the music out ahead of time with the best voice model (kept on this computer)">⏬ Prepare this song ahead</button>' +
-				'<button class="t" data-a="prepList" hidden>⏬ Prepare the whole playlist</button>' +
+				'<button class="t" data-a="vplist" hidden title="Songs with the music taken out ahead of time, with the best voice model (kept on this computer)">🎧 Voice-only playlist</button>' +
+				'<button class="t" data-a="prepList" hidden>➕ Add this playlist to it</button>' +
 				'<a class="t gen" target="_blank" rel="noopener" hidden>Check the lyrics on Genius ↗</a></div>' +
 				'<div class="lmh">Display</div><div class="menu on">' + OPTS + '</div></div>';
 			if (MOBILE) S.host.classList.add('mob');
@@ -829,35 +829,43 @@
 		});
 	}
 
-	var THEME_NAMES = { violence: 'violence', sexual: 'sexual content', drugs: 'drugs or alcohol', selfharm: 'self-harm' };
-	/** Content check: swearing by severity, mature themes mentioned, and YouTube's own family-safe flag. */
+	var THEME_NAMES = { violence: 'violence', drugs: 'drugs or alcohol', selfharm: 'self-harm' };
+	var KIND = { sexual: 'sexual language', topic: 'sexual topic', profanity: 'profanity', mild: 'mild', slur: 'slur' };
+	/** Content check (what is said): sexual language or topics first, then profanity and slurs, other themes, and YouTube's family-safe flag. */
 	function paintAdvisory() {
 		var a = S.adv, sf = S.safety || {}, unsafe = sf.familySafe === false || sf.ageRestricted;
+		var flags = [];
+		if (a) {
+			if (a.sexual === 'explicit') flags.push('Sexual language');
+			else if (a.sexual === 'topics') flags.push('Sexual topics');
+			if (a.slurs) flags.push('Slurs');
+			if (a.profanity === 'frequent') flags.push('Frequent profanity');
+			else if (a.profanity === 'moderate') flags.push('Moderate profanity');
+		}
 		var badge = S.root && S.root.querySelector('.advb');
 		if (badge) {
-			var strongish = a && (a.level === 'strong' || a.level === 'moderate');
-			badge.hidden = !(strongish || unsafe);
-			badge.textContent = unsafe && !strongish ? '⚠ Not family-safe (YouTube)' : a ? '⚠ ' + { strong: 'Strong', moderate: 'Moderate', mild: 'Mild' }[a.level] + ' language' + (unsafe ? ' · not family-safe' : '') : '';
+			badge.hidden = !(flags.length || unsafe);
+			badge.textContent = '⚠ ' + flags.concat(unsafe ? ['Not family-safe (YouTube)'] : []).join(' · ');
 			badge.title = 'Language Lens content check. Details in the transcript panel.';
 		}
 		var el = S.sRoot && S.sRoot.querySelector('.adv');
 		if (!el) return;
 		if (!a) { el.innerHTML = unsafe ? '<span class="warn">⚠ YouTube marks this video as not family-safe.</span>' : ''; return; }
-		var u = U.esc, parts = [];
-		if (a.level === 'none') parts.push('<span class="ok">✓ No swearing found</span>');
-		else {
-			parts.push('<span class="warn">⚠ ' + { strong: 'Strong', moderate: 'Moderate', mild: 'Mild' }[a.level] + ' language</span> · ' +
-				['strong', 'moderate', 'mild'].filter(function (k) { return a.counts[k]; }).map(function (k) { return k + ' ×' + a.counts[k]; }).join(', ') +
-				' · <a data-adv="words">' + (S.advOpen === 'words' ? 'hide' : 'show') + '</a>');
-		}
+		var u = U.esc, parts = [], c = a.counts;
+		var show = function (k) { return ' · <a data-adv="' + k + '">' + (S.advOpen === k ? 'hide' : 'show') + '</a>'; };
+		if (a.sexual === 'explicit') parts.push('<span class="warn">⚠ Sexual language</span> ×' + (c.sexual + c.topic) + show('sexual'));
+		else if (a.sexual === 'topics') parts.push('<span class="warn">⚠ Sexual topics</span> ×' + c.topic + show('sexual'));
+		if (a.slurs) parts.push('<span class="warn">⚠ Slurs</span> ×' + a.slurs + show('slur'));
+		if (a.profanity === 'frequent' || a.profanity === 'moderate') parts.push('<span class="warn">⚠ ' + (a.profanity === 'frequent' ? 'Frequent' : 'Moderate') + ' profanity</span> ×' + c.profanity + (c.mild ? ' (+' + c.mild + ' mild)' : '') + show('profanity'));
+		if (!parts.length) parts.push('<span class="ok">✓ No explicit language</span>' + (a.profanity === 'mild' ? ' · mild words only ×' + c.mild + show('profanity') : ''));
 		var th = Object.keys(a.themes);
-		if (th.length) parts.push('Mentions: ' + th.map(function (k) { return THEME_NAMES[k] + ' ×' + a.themes[k]; }).join(', ') + ' · <a data-adv="themes">' + (S.advOpen === 'themes' ? 'hide' : 'show') + '</a>');
+		if (th.length) parts.push('Mentions: ' + th.map(function (k) { return THEME_NAMES[k] + ' ×' + a.themes[k]; }).join(', ') + show('themes'));
 		if (unsafe) parts.push('<span class="warn">⚠ YouTube marks this video as ' + (sf.ageRestricted ? 'age-restricted' : 'not family-safe') + ': it may contain graphic content.</span>');
-		var list = '';
-		if (S.advOpen === 'words') {
-			list = '<ul>' + a.hits.map(function (h) {
-				var w = prefs.maskSwears ? h.word[0] + h.word.slice(1).replace(/[A-Za-z']/g, '*') : h.word;
-				return '<li><button class="tm" data-adv="play" data-i="' + h.i + '">' + fmt(S.sents[h.i].start) + '</button><span class="lvl ' + h.level + '">' + h.level + '</span>' + u(w) + '</li>';
+		var list = '', want = { sexual: ['sexual', 'topic'], slur: ['slur'], profanity: ['profanity', 'mild'] }[S.advOpen];
+		if (want) {
+			list = '<ul>' + a.hits.filter(function (h) { return want.indexOf(h.kind) >= 0; }).slice(0, 60).map(function (h) {
+				var lv = { sexual: 'strong', slur: 'strong', topic: 'moderate', profanity: 'moderate', mild: 'mild' }[h.kind];
+				return '<li><button class="tm" data-adv="play" data-i="' + h.i + '">' + fmt(S.sents[h.i].start) + '</button><span class="lvl ' + lv + '">' + KIND[h.kind] + '</span>' + u(h.word) + '</li>';
 			}).join('') + '</ul>';
 		} else if (S.advOpen === 'themes') {
 			list = '<ul>' + th.map(function (k) {
@@ -1478,8 +1486,8 @@
 			setPref('autoPause', !prefs.autoPause);
 		} else if (a === 'menu') {
 			S.root.querySelector('.menu').classList.toggle('on');
-		} else if (a === 'prep') {
-			LensVocals.prepare([{ id: S.videoId, title: document.title.replace(/^\(\d+\)\s*/, '').replace(/ - YouTube$/, '') }]);
+		} else if (a === 'vplist') {
+			LensVocals.prepare([]);
 		} else if (a === 'prepList') {
 			LensVocals.prepare(LensVocals.playlist());
 		} else if (a === 'game') {

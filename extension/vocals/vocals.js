@@ -4,7 +4,7 @@
                (sep.js) and sends back the voice in windows of ~11 s, ahead of the playhead;
    - prepared: the song was prepared ahead (vocals/prepare.html, better model): its voice is read from this
                computer and sent back at once, nothing to separate;
-   - capture:  a muted background tab opened by the Prepared songs page: collect the whole song's sound and
+   - capture:  a muted background tab opened by the Voice-only playlist page: collect the whole song's sound and
                keep it for that page to separate.
    Everything stays on this computer. Models are downloaded once (pinned, SHA-256 checked) and cached. */
 (function () {
@@ -175,7 +175,7 @@
 		send({ t: 'eta', k: working, sec: left });
 	}, 500);
 
-	/* ------------------------------------------------------------ capture: keep a whole song's sound for the Prepared songs page */
+	/* ------------------------------------------------------------ capture: keep a whole song's sound for the Voice-only playlist page */
 	async function save() {
 		if (!capture || !config) return send({ t: 'saved', ok: false });
 		try {

@@ -1,4 +1,4 @@
-/* ⏬ Prepared songs (🎵 Music, computers only): take the music out of songs ahead of time, with the best voice
+/* 🎧 Voice-only playlist (🎵 Music, computers only): take the music out of songs ahead of time, with the best voice
    model, and keep only the singer's voice on this computer. Played later with 🎤 Vocals only, a prepared song
    starts at once (vocals/vocals.js reads it) and has less music in it than live separation.
    For each song: a muted background tab plays it at double speed so YouTube sends its sound
@@ -33,12 +33,18 @@ function render() {
 			if (d) { st = '✓ Ready · ' + Math.round(d.duration / 60) + ' min · ' + (d.bytes / 1e6).toFixed(1) + ' MB · kept until ' + new Date(d.createdAt + A.KEEP_DAYS * 864e5).toLocaleDateString(); cls = 'ok'; }
 			else if (failed[id]) { st = 'Could not prepare it: ' + failed[id]; cls = 'bad'; }
 			else if (n) { st = n.text; cls = n.cls; if (n.progress != null) bar = '<div class="bar2"><i style="width:' + Math.round(n.progress * 100) + '%"></i></div>'; }
-			else st = isWorker ? 'Waiting' : 'Waiting (another Prepared songs tab is working)';
+			else st = isWorker ? 'Waiting' : 'Waiting (another Voice-only playlist tab is working)';
 			return '<li><div class="tt"><b>' + esc(title(id)) + '</b><div class="st ' + cls + '">' + esc(st) + '</div>' + bar + '</div>' +
 				(d ? '<a class="btn sm ghost" target="_blank" href="https://www.youtube.com/watch?v=' + esc(id) + '">▶ Play</a>' : '') +
 				(failed[id] ? '<button class="btn sm ghost" data-retry="' + esc(id) + '">Try again</button>' : '') +
 				(id !== working ? '<button class="btn sm ghost" data-del="' + esc(id) + '">' + (d ? 'Delete' : 'Remove') + '</button>' : '') + '</li>';
-		}).join('') : '<div class="empty">No songs yet. On YouTube, open a song and choose 🎵 Music → ⏬ Prepare this song (or the whole playlist) in the Language Lens menu, or paste a link above.</div>';
+		}).join('') : '<div class="empty">No songs yet. Paste YouTube links above, or on a YouTube playlist choose Aa → 🎵 Music → ➕ Add these songs.</div>';
+		const ready = ids.filter((id) => done[id]), left = ids.length - ready.length;
+		$('#sum').innerHTML = ids.length ? '<div><b>' + ready.length + ' of ' + ids.length + ' ready</b><div class="muted">' + (working ? 'Working on: ' + esc(title(working)) : left ? (isWorker ? 'Starting…' : 'Another Voice-only playlist tab is working on them') : 'All songs are ready.') + '</div></div>' +
+			(ready.length ? '<button class="btn sm" id="playAll">▶ Play on YouTube with 🎤 Vocals only</button>' : '') : '';
+		const pa = $('#playAll');
+		// YouTube makes a playlist from up to 50 song ids; Vocals only is switched on for it
+		if (pa) pa.onclick = () => chrome.storage.local.set({ vocalsOnly: true }, () => window.open('https://www.youtube.com/watch_videos?video_ids=' + ready.slice(0, 50).join(','), '_blank'));
 		const bytes = Object.values(done).reduce((s, d) => s + d.bytes, 0);
 		$('#foot').textContent = Object.keys(done).length + ' prepared · ' + (bytes / 1e6).toFixed(1) + ' MB on this computer' +
 			(modelName ? ' · voice model: ' + modelName : '') + ' · nothing is uploaded or shared.';
@@ -61,36 +67,45 @@ document.addEventListener('click', async (e) => {
 chrome.storage.onChanged.addListener((ch) => { if (ch.vocalsQueue || ch.vocalsPrepared) { render(); if (wake) wake(); } });
 
 /* ------------------------------------------------------------ adding a link */
+/** The songs behind one link: a song, or every song of a playlist (YouTube's own playlist page). */
+async function songsOf(v) {
+	const vid = (v.match(/(?:[?&]v=|youtu\.be\/|\/shorts\/)([\w-]{11})/) || [])[1], list = (v.match(/[?&]list=([\w-]+)/) || [])[1];
+	let songs = [];
+	if (list) {
+		const html = await (await fetch('https://www.youtube.com/playlist?list=' + list, { credentials: 'omit' })).text();
+		const seen = {}, re = /"playlistVideoRenderer":\{"videoId":"([\w-]{11})"[\s\S]*?"title":\{"runs":\[\{"text":"((?:[^"\\]|\\.)*)"/g;
+		let m;
+		while ((m = re.exec(html)) && songs.length < 100) if (!seen[m[1]]) { seen[m[1]] = 1; songs.push({ id: m[1], title: JSON.parse('"' + m[2] + '"') }); }
+	}
+	if (!songs.length && vid) {
+		const o = await fetch('https://www.youtube.com/oembed?format=json&url=' + encodeURIComponent('https://www.youtube.com/watch?v=' + vid)).then((r) => r.json()).catch(() => ({}));
+		songs = [{ id: vid, title: o.title || vid }];
+	}
+	return songs;
+}
+/** Add every link pasted (one per line, or separated by spaces): songs and whole playlists. */
 async function addLink() {
-	const v = $('#link').value.trim(), btn = $('#addBtn');
-	if (!v) return;
+	const links = $('#link').value.split(/[\s,]+/).filter((x) => /youtu/.test(x)), btn = $('#addBtn'), msg = $('#addMsg');
+	if (!links.length) { msg.textContent = 'Paste YouTube links (songs or playlists) first.'; return; }
 	btn.disabled = true;
+	let added = 0, bad = 0;
 	try {
-		const vid = (v.match(/(?:[?&]v=|youtu\.be\/|\/shorts\/)([\w-]{11})/) || [])[1], list = (v.match(/[?&]list=([\w-]+)/) || [])[1];
-		let songs = [];
-		if (list) {
-			const html = await (await fetch('https://www.youtube.com/playlist?list=' + list, { credentials: 'omit' })).text();
-			const seen = {}, re = /"playlistVideoRenderer":\{"videoId":"([\w-]{11})"[\s\S]*?"title":\{"runs":\[\{"text":"((?:[^"\\]|\\.)*)"/g;
-			let m;
-			while ((m = re.exec(html)) && songs.length < 100) if (!seen[m[1]]) { seen[m[1]] = 1; songs.push({ id: m[1], title: JSON.parse('"' + m[2] + '"') }); }
+		for (let k = 0; k < links.length; k++) {
+			msg.textContent = 'Reading link ' + (k + 1) + ' of ' + links.length + '…';
+			const songs = await songsOf(links[k]).catch(() => []);
+			if (!songs.length) { bad++; continue; }
+			const { queue, done } = await lists(), have = new Set(queue.map((x) => x.id).concat(Object.keys(done)));
+			songs.forEach((x) => { if (!have.has(x.id)) { queue.push({ id: x.id, title: x.title, addedAt: Date.now() }); added++; } });
+			await chrome.storage.local.set({ vocalsQueue: queue });
 		}
-		if (!songs.length && vid) {
-			const o = await fetch('https://www.youtube.com/oembed?format=json&url=' + encodeURIComponent('https://www.youtube.com/watch?v=' + vid)).then((r) => r.json()).catch(() => ({}));
-			songs = [{ id: vid, title: o.title || vid }];
-		}
-		if (!songs.length) throw new Error('That doesn’t look like a YouTube song or playlist link.');
-		const { queue } = await lists(), have = new Set(queue.map((s) => s.id));
-		songs.forEach((s) => { if (!have.has(s.id)) queue.push({ id: s.id, title: s.title, addedAt: Date.now() }); });
-		await chrome.storage.local.set({ vocalsQueue: queue });
 		$('#link').value = '';
-	} catch (err) {
-		alert(err.message || 'Could not add it.');
+		msg.textContent = added + ' song' + (added === 1 ? '' : 's') + ' added' + (bad ? ' · ' + bad + ' link' + (bad === 1 ? '' : 's') + ' not understood' : '') + '.';
 	} finally {
 		btn.disabled = false;
 	}
 }
 $('#addBtn').onclick = addLink;
-$('#link').addEventListener('keydown', (e) => { if (e.key === 'Enter') addLink(); });
+$('#link').addEventListener('keydown', (e) => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) addLink(); });
 
 /* ------------------------------------------------------------ the work */
 /** Open the song in a muted background tab and wait for its sound (content/vocals.js keeps it in IndexedDB "audio"). */
@@ -207,9 +222,13 @@ async function tidy() {
 }
 
 (async () => {
+	try {
+		const me = await chrome.tabs.getCurrent();
+		if (me) await chrome.tabs.update(me.id, { pinned: true, autoDiscardable: false });
+	} catch (e) { /* not in a tab */ }
 	await tidy();
 	render();
-	// one Prepared songs tab works at a time (the others just show the list)
+	// one Voice-only playlist tab works at a time (the others just show the list)
 	navigator.locks.request('sawa-prepare', { ifAvailable: true }, async (lock) => {
 		if (!lock) { render(); return; }
 		isWorker = true;
@@ -217,10 +236,10 @@ async function tidy() {
 			const { queue, done } = await lists();
 			const next = queue.find((s) => !done[s.id] && !failed[s.id]);
 			if (!next) {
-				$('#note').textContent = 'All songs are prepared. You can close this tab; open it again from the Language Lens menu to add more.';
+				$('#note').textContent = 'All songs are ready. Add more any time; this page waits for them.';
 				await new Promise((r) => { wake = r; });
 				wake = null;
-				$('#note').textContent = 'Keep this tab open while songs are being prepared. Each song opens for a moment in a small muted window, then closes by itself.';
+				$('#note').textContent = 'This page works in the background (it stays pinned on the left of your tabs). Each song opens for a moment in a small muted window, then closes by itself.';
 				continue;
 			}
 			await work(next);
