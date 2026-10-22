@@ -31,7 +31,10 @@ const DEFAULTS = {
 	blurCaptions: false, // blur captions until hovered
 	blurTrans: false, // blur the translation until hovered
 	progress: null,
-	local: { day: '', words: 0, sentences: 0 }
+	local: { day: '', words: 0, sentences: 0 },
+	learnCap: 30, // new Learning words a day (20, 30 or 40): enough to grow, not so many that reviews pile up
+	daily: { day: '', read: 0, heard: 0, curious: 0, learning: 0 }, // today's numbers on this device
+	dailyOut: { read: 0, heard: 0 } // read/heard words not sent to the server yet
 };
 
 async function get(keys) {
@@ -45,6 +48,45 @@ const set = (o) => chrome.storage.local.set(o);
 function today() {
 	const d = new Date();
 	return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+}
+
+/* ------------------------------------------------------------ daily numbers: curious, read, heard */
+
+async function daily() {
+	const { daily: d } = await get('daily');
+	return d.day === today() ? d : { day: today(), read: 0, heard: 0, curious: 0, learning: 0 };
+}
+
+/** Words read on websites / heard in YouTube captions: counted here, sent to the server about once a minute. */
+let dailyFlushAt = 0;
+async function addDaily({ read, heard }) {
+	read = Math.max(0, Math.min(5000, read | 0)); heard = Math.max(0, Math.min(5000, heard | 0));
+	const d = await daily(), { dailyOut: o } = await get('dailyOut');
+	d.read += read; d.heard += heard; o.read += read; o.heard += heard;
+	await set({ daily: d, dailyOut: o });
+	if (Date.now() - dailyFlushAt > 60000) flushDaily();
+	return d;
+}
+async function flushDaily() {
+	const { dailyOut: o, token } = await get(['dailyOut', 'token']);
+	if (!token || (!o.read && !o.heard)) return;
+	dailyFlushAt = Date.now();
+	await set({ dailyOut: { read: 0, heard: 0 } });
+	await api('/daily', o).catch(async () => { const { dailyOut: n } = await get('dailyOut'); await set({ dailyOut: { read: n.read + o.read, heard: n.heard + o.heard } }); });
+}
+
+/** "I'm curious about this word": XP for exploring; the word is tracked but not added to Learning or reviews. */
+async function curious(lemma) {
+	const r = await api('/curious', { lemma });
+	const d = await daily();
+	if (r.new) { d.curious++; await set({ daily: d }); }
+	return Object.assign(r, { todayLocal: d.curious });
+}
+
+/** Is there room for another new Learning word today? */
+async function learnRoom() {
+	const [d, { learnCap }] = await Promise.all([daily(), get('learnCap')]);
+	return { used: d.learning, cap: learnCap, left: Math.max(0, learnCap - d.learning) };
 }
 
 async function bumpLocal(kind, n) {
@@ -223,6 +265,16 @@ async function mark(lemma, status, baseline, ctx) {
 	const L = await loadLens();
 	const s = await get(['words', 'wordTs', 'pending', 'level']);
 	const before = L.status(lemma, { level: s.level, words: s.words });
+	// New Learning words are capped each day, so reviews never pile up. Curious is unlimited.
+	const newLearning = !baseline && status === 'learning' && s.words[lemma] !== 'learning';
+	if (newLearning) {
+		const room = await learnRoom();
+		if (!room.left) {
+			const e = new Error('You added ' + room.cap + ' new Learning words today — that\'s plenty! Tap 💡 Curious to earn XP for this one instead.');
+			e.code = 'learn_cap';
+			throw e;
+		}
+	}
 	if (status) s.words[lemma] = status;
 	else delete s.words[lemma];
 	const t = Date.now();
@@ -234,6 +286,7 @@ async function mark(lemma, status, baseline, ctx) {
 	const after = L.status(lemma, { level: s.level, words: s.words });
 	if (!baseline && before !== 'known' && after === 'known') await bumpLocal('words', 1);
 	if (!baseline && before === 'known' && after !== 'known' && status !== '') await bumpLocal('words', -1);
+	if (newLearning) { const d = await daily(); d.learning++; await set({ daily: d }); }
 	scheduleSync();
 	return after;
 }
@@ -265,7 +318,7 @@ async function saveSentence(d) {
 	if (d.focusLemma) {
 		const L = await loadLens();
 		const st = await userState();
-		if (L.status(d.focusLemma, st) !== 'known') await mark(d.focusLemma, 'learning');
+		if (L.status(d.focusLemma, st) !== 'known') await mark(d.focusLemma, 'learning').catch(() => {}); // over today's cap: the sentence is still saved
 	}
 	scheduleSync(1500);
 	// Arabic translation in the background, then save it onto the sentence.
@@ -571,6 +624,10 @@ async function videoProfile(texts, level) {
 }
 
 const handlers = {
+	curious: ({ lemma }) => curious(String(lemma || '').slice(0, 60)),
+	addDaily: (x) => addDaily(x || {}),
+	daily: async () => Object.assign(await daily(), await learnRoom()),
+	setLearnCap: ({ n }) => set({ learnCap: [20, 30, 40].includes(+n) ? +n : 30 }),
 	arLookup: async ({ word }) => ({ word, hits: await arLookup(String(word || '').slice(0, 40)) }),
 	toEnglish: ({ text, word }) => api('/to-english', { text, word: word || '' }),
 	toEnglishMany: ({ texts }) => api('/to-english', { texts: (texts || []).slice(0, 12) }),

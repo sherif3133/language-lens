@@ -207,8 +207,8 @@
 		var st = document.createElement('style');
 		st.id = 'sawa-lens-hl';
 		st.textContent =
-			'::highlight(lens-next){text-decoration:underline 2px #15803D;text-underline-offset:3px}' +
-			'::highlight(lens-hard){text-decoration:underline 2px #E3262B;text-underline-offset:3px}' +
+			'::highlight(lens-next){background-color:rgba(34,197,94,.22)}' +
+			'::highlight(lens-hard){background-color:rgba(249,115,22,.26)}' +
 			'::highlight(lens-learning){background-color:#FDE68A;color:#0F0F10}' +
 			'::highlight(lens-focus){background-color:#EDE9FE;color:#0F0F10}';
 		(document.head || document.documentElement).appendChild(st);
@@ -440,10 +440,39 @@
 		arDone = new WeakSet(); arQueue = []; arCount = 0;
 	}
 
+	/* ------------------------------------------------------------ words read today */
+	var readSeen = new WeakSet(), readTimers = new WeakMap(), readSum = 0, readT = null;
+	var readObs = new IntersectionObserver(function (es) {
+		es.forEach(function (e) {
+			var el = e.target;
+			if (e.isIntersecting && e.intersectionRatio > 0.6) {
+				readTimers.set(el, setTimeout(function () {
+					if (document.hidden || readSeen.has(el)) return;
+					readSeen.add(el); readObs.unobserve(el);
+					readSum += ((el.textContent || '').match(/[A-Za-z]+(?:['’][a-z]+)?/g) || []).length;
+					clearTimeout(readT); readT = setTimeout(readSend, 4000);
+				}, 3000));
+			} else clearTimeout(readTimers.get(el));
+		});
+	}, { threshold: [0, 0.6] });
+	function readSend() { if (readSum && !PAUSED) U.send('addDaily', { read: readSum }).catch(function () {}); readSum = 0; }
+	function readWatch() {
+		if (PAUSED) return;
+		var root = mainEl();
+		root.querySelectorAll('p,li,blockquote,h1,h2,h3,dd,td').forEach(function (el) {
+			if (readSeen.has(el) || el.closest(SKIP) || el.closest('nav,header,footer,aside')) return;
+			var w = ((el.textContent || '').match(/[A-Za-z]+/g) || []).length;
+			if (w >= 4 && w < 1500) readObs.observe(el);
+		});
+	}
+	setTimeout(readWatch, 2000);
+	window.addEventListener('pagehide', readSend);
+
 	// Feeds and single-page sites change their text: re-grade after things settle.
 	new MutationObserver(function (muts) {
 		if (muts.every(function (m) { return m.target.closest && m.target.closest('sawa-lens-card,sawa-lens-page,sawa-lens-select,sawa-lens-en') || [].every.call(m.addedNodes, function (x) { return x.tagName === 'SAWA-LENS-EN'; }) && m.addedNodes.length; })) return;
 		if (arEnglish) { clearTimeout(arScan.t); arScan.t = setTimeout(arScan, 1500); }
+		clearTimeout(readWatch.t); readWatch.t = setTimeout(readWatch, 2000);
 		clearTimeout(gradeT);
 		gradeT = setTimeout(regrade, 2500);
 	}).observe(document.body, { childList: true, subtree: true, characterData: true });

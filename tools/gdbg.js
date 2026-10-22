@@ -1,0 +1,21 @@
+const puppeteer = require('puppeteer');
+const B = 'http://127.0.0.1:9410', OUT = process.argv[2];
+const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+(async () => {
+  const br = await puppeteer.launch({ headless: true, args: ['--mute-audio'] });
+  const p = await br.newPage(); const errs = []; p.on('pageerror', e => errs.push(e.message));
+  await p.setViewport({ width: 900, height: 600 });
+  await p.setCookie({ name: 'as_user', value: '3', url: B });
+  await p.evaluateOnNewDocument(() => { try { localStorage.setItem('sawaWorldTour', '1'); } catch (e) {} });
+  await p.goto(B + '/app/?g=' + Date.now() + '#community', { waitUntil: 'networkidle2', timeout: 120000 });
+  const e = await p.waitForSelector('pierce/[data-act="w-open"]', { timeout: 60000 }); await e.evaluate(x => x.click());
+  await p.waitForFunction(() => window.SawaGame && window.SawaGame.scene() && window.SawaGame.scene().pl, { timeout: 120000 });
+  await sleep(1500);
+  await p.evaluate(() => { const s = window.SawaGame.scene(); const m = s.monsters.find(x => x.active); s.cool = 0; s.pl.setPosition(m.x - 4, m.y); });
+  await p.waitForSelector('pierce/.sg-battle.on .sg-ops', { timeout: 60000 }); await sleep(1200);
+  const info = await p.evaluate(() => { const g = window.SawaGame.scene().game, b = g.scene.getScene('Battle'); return { active: b.sys.isActive(), visible: b.sys.isVisible(), order: g.scene.scenes.map(s => s.sys.settings.key + ':' + s.sys.settings.status), list: b.children.list.map(o => [o.type, o.texture && o.texture.key, Math.round(o.x), Math.round(o.y), o.scaleX, o.alpha, o.visible, o.depth, o.width, o.height]) }; });
+  console.log(JSON.stringify(info, null, 1));
+  await p.screenshot({ path: OUT + '/dbg-battle.png' });
+  console.log('errors', errs);
+  await br.close();
+})().catch(e => { console.error('FAILED', e.message); process.exit(1); });

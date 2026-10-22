@@ -79,6 +79,7 @@ async function render() {
 	const proofOn = (await chrome.storage.local.get('proofOn')).proofOn !== false;
 	const skipUi = (await chrome.storage.local.get('skipUi')).skipUi !== false;
 	const arS = await chrome.storage.local.get(['arHover', 'arEnglish']);
+	const dy = await send('daily').catch(() => ({ read: 0, heard: 0, curious: 0, learning: 0, used: 0, cap: 30 }));
 	const groups = {};
 	(st.focusList || []).forEach((f) => { (groups[f.group] = groups[f.group] || []).push(f); });
 
@@ -106,7 +107,13 @@ async function render() {
 				<div><b>${todayWords}</b><span>words learned</span></div>
 				<div><b>${todaySent}</b><span>sentences saved</span></div>
 				<div><b>${n(p.wordsKnown || 0)}</b><span>words known</span></div>
+				<div><b>${n(dy.read)}</b><span>📖 words read</span></div>
+				<div><b>${n(dy.heard)}</b><span>🎧 words heard in videos</span></div>
+				<div><b>${n(dy.curious)}</b><span>💡 curious about</span></div>
 			</div>
+			<div class="lcap"><span>★ New Learning words today: <b>${dy.used} / ${dy.cap}</b></span>
+				<select id="lcap" title="New Learning words a day">${[20, 30, 40].map((x) => `<option ${x === dy.cap ? 'selected' : ''}>${x}</option>`).join('')}</select></div>
+			<p class="hint">Hover any word you're curious about and tap <b>💡 Curious</b> for XP. It isn't added to your reviews, so you never get overwhelmed.</p>
 		</div>
 		<div class="sec">
 			<div class="label">Your level</div>
@@ -176,6 +183,7 @@ async function render() {
 	pref('pause', 'pauseOnHover');
 	$('#focus').onchange = (e) => send('setPref', { key: 'focus', value: e.target.value });
 	const pf = $('#proof'); if (pf) pf.onchange = () => chrome.storage.local.set({ proofOn: pf.checked });
+	const lc = $('#lcap'); if (lc) lc.onchange = () => send('setLearnCap', { n: +lc.value });
 	const ah = $('#arhover'); if (ah) ah.onchange = () => chrome.storage.local.set({ arHover: ah.checked });
 	const ae = $('#arenglish'); if (ae) ae.onchange = () => chrome.storage.local.set({ arEnglish: ae.checked });
 	const su = $('#skipui'); if (su) su.onchange = () => chrome.storage.local.set({ skipUi: su.checked });

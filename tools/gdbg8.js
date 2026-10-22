@@ -1,0 +1,28 @@
+const puppeteer = require('puppeteer');
+const B = 'http://127.0.0.1:9410';
+const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+(async () => {
+  const br = await puppeteer.launch({ headless: true, args: ['--mute-audio', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
+  const p = await br.newPage(); p.on('console', m => console.log('console:', m.text().slice(0, 160)));
+  await p.setViewport({ width: 390, height: 844 });
+  await p.setCookie({ name: 'as_user', value: '3', url: B });
+  await p.evaluateOnNewDocument(() => { try { localStorage.setItem('sawaWorldTour', '1'); } catch (e) {} });
+  await p.goto(B + '/app/?g=' + Date.now() + '#community', { waitUntil: 'networkidle2', timeout: 120000 });
+  const e = await p.waitForSelector('pierce/[data-act="w-open"]', { timeout: 60000 }); await e.evaluate(x => x.click());
+  await p.waitForFunction(() => window.SawaGame && window.SawaGame.scene() && window.SawaGame.scene().pl, { timeout: 120000 });
+  await sleep(1500);
+  const lost = () => p.evaluate(() => window.SawaGame.scene().game.renderer.contextLost);
+  console.log('start lost', await lost());
+  await p.evaluate(() => { const w = window.SawaGame.scene(); w.game.canvas.addEventListener('webglcontextlost', () => console.log('CONTEXT LOST at ' + (window.__step || '?'))); });
+  const steps = ['launch', 'hit-ok', 'hit-no', 'finish', 'stop'];
+  await p.evaluate(() => { window.__step = 'launch'; const w = window.SawaGame.scene(); w.frozen = true; w.scene.pause(); w.scene.launch('Battle', { b: { foe: { name: 'Mountain Wolf', hp: 66, icon: 'x' }, questions: [{ q: 'test', options: ['a', 'b'] }], seconds: 20, battle: 'none', kind: 'monster' } }); });
+  await sleep(1500); console.log('after launch', await lost());
+  for (let k = 0; k < 6; k++) { await p.evaluate(() => { window.SawaGame.scene().game.scene.getScene('Battle').hit(true, 20); }); await sleep(1200); console.log('hit ' + k, await lost()); } console.log('after hit ok', await lost());
+  await p.evaluate(() => { window.__step = 'hit-no'; window.SawaGame.scene().game.scene.getScene('Battle').hit(false, 20); });
+  await sleep(1500); console.log('after hit no', await lost());
+  await p.evaluate(() => { window.__step = 'finish'; window.SawaGame.scene().game.scene.getScene('Battle').finish(true); });
+  await sleep(1500); console.log('after finish', await lost());
+  await p.evaluate(() => { window.__step = 'stop'; const g = window.SawaGame.scene().game; g.scene.stop('Battle'); g.scene.getScene('World').scene.resume(); });
+  await sleep(1500); console.log('after stop', await lost());
+  await br.close();
+})().catch(e => { console.error('FAILED', e.message); process.exit(1); });

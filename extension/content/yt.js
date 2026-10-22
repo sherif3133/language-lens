@@ -6,7 +6,7 @@
    - Focus: highlight a grammar or pronunciation feature everywhere, and jump between examples.
    - Hotkeys: A previous sentence · S repeat · D next · Q auto-pause after each sentence.
    - Vocabulary goal bar (top 1k / 2k / 3k words) at the top of the sidebar.
-   Colours: known = plain · next level = green · beyond your level or rare = red · learning = yellow. */
+   Colours: known = plain · next level = green · beyond your level or rare = orange · learning = yellow. */
 (function () {
 	'use strict';
 	if (window.__sawaLensYT) return;
@@ -30,8 +30,8 @@
 		':host(.no-tr) .line.tr{display:none}.line.snd{font-size:.7em;color:#FDE68A;letter-spacing:.02em;cursor:help;pointer-events:auto}.line.snd:empty{display:none}.no-snd .line.snd{display:none}.box{position:relative}.sndtip{position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%);width:min(520px,90vw);background:#fff;color:#0F0F10;border-radius:12px;padding:10px 14px;font:500 14px/1.45 ' + FONT + ';text-align:left;display:none;box-shadow:0 8px 24px rgba(0,0,0,.3);pointer-events:auto}.sndtip.on{display:block}.sndtip ul{margin:6px 0 0;padding-left:18px}.lensmenu{position:absolute;right:12px;bottom:60px;width:270px;background:rgba(15,15,16,.94);color:#fff;border-radius:12px;padding:10px;display:none;flex-direction:column;gap:6px;pointer-events:auto;font:500 13px/1.3 ' + FONT + '}.lensmenu.on{display:flex}.lensmenu .t{display:flex;justify-content:space-between;align-items:center;width:100%;border-radius:8px;text-align:left}.lensmenu .lmh{font:700 11px/1 ' + FONT + ';letter-spacing:.06em;text-transform:uppercase;color:#FDE68A;margin-top:4px}.lensmenu .menu{position:static;display:block;background:transparent;color:#fff;padding:0;min-width:0}.lensmenu .menu label{display:flex;gap:8px;align-items:center;padding:4px 2px}' +
 		'.wd{cursor:pointer;border-radius:4px;padding:0 1px}' +
 		'.wd:hover{background:#fff;color:#0F0F10;text-decoration:none}' +
-		':host(.colors) .wd.next{text-decoration:underline;text-decoration-color:#34D399;text-decoration-thickness:3px;text-underline-offset:6px}' +
-		':host(.colors) .wd.hard{text-decoration:underline;text-decoration-color:#FF6B6B;text-decoration-thickness:3px;text-underline-offset:6px}' +
+		':host(.colors) .wd.next{background:rgba(52,211,153,.32);border-radius:4px;box-shadow:0 0 0 2px rgba(52,211,153,.32)}' +
+		':host(.colors) .wd.hard{background:rgba(251,146,60,.38);border-radius:4px;box-shadow:0 0 0 2px rgba(251,146,60,.38)}' +
 		':host(.colors) .wd.learning{background:#FDE68A;color:#0F0F10;box-shadow:0 0 0 2px #FDE68A}' +
 		'.fx{background:rgba(167,139,250,.55);box-shadow:0 0 0 2px rgba(167,139,250,.55);border-radius:4px}' +
 		'.tools{position:absolute;left:50%;transform:translateX(-50%);top:100%;margin-top:6px;display:flex;justify-content:center;gap:5px;opacity:0;transition:opacity .15s;white-space:nowrap}' +
@@ -83,7 +83,7 @@
 		'.legend{display:flex;flex-wrap:wrap;gap:10px;padding:8px 12px;border-bottom:1px solid #E6E3DF;font-size:12px;color:#4A4847}' +
 		'.legend span{display:inline-flex;align-items:center;gap:5px}' +
 		'.sw{display:inline-block;width:18px;height:10px;border-radius:2px}' +
-		'.sw.next{border-bottom:3px solid #15803D}.sw.hard{border-bottom:3px solid #E3262B}.sw.learning{background:#FDE68A;outline:1px solid #B45309}.sw.known{border-bottom:1px solid #E6E3DF}' +
+		'.sw.next{background:rgba(34,197,94,.3);border-radius:3px}.sw.hard{background:rgba(249,115,22,.34);border-radius:3px}.sw.learning{background:#FDE68A;outline:1px solid #B45309}.sw.known{border-bottom:1px solid #E6E3DF}' +
 		'.focus{display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid #E6E3DF;font-size:12.5px}' +
 		'.focus label{color:#4A4847;font-weight:600;white-space:nowrap}' +
 		'.fsel{flex:1;min-width:0;font:600 13px/1.2 ' + FONT + ';border:1px solid #E6E3DF;border-radius:8px;padding:6px 8px;background:#fff;color:#0F0F10}' +
@@ -108,8 +108,8 @@
 		'.rep:hover{color:#0F0F10;background:#fff}.rep svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}' +
 		'.wd{border-radius:3px;padding:0 1px}' +
 		'.wd:hover{background:#0F0F10;color:#fff;text-decoration:none}' +
-		':host(.colors) .wd.next{text-decoration:underline;text-decoration-color:#15803D;text-decoration-thickness:2px;text-underline-offset:4px}' +
-		':host(.colors) .wd.hard{text-decoration:underline;text-decoration-color:#E3262B;text-decoration-thickness:2px;text-underline-offset:4px}' +
+		':host(.colors) .wd.next{background:rgba(34,197,94,.2);border-radius:3px}' +
+		':host(.colors) .wd.hard{background:rgba(249,115,22,.24);border-radius:3px}' +
 		':host(.colors) .wd.learning{background:#FDE68A;box-shadow:0 0 0 1px #B45309}' +
 		'.fx{background:#EDE9FE;box-shadow:0 0 0 1px #A78BFA;border-radius:3px}' +
 		'.empty{padding:16px;color:#8A8584}' +
@@ -173,6 +173,7 @@
 		if (!cues.length) return;
 		S.videoId = d.videoId;
 		S.cues = cues;
+		S.heardSeen = {};
 		S.kind = d.kind;
 		S.sents = sentences(cues, d.kind === 'asr');
 		S.sounds = {};
@@ -548,6 +549,7 @@
 		en.innerHTML = U.markup(mask(S.cues[i].text), S.lines ? S.lines[i] : null, S.fxCues ? S.fxCues[i] : null);
 		tr.textContent = S.cueTr ? S.cueTr[i] || '' : '';
 		S.shown = i;
+		heard(i);
 		var snd = S.root.querySelector('.line.snd'); if (snd) snd.textContent = S.cueSnd ? S.cueSnd[i] || '' : '';
 		var tip = S.root.querySelector('.sndtip'); if (tip) tip.classList.remove('on');
 	}
@@ -654,6 +656,17 @@
 			+ '<p class="vv">' + verdict + '</p>'
 			+ '<div class="lmh2">Most used words</div><div class="vtop">' + v.top.map(function (w) { return '<span title="' + u(w.ar) + '">' + u(w.lemma) + ' <small>×' + w.count + '</small></span>'; }).join('') + '</div></details>';
 		box.querySelector('details').addEventListener('toggle', function () { S.vprofOpen = this.open; });
+	}
+
+	/** Words heard today: each caption line counts once per video, only while the video plays. */
+	var heardSum = 0, heardT = null;
+	function heard(i) {
+		if (!S.video || S.video.paused || !S.cues[i]) return;
+		S.heardSeen = S.heardSeen || {};
+		if (S.heardSeen[i]) return;
+		S.heardSeen[i] = 1;
+		heardSum += (S.cues[i].text.match(/[A-Za-z]+(?:['’][a-z]+)?/g) || []).length;
+		if (!heardT) heardT = setTimeout(function () { heardT = null; if (heardSum) U.send('addDaily', { heard: heardSum }).catch(function () {}); heardSum = 0; }, 15000);
 	}
 
 	function paintGoal() {

@@ -23,6 +23,7 @@
 		'.card{position:fixed;z-index:2147483646;width:340px;max-width:calc(100vw - 16px);max-height:calc(100vh - 16px);overflow:auto;background:#fff;color:#0F0F10;border:1px solid #0F0F10;border-radius:12px;' +
 		'font:14.5px/1.5 ' + FONT + ';text-align:left;padding:14px 14px 12px;display:none}' +
 		'.arw{font:700 20px/1.3 ' + FONT + ';direction:rtl}.arh{display:flex;align-items:center;justify-content:space-between;gap:8px}.arsub{font-size:12px;color:#8A8584;margin:2px 0 8px}.enrow{display:flex;align-items:center;gap:8px;padding:6px 0;border-top:1px solid #EFEDEA}.enrow:first-of-type{border-top:0}.enrow .ew{font:700 17px/1.2 ' + FONT + ';cursor:pointer;text-decoration:underline dotted #C9C5C2;text-underline-offset:3px}.enrow .ep{font-size:12px;color:#8A8584}.enrow .sp{flex:1}.enrow .lb{border:1px solid #0F0F10;background:#fff;border-radius:99px;padding:3px 10px;font:600 12px/1.2 ' + FONT + ';cursor:pointer}.enrow .lb.on{background:#FDE68A;border-color:#FDE68A}.ensent{margin-top:10px;padding:10px;border-radius:10px;background:#F6F5F3;font-size:15px;line-height:1.5}.ensent .lbl{font:700 11px/1 ' + FONT + ';letter-spacing:.06em;text-transform:uppercase;color:#8A8584;margin-bottom:6px}.arbtns{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}.arbtns button{border:1px solid #0F0F10;background:#fff;border-radius:99px;padding:5px 12px;font:600 13px/1.2 ' + FONT + ';cursor:pointer}.arbtns button.pri{background:#0F0F10;color:#fff}' +
+		'.btns .cur{border-style:dashed}.btns .cur.on{background:#FEF3C7;border-color:#F59E0B;border-style:solid}' +
 		'.card.on{display:block}.x{border:0;background:transparent;color:#8A8584;font:400 22px/1 Arial,sans-serif;padding:0 2px 2px 6px;cursor:pointer;flex:none}.x:hover{color:#0F0F10}' +
 		'.top{display:flex;align-items:center;justify-content:space-between;gap:8px}' +
 		'.wrow{display:flex;align-items:center;gap:6px;min-width:0}' +
@@ -198,6 +199,7 @@
 			'<div class="btns">' +
 			'<button data-a="known" class="' + (known ? 'on' : '') + '">' + (known ? '✓ ' : '') + 'I know it</button>' +
 			'<button data-a="learning" class="' + (learning ? 'on' : '') + '">' + (learning ? '✓ ' : '') + 'Learning</button>' +
+			(learning || d.mark === 'known' ? '' : '<button data-a="curious" class="cur' + (cur.curious ? ' on' : '') + '" title="You understood it: earn XP for being curious. It isn\'t added to your reviews.">' + (cur.curious ? '💡 ' + (cur.curious.xp ? '+' + cur.curious.xp + ' XP' : 'Curious ✓') : '💡 Curious') + '</button>') +
 			'</div>' +
 			(cur.msg ? '<div class="msg' + (cur.bad ? ' bad' : '') + '">' + u(cur.msg) + '</div>' : '') +
 			'<div class="brand">' + (!cur.pics ? '<a href="#" data-a="pics">🖼 Picture</a> · ' : '') + '<a href="https://youglish.com/pronounce/' + encodeURIComponent((d.lemma || cur.word).toLowerCase()) + '/english" target="_blank" rel="noopener">Hear it in other videos ↗</a> · Language Lens · Sawa English</div>';
@@ -226,6 +228,16 @@
 			c.ctx = null; // the explanation is per language
 			U.send('setPref', { key: 'glossLang', value: lang }).catch(function () {});
 			render();
+		} else if (a === 'curious') {
+			if (c.curious) return;
+			c.curious = { xp: 0 };
+			render();
+			U.send('curious', { lemma: c.data.lemma || c.word }).then(function (r) {
+				c.curious = r;
+				c.msg = r.new ? '💡 Curious about ' + r.todayLocal + ' word' + (r.todayLocal === 1 ? '' : 's') + ' today' + (r.xp ? ' · +' + r.xp + ' XP' : '') : '💡 You were already curious about this word.';
+				c.bad = false;
+				if (cur === c) render();
+			}, function (err) { c.curious = null; fail(c)(err); });
 		} else if (a === 'known' || a === 'learning') {
 			var next = c.data.mark === a ? '' : a;
 			var src0 = c.source || {};
@@ -342,7 +354,7 @@
 			if (c.hits === null) rows = '<div class="msg"><span class="spin"></span></div>';
 			else rows = c.hits.map(function (h, i) {
 				return '<div class="enrow"><button class="say" data-a="ar-say" data-i="' + i + '" title="Listen">' + SPEAK + '</button><span class="ew" data-a="ar-open" data-i="' + i + '">' + u(h.lemma) + '</span><span class="ep">' + u(h.pos) + (h.level ? ' · ' + u(h.level) : '') + '</span><span class="sp"></span>'
-					+ (h.status === 'known' ? '<span class="ep">✓ known</span>' : '<button class="lb' + (h.status === 'learning' ? ' on' : '') + '" data-a="ar-learn" data-i="' + i + '">' + (h.status === 'learning' ? '★ Learning' : '+ Learning') + '</button>') + '</div>';
+					+ (h.status === 'known' ? '<span class="ep">✓ known</span>' : (h.status === 'learning' ? '' : '<button class="lb' + (h.cur ? ' on' : '') + '" data-a="ar-cur" data-i="' + i + '" title="Earn XP for being curious (not added to reviews)">' + (h.cur ? '💡 ✓' : '💡') + '</button> ') + '<button class="lb' + (h.status === 'learning' ? ' on' : '') + '" data-a="ar-learn" data-i="' + i + '">' + (h.status === 'learning' ? '★ Learning' : '+ Learning') + '</button>') + '</div>';
 			}).join('');
 			if (c.en && c.en.word && !c.hits.some(function (h) { return h.lemma === c.en.word.toLowerCase(); })) rows += '<div class="enrow"><button class="say" data-a="ar-say-ai" title="Listen">' + SPEAK + '</button><span class="ew" data-a="ar-open-ai">' + u(c.en.word) + '</span><span class="ep">' + u(c.en.pos || '') + ' · here</span></div>';
 		}
@@ -366,7 +378,11 @@
 		else if (a === 'ar-learn' && h && h.status !== 'learning') {
 			h.status = 'learning';
 			renderAr();
-			U.send('mark', { lemma: h.lemma, status: 'learning' }).catch(function (err) { c.msg = U.errText(err); c.bad = true; if (cur === c) renderAr(); });
+			U.send('mark', { lemma: h.lemma, status: 'learning' }).catch(function (err) { h.status = ''; c.msg = U.errText(err); c.bad = true; if (cur === c) renderAr(); });
+		} else if (a === 'ar-cur' && h && !h.cur) {
+			h.cur = true;
+			renderAr();
+			U.send('curious', { lemma: h.lemma }).then(function (r) { c.msg = r.xp ? '💡 +' + r.xp + ' XP for being curious' : '💡 Curious ✓'; c.bad = false; if (cur === c) renderAr(); }, function (err) { h.cur = false; c.msg = U.errText(err); c.bad = true; if (cur === c) renderAr(); });
 		} else if (a === 'ar-sent') toEn(c);
 		else if (a === 'ar-listen' && c.en) speak(c.en.english);
 		else if (a === 'ar-save' && c.en) {

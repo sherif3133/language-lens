@@ -1,0 +1,27 @@
+const puppeteer = require('puppeteer');
+const B = 'http://127.0.0.1:9410', OUT = process.argv[2];
+const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+(async () => {
+  const br = await puppeteer.launch({ headless: true, args: ['--mute-audio'] });
+  const p = await br.newPage(); const errs = []; p.on('pageerror', e => errs.push(e.message));
+  const clk = async (sel) => { const e = await p.waitForSelector(sel, { timeout: 30000 }); await e.evaluate(x => x.click()); };
+  await p.setViewport({ width: 390, height: 844, isMobile: true });
+  await p.setCookie({ name: 'as_user', value: '3', url: B });
+  await p.evaluateOnNewDocument(() => { try { localStorage.setItem('sawaWorldTour', '1'); } catch (e) {} });
+  await p.goto(B + '/app/#me', { waitUntil: 'networkidle2', timeout: 90000 });
+  const hc = await p.waitForSelector('pierce/.skills', { timeout: 90000 }); await sleep(500);
+  console.log('me:', await p.evaluate(() => { const h = [...document.querySelectorAll('*')].find(e => e.shadowRoot && e.shadowRoot.querySelector('.skills')); return h.shadowRoot.querySelector('.skills').closest('section').innerText.replace(/\s+/g, ' '); }));
+  await (await hc.evaluateHandle(e => e.closest('section'))).asElement().screenshot({ path: OUT + '/9-help-card.png' });
+  await p.goto(B + '/app/?r=2#community', { waitUntil: 'networkidle2', timeout: 90000 });
+  await clk('pierce/[data-act="w-open"]'); await p.waitForSelector('pierce/.wd-route', { timeout: 60000 });
+  await clk('pierce/[data-act="w-tab"][data-tab="quests"]'); await sleep(400);
+  console.log('quest:', await p.$eval('pierce/.wd-sq', e => e.innerText.replace(/\s+/g, ' ')));
+  const coins0 = await p.$eval('pierce/.wd-top .pill', e => e.innerText);
+  await clk('pierce/[data-act="w-squest"]');
+  await p.waitForFunction(() => { const h = [...document.querySelectorAll('*')].find(e => e.shadowRoot && e.shadowRoot.querySelector('.wd-sq')); return h && /Done/.test(h.shadowRoot.querySelector('.wd-sq').innerText) && !h.shadowRoot.querySelector('[data-act="w-squest"]'); }, { timeout: 60000 });
+  console.log('after:', await p.$eval('pierce/.wd-sq', e => e.innerText.replace(/\s+/g, ' ')), '| coins', coins0, '→', await p.$eval('pierce/.wd-top .pill', e => e.innerText));
+  await p.screenshot({ path: OUT + '/10-quests-top.png' });
+  console.log('top bar width ok:', await p.evaluate(() => document.documentElement.scrollWidth));
+  console.log('JS errors:', errs.length ? errs : 'none');
+  await br.close();
+})().catch(e => { console.error('FAILED', e.message); process.exit(1); });
