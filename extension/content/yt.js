@@ -20,6 +20,7 @@
 	var FONT = '"IBM Plex Sans","IBM Plex Sans Arabic","Segoe UI",system-ui,sans-serif';
 	var AR = '"IBM Plex Sans Arabic","Segoe UI",Tahoma,sans-serif';
 	var CSS = '' +
+		'.line.slg{font-size:.62em;font-weight:500;color:#FDE68A;text-align:left;max-width:100%}.line.slg:empty{display:none}.line.slg b{color:#fff}.line.slg[dir=rtl]{text-align:right}' +
 		':host{all:initial}*{box-sizing:border-box}:host(.gaming) .bar{visibility:hidden}' + // 🎮 no spoilers during the lyrics game
 		'.bar{position:absolute;left:50%;transform:translateX(-50%);bottom:var(--pos,12%);z-index:60;max-width:min(94%,1000px);width:max-content;pointer-events:auto;' +
 		'font:600 clamp(16px,2.2vw,26px)/1.45 ' + FONT + ';color:#fff;text-align:center;display:flex;align-items:center;gap:6px}' +
@@ -72,7 +73,7 @@
 		':host(.mob) .grip,:host(.mob) .chip,:host(.mob) .advb,:host(.mob) .panel,:host(.mob) .lensmenu{display:none!important}:host(.mob) .msg{font-size:13px;max-width:90%;text-align:center}' +
 		':host(.mob) .quiz{position:fixed;left:0;right:0;top:auto;bottom:0;transform:none;width:100%;max-height:70vh;border-radius:16px 16px 0 0;padding-bottom:calc(18px + env(safe-area-inset-bottom))}';
 
-	var MUSIC_CSS = '.music{margin:8px 10px;padding:8px 10px;border:1px solid #E6E3DF;border-radius:10px;background:#FFFBEB;font-size:13px}.music .mh{font:700 11px/1 ' + FONT + ';letter-spacing:.06em;text-transform:uppercase;color:#8A6D00;margin-bottom:6px}' +
+	var MUSIC_CSS = '.slgs{font-size:12.5px;line-height:1.5;color:#57534E;background:#FFFBEB;border-radius:6px;padding:4px 8px;margin-top:4px}.slgs[dir=rtl]{text-align:right}.slgs b{color:#0F0F10}' + '.music{margin:8px 10px;padding:8px 10px;border:1px solid #E6E3DF;border-radius:10px;background:#FFFBEB;font-size:13px}.music .mh{font:700 11px/1 ' + FONT + ';letter-spacing:.06em;text-transform:uppercase;color:#8A6D00;margin-bottom:6px}' +
 		'.music .mr{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;justify-content:space-between;margin-top:4px}.music a{color:#0F0F10;font-weight:600}.ib2{font:600 12px/1 ' + FONT + ';border:1px solid #E6E3DF;background:#fff;border-radius:999px;padding:5px 8px;cursor:pointer;margin-left:4px}.ib2.on{background:#0F0F10;color:#fff;border-color:#0F0F10}.snd.lyr{background:#FFFBEB}';
 	var SIDE_CSS = '' +
 		':host{all:initial;display:block;margin-bottom:16px}*{box-sizing:border-box}' +
@@ -248,6 +249,7 @@
 			S.music = { state: 'lrclib', vid: vid, hit: hit, offset: off, auto: off };
 			useCues(vid, LensMusic.cues(hit.lines, off), 'lyrics');
 			paintMusic();
+			translateSong();
 		});
 	}
 	/** Switch between LRCLIB's lyrics and the video's own captions. */
@@ -257,6 +259,57 @@
 		if (S.kind === 'lyrics') { if (S.subs) useCues(S.videoId, S.subs.cues, S.subs.kind); }
 		else useCues(S.videoId, LensMusic.cues(mu.hit.lines, mu.offset), 'lyrics');
 		paintMusic();
+	}
+	/* 🎵 Songs: each line translated by what it actually means, and its slang explained (literal → real meaning).
+	   One request per song (/song-lines in sawa-lens, cached and shared); needs the student signed in. */
+	function songKey() { return S.videoId + '|' + prefs.lyricLang; }
+	function applySongTr() {
+		var st = S.songTr;
+		if (S.kind !== 'lyrics' || !st || !st.res || st.key !== songKey() || st.n !== S.cues.length) return false;
+		S.cueTr = st.res.lines.map(function (l) { return l.ar || ''; });
+		S.sentTr = S.cueTr.slice(); // lyrics: one row per line
+		return true;
+	}
+	function slangOf(i) {
+		var st = S.songTr;
+		if (S.kind !== 'lyrics' || !st || !st.res || st.key !== songKey()) return null;
+		var l = st.res.lines[i];
+		return l && l.slang && l.slang.length ? l.slang : null;
+	}
+	/** Rude words: how strong they are (the meaning itself is always said politely). */
+	var SEV = {
+		mild: ['#FDE68A', '#0F0F10', 'mild: common, not very rude', 'خفيفة: شائعة وليست وقحة جدًا'],
+		moderate: ['#FDBA74', '#0F0F10', 'rude', 'وقحة'],
+		strong: ['#FCA5A5', '#0F0F10', 'very rude', 'وقحة جدًا'],
+		slur: ['#DC2626', '#fff', 'slur: hurtful, never use it', 'إهانة جارحة: لا تستخدمها أبدًا']
+	};
+	function sevHtml(x) {
+		var v = SEV[x.severity];
+		if (!v) return '';
+		var ar = prefs.lyricLang === 'ar';
+		return ' <span style="display:inline-block;background:' + v[0] + ';color:' + v[1] + ';border-radius:99px;padding:0 7px;font-size:.9em;font-weight:600">⚠ ' + (ar ? v[3] : v[2]) + '</span>' +
+			(x.context ? '<br><span style="opacity:.9">' + (ar ? 'حسب السياق: ' : 'Depends on context: ') + U.esc(x.context) + '</span>' : '');
+	}
+	function slangHtml(list) {
+		var ar = prefs.lyricLang === 'ar';
+		return list.map(function (x) {
+			return '💬 <b dir="ltr">' + U.esc(x.text) + '</b>' + (x.literal ? (ar ? ' حرفيًا: ' : ': literally ') + '“' + U.esc(x.literal) + '”' : '') + (x.meaning ? ' → ' + U.esc(x.meaning) : '') + sevHtml(x);
+		}).join('<br>');
+	}
+	function translateSong() {
+		if (S.kind !== 'lyrics' || !isSong()) return;
+		var key = songKey(), n = S.cues.length;
+		if (S.songTr && S.songTr.key === key && S.songTr.n === n) return;
+		var lines = S.cues.map(function (c) { return c.text; }), nm = LensMusic.names(S.media);
+		S.songTr = { key: key, n: n, res: null };
+		U.send('songLines', { song: nm.artist + ' – ' + nm.track, lines: lines, lang: prefs.lyricLang }).then(function (res) {
+			if (!S.songTr || S.songTr.key !== key || !res || !res.lines || res.lines.length !== n) return;
+			S.songTr.res = res;
+			alignTranslation();
+			paintSide();
+			S.idx = -1;
+			tick(true);
+		}, function () { /* signed out or no AI: YouTube's translation stays */ });
 	}
 	/** Lyrics a little early or late: move them (ms). */
 	function nudgeLyrics(ms) {
@@ -328,7 +381,7 @@
 		if (r.error) return '<div class="snd lyr" style="color:#E3262B">' + u(r.error) + '</div>';
 		var ar = r.lang === 'ar', dir = ar ? ' dir="rtl" style="text-align:right;font-family:' + AR.replace(/"/g, '&quot;') + '"' : '';
 		return '<div class="snd lyr"' + dir + '><div><b>' + (ar ? 'المعنى:' : 'Meaning:') + '</b> ' + u(r.meaning) + '</div>' +
-			(r.parts && r.parts.length ? '<ul>' + r.parts.map(function (p) { return '<li><b dir="ltr">' + u(p.text) + '</b> · ' + u(p.why) + '</li>'; }).join('') + '</ul>' : '') +
+			(r.parts && r.parts.length ? '<ul>' + r.parts.map(function (p) { return '<li><b dir="ltr">' + u(p.text) + '</b> · ' + u(p.why) + sevHtml(p) + '</li>'; }).join('') + '</ul>' : '') +
 			(r.plain ? '<div dir="ltr" style="text-align:left"><b>In plain English:</b> ' + u(r.plain) + '</div>' : '') + '</div>';
 	}
 
@@ -407,6 +460,7 @@
 	/** Match YouTube's translated lines to our caption lines and sentences by time. */
 	function alignTranslation() {
 		S.cueTr = S.sentTr = null;
+		if (applySongTr()) return;
 		if (!S.tcues.length || !S.cues.length) return;
 		S.cueTr = S.cues.map(function (c) {
 			var best = '', bestOv = 0;
@@ -456,7 +510,7 @@
 			reT = setTimeout(analyse, 300);
 		}
 		if (ch.words || ch.vocabTest) paintGoal();
-		if (ch.explainLang) { S.lyrExp = {}; S.cueSound = {}; S.sounds = {}; } // explained in the other language now
+		if (ch.explainLang) { S.lyrExp = {}; S.cueSound = {}; S.sounds = {}; setTimeout(translateSong, 100); } // explained in the other language now
 		var touched = PREF_KEYS.some(function (k) { return ch[k]; });
 		if (!touched) return;
 		chrome.storage.local.get(PREF_KEYS, function (o) {
@@ -555,7 +609,7 @@
 			S.root = S.host.attachShadow({ mode: 'open' });
 			S.root.innerHTML = '<style>' + CSS + '</style>' +
 				'<button class="chip" hidden></button><div class="advb" hidden></div><div class="panel"></div><div class="quiz" hidden></div>' +
-				'<div class="bar"><div class="grip" title="Drag to move the captions up or down">⋮⋮</div><div class="box"><div class="line en"></div><div class="line tr"></div><div class="line snd" title="How it sounds — hover for fast speech"></div><div class="sndtip"></div></div></div>' +
+				'<div class="bar"><div class="grip" title="Drag to move the captions up or down">⋮⋮</div><div class="box"><div class="line en"></div><div class="line tr"></div><div class="line slg"></div><div class="line snd" title="How it sounds — hover for fast speech"></div><div class="sndtip"></div></div></div>' +
 				'<div class="lensmenu"><div class="lmh">Language Lens</div>' +
 				'<button class="t" data-a="prev" title="Previous sentence">◀ Previous sentence<kbd>A</kbd></button>' +
 				'<button class="t" data-a="repeat" title="Repeat sentence">↻ Repeat sentence<kbd>S</kbd></button>' +
@@ -699,11 +753,14 @@
 		if (i < 0 || !S.cues[i]) {
 			en.innerHTML = '';
 			tr.textContent = '';
+			var sg = S.root.querySelector('.line.slg'); if (sg) sg.innerHTML = '';
 			var sl = S.root.querySelector('.line.snd'); if (sl) sl.textContent = '';
 			return;
 		}
 		en.innerHTML = U.markup(mask(S.cues[i].text), S.lines ? S.lines[i] : null, S.fxCues ? S.fxCues[i] : null);
 		tr.textContent = S.cueTr ? S.cueTr[i] || '' : '';
+		var slg = S.root.querySelector('.line.slg');
+		if (slg) { var ns = slangOf(i); slg.innerHTML = ns ? slangHtml(ns) : ''; slg.dir = prefs.lyricLang === 'ar' ? 'rtl' : 'ltr'; }
 		tr.classList.remove('peek');
 		S.shown = i;
 		heard(i);
@@ -880,6 +937,8 @@
 
 	function rowHtml(s, i) {
 		var tr = S.sentTr && S.sentTr[i] ? '<div class="trs">' + U.esc(S.sentTr[i]) + '</div>' : '';
+		var sl = slangOf(i);
+		if (sl) tr += '<div class="slgs"' + (prefs.lyricLang === 'ar' ? ' dir="rtl"' : '') + '>' + slangHtml(sl) + '</div>';
 		return '<div class="s" data-i="' + i + '"><button class="tm" data-a="seek">' + fmt(s.start) + '</button><div class="body"><div class="tx">' +
 			U.markup(mask(s.text), S.sentToks ? S.sentToks[i] : null, S.fxSents ? S.fxSents[i] : null) + '</div>' + tr +
 			(S.sounds[i] ? soundBox(S.sounds[i]) : '') + (S.lyrExp && S.lyrExp[i] ? lyricBox(S.lyrExp[i]) : '') + '</div>' +
@@ -1495,6 +1554,7 @@
 		S.lastEnded = -1;
 		S.music = null;
 		S.subs = null;
+		S.songTr = null;
 		if (window.LensGame && LensGame.running()) LensGame.stop();
 		S.lyrExp = {};
 		var tries = 0;

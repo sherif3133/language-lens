@@ -761,6 +761,8 @@ const handlers = {
 		return api('/explain', { word, sentence, lang: lang || glossLang, expl: explainLang });
 	},
 	/** 🎵 Music: one lyric line explained (meaning, slang and idioms, plain English), in English (default) or Arabic. */
+	/** 🎵 Music: a whole song translated by what it means, with its slang (literal → real meaning). */
+	songLines: async ({ song, lines, lang }) => api('/song-lines', { song, lines: (lines || []).slice(0, 120), lang: lang === 'ar' ? 'ar' : 'en' }),
 	lyric: async ({ line, song, context, lang }) => api('/lyric', { line, song, context, lang: lang === 'ar' ? 'ar' : 'en' }),
 	/** How a sentence or phrase sounds in natural fast speech, and why (connected speech). */
 	sound: async ({ text }) => api('/sound', { text, lang: (await get('explainLang')).explainLang }),

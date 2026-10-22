@@ -28,6 +28,20 @@ async function launch() {
 	}
 	throw new Error('chrome did not start');
 }
+/** Evaluate in Language Lens's content-script world. */
+async function lens(page) {
+	const cdp = await page.createCDPSession(), ctxs = [];
+	cdp.on('Runtime.executionContextCreated', (e) => ctxs.push(e.context));
+	cdp.on('Runtime.executionContextsCleared', () => { ctxs.length = 0; });
+	await cdp.send('Runtime.enable');
+	return async (expr) => {
+		const c = ctxs.filter((x) => x.auxData && x.auxData.type === 'isolated' && /Language Lens/.test(x.name)).pop();
+		if (!c) return undefined;
+		const r = await cdp.send('Runtime.evaluate', { expression: expr, contextId: c.id, returnByValue: true, awaitPromise: true });
+		if (r.exceptionDetails) throw new Error(r.exceptionDetails.text);
+		return r.result.value;
+	};
+}
 const side = (page) => page.evaluate(() => {
 	const h = document.querySelector('sawa-lens-side'), r = h && h.shadowRoot;
 	if (!r) return null;
@@ -35,6 +49,8 @@ const side = (page) => page.evaluate(() => {
 	const rows = [...r.querySelectorAll('.s')];
 	return { music: m && !m.hidden ? m.textContent.replace(/\s+/g, ' ').trim() : '', genius: gen && gen.href, rows: rows.length, first: rows.slice(0, 3).map((x) => x.querySelector('.tx').textContent), bulb: !!r.querySelector('.s [data-a=lyr]') };
 });
+const G0 = (pageFn) => currentPage.evaluate(pageFn);
+let currentPage = null;
 const menu = (page) => page.evaluate(() => {
 	const h = document.querySelector('sawa-lens-yt'), r = h && h.shadowRoot, sec = r && r.querySelector('.lmmusic');
 	return sec ? { shown: !sec.hidden, vocals: !!sec.querySelector('[data-a=vocals]'), genius: !sec.querySelector('.gen').hidden && sec.querySelector('.gen').href } : null;
@@ -57,6 +73,7 @@ async function open(page, vid) {
 	const browser = await launch();
 	try {
 		const page = await browser.newPage();
+		currentPage = page;
 		await page.setViewport({ width: 1400, height: 900 });
 		const ua = (await browser.userAgent()).replace('HeadlessChrome', 'Chrome'), major = (ua.match(/Chrome\/(\d+)/) || [])[1] || '140';
 		await page.setUserAgent({ userAgent: ua, userAgentMetadata: { brands: [{ brand: 'Google Chrome', version: major }, { brand: 'Chromium', version: major }], platform: 'Windows', platformVersion: '10.0.0', architecture: 'x86', model: '', mobile: false } });
@@ -81,6 +98,31 @@ async function open(page, vid) {
 				await wait(500);
 				const ar = await page.evaluate(() => document.querySelector('sawa-lens-side').shadowRoot.querySelector('[data-a=ll-ar]').classList.contains('on'));
 				check(vid + ': explain in عربي can be chosen', ar);
+				// 🎵 the song translated by meaning, with slang and rude-word notes (the AI needs sign-in: a stand-in answer here)
+				const L = await lens(page);
+				await L(`(function () {
+					var send = LensUI.send;
+					LensUI.send = function (type, data) {
+						if (type !== 'songLines') return send.apply(this, arguments);
+						return Promise.resolve({ lang: data.lang, lines: data.lines.map(function (l, i) {
+							return { ar: 'ترجمة المعنى ' + i, slang: i === 0 ? [{ text: l.split(' ')[1] || l, literal: 'LITERAL', meaning: 'REAL MEANING', severity: '' }, { text: 'xx', literal: 'polite literal', meaning: 'an insult for a mean person', severity: 'mild', context: 'CONTEXT NOTE' }] : [] };
+						}) });
+					};
+					return true;
+				})()`);
+				await G0(() => document.querySelector('sawa-lens-side').shadowRoot.querySelector('[data-a=ll-en]').click());
+				let tr = null;
+				for (let k = 0; k < 12; k++) {
+					await wait(500);
+					tr = await G0(() => { const r = document.querySelector('sawa-lens-side').shadowRoot, row = r.querySelector('.s'); return { trs: (row.querySelector('.trs') || {}).textContent || '', slg: (row.querySelector('.slgs') || {}).textContent || '' }; });
+					if (tr && /ترجمة المعنى 0/.test(tr.trs)) break;
+				}
+				check(vid + ': song translated by meaning (Arabic line) with slang notes: literal → real meaning, how rude, context', tr && /ترجمة المعنى 0/.test(tr.trs) && /literally “LITERAL” → REAL MEANING/.test(tr.slg) && /⚠ mild/.test(tr.slg) && /Depends on context: CONTEXT NOTE/.test(tr.slg), JSON.stringify(tr));
+				await G0(() => { const v = document.querySelector('#movie_player video'); v.currentTime = 22; });
+				await wait(1200);
+				const cap = await G0(() => { const r = document.querySelector('sawa-lens-yt').shadowRoot; return { tr: r.querySelector('.line.tr').textContent, slg: r.querySelector('.line.slg').textContent }; });
+				check(vid + ': on the video too: the meaning and the slang note', /ترجمة المعنى/.test(cap.tr), JSON.stringify(cap));
+				await page.screenshot({ path: path.join(out, 'song-translation.png') });
 				await page.evaluate(() => document.querySelector('sawa-lens-side').shadowRoot.querySelector('[data-a=ll-en]').click());
 				// nudge the timing
 				if (/LRCLIB/.test(s.music)) {
