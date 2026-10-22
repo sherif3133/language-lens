@@ -67,6 +67,48 @@ function loadLens() {
 	return lensLoading;
 }
 
+/* ------------------------------------------------------------ Arabic → English */
+
+/** Arabic spelled one way: no diacritics or tatweel, one alef, ى → ي, ة → ه. */
+const arNorm = (s) => String(s).replace(/[\u064B-\u0652\u0670\u0640]/g, '').replace(/[أإآٱ]/g, 'ا').replace(/ى/g, 'ي').replace(/ة/g, 'ه').replace(/ؤ/g, 'و').replace(/ئ/g, 'ي').trim();
+let arIndex = null;
+/** Every Arabic meaning in the dictionary → the English words that have it. */
+async function loadArIndex() {
+	if (arIndex) return arIndex;
+	const L = await loadLens(), idx = {};
+	L.lex.entries.forEach((e, i) => {
+		String(e[3] || '').split(/[،,؛;]/).forEach((g, gi) => {
+			g = arNorm(g.replace(/\(.*?\)/g, ''));
+			if (g) (idx[g] = idx[g] || []).push([i, gi]);
+		});
+	});
+	return (arIndex = idx);
+}
+const AR_PRE = ['وال', 'بال', 'فال', 'كال', 'لل', 'ال', 'و', 'ف', 'ب', 'ل', 'ك', 'س'];
+const AR_SUF = ['هما', 'كما', 'ها', 'هم', 'هن', 'كم', 'نا', 'ات', 'ون', 'ين', 'ان', 'ه', 'ك', 'ي', 'ا'];
+/** The forms to try for an Arabic word on a page: as it is, without و/ب/ال…, without ها/ات/ي…. */
+function arForms(w) {
+	w = arNorm(w);
+	const out = [w];
+	for (const p of AR_PRE) if (w.startsWith(p) && w.length - p.length >= 2) out.push(w.slice(p.length));
+	for (const c of out.slice()) for (const s of AR_SUF) if (c.endsWith(s) && c.length - s.length >= 2) out.push(c.slice(0, -s.length));
+	for (const c of out.slice()) if (/ت$/.test(c)) out.push(c.slice(0, -1) + 'ه'); // مدرستي → مدرسه
+	return [...new Set(out)];
+}
+/** English words for an Arabic word, from the built-in dictionary (instant, no AI): easiest first. */
+async function arLookup(word) {
+	const idx = await loadArIndex(), L = await loadLens(), st = await userState();
+	for (const f of arForms(word)) {
+		const h = idx[f] || idx['ال' + f];
+		if (!h) continue;
+		const seen = new Set();
+		return h.map(([i, gi]) => ({ e: L.lex.entries[i], gi })).sort((a, b) => a.e[2] - b.e[2] || a.gi - b.gi)
+			.filter((x) => !seen.has(x.e[0]) && seen.add(x.e[0])).slice(0, 4)
+			.map((x) => ({ lemma: x.e[0], pos: x.e[1], level: L.lex.levels[x.e[2] - 1] || '', ar: x.e[3], status: L.status(x.e[0], st) }));
+	}
+	return [];
+}
+
 async function userState() {
 	const { level, words } = await get(['level', 'words']);
 	return { level, words };
@@ -529,6 +571,9 @@ async function videoProfile(texts, level) {
 }
 
 const handlers = {
+	arLookup: async ({ word }) => ({ word, hits: await arLookup(String(word || '').slice(0, 40)) }),
+	toEnglish: ({ text, word }) => api('/to-english', { text, word: word || '' }),
+	toEnglishMany: ({ texts }) => api('/to-english', { texts: (texts || []).slice(0, 12) }),
 	videoProfile: async ({ texts }) => videoProfile((texts || []).slice(0, 3000), (await get('level')).level),
 	soundLines: ({ texts }) => soundLines((texts || []).slice(0, 2000)),
 	proof: ({ text, grammar }) => proofText(String(text || '').slice(0, 2000), !!grammar),

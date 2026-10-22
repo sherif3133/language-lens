@@ -22,6 +22,7 @@
 	var CSS = BASE +
 		'.card{position:fixed;z-index:2147483646;width:340px;max-width:calc(100vw - 16px);max-height:calc(100vh - 16px);overflow:auto;background:#fff;color:#0F0F10;border:1px solid #0F0F10;border-radius:12px;' +
 		'font:14.5px/1.5 ' + FONT + ';text-align:left;padding:14px 14px 12px;display:none}' +
+		'.arw{font:700 20px/1.3 ' + FONT + ';direction:rtl}.arh{display:flex;align-items:center;justify-content:space-between;gap:8px}.arsub{font-size:12px;color:#8A8584;margin:2px 0 8px}.enrow{display:flex;align-items:center;gap:8px;padding:6px 0;border-top:1px solid #EFEDEA}.enrow:first-of-type{border-top:0}.enrow .ew{font:700 17px/1.2 ' + FONT + ';cursor:pointer;text-decoration:underline dotted #C9C5C2;text-underline-offset:3px}.enrow .ep{font-size:12px;color:#8A8584}.enrow .sp{flex:1}.enrow .lb{border:1px solid #0F0F10;background:#fff;border-radius:99px;padding:3px 10px;font:600 12px/1.2 ' + FONT + ';cursor:pointer}.enrow .lb.on{background:#FDE68A;border-color:#FDE68A}.ensent{margin-top:10px;padding:10px;border-radius:10px;background:#F6F5F3;font-size:15px;line-height:1.5}.ensent .lbl{font:700 11px/1 ' + FONT + ';letter-spacing:.06em;text-transform:uppercase;color:#8A8584;margin-bottom:6px}.arbtns{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}.arbtns button{border:1px solid #0F0F10;background:#fff;border-radius:99px;padding:5px 12px;font:600 13px/1.2 ' + FONT + ';cursor:pointer}.arbtns button.pri{background:#0F0F10;color:#fff}' +
 		'.card.on{display:block}.x{border:0;background:transparent;color:#8A8584;font:400 22px/1 Arial,sans-serif;padding:0 2px 2px 6px;cursor:pointer;flex:none}.x:hover{color:#0F0F10}' +
 		'.top{display:flex;align-items:center;justify-content:space-between;gap:8px}' +
 		'.wrow{display:flex;align-items:center;gap:6px;min-width:0}' +
@@ -206,6 +207,7 @@
 	function onClick(e) {
 		var b = e.target.closest('button,[data-a]');
 		if (b && b.dataset.a === 'close') return hide();
+		if (b && cur && cur.ar) return arClick(b);
 		if (!b || !cur || !cur.data) return;
 		if (b.tagName === 'A' && b.dataset.a) e.preventDefault();
 		var a = b.dataset.a, c = cur;
@@ -297,6 +299,84 @@
 		c.pics.aiLoading = true;
 		render();
 		U.send('aiImage', { word: (c.data.lemma || c.word), sentence: c.sentence || '' }).then(function (r) { c.pics.ai = r.url; c.pics.aiLoading = false; if (cur === c) render(); }, function (err) { c.pics.aiLoading = false; c.msg = U.errText(err); c.bad = true; if (cur === c) render(); });
+	}
+
+	/* ------------------------------------------------------------ Arabic → English card */
+	/**
+	 * An Arabic word on the page: its English words from the dictionary (instant), and the whole sentence
+	 * in English on request (AI). o = { word, rect, sentence, source, selected }
+	 * With o.selected (Arabic text the learner selected), the English translation comes straight away.
+	 */
+	function showAr(o) {
+		ensure();
+		clearTimeout(hideT);
+		if (cur && cur.ar && cur.word === o.word && cur.sentence === o.sentence) return;
+		if (cur && cur.onHide) cur.onHide();
+		cur = Object.assign({ ar: true, hits: null, en: null, saved: false, msg: '' }, o);
+		var c = cur;
+		el.classList.add('on');
+		renderAr();
+		place(o.rect);
+		if (o.selected) return toEn(c);
+		U.send('arLookup', { word: o.word }).then(function (r) {
+			c.hits = r.hits;
+			if (cur !== c) return;
+			renderAr();
+			if (!r.hits.length) toEn(c); // not in the dictionary: ask the AI about it in its sentence
+		}, function () { c.hits = []; if (cur === c) toEn(c); });
+	}
+	function toEn(c) {
+		c.en = 'loading';
+		renderAr();
+		U.send('toEnglish', { text: c.selected ? c.word : (c.sentence || c.word), word: c.selected ? '' : c.word }).then(function (r) {
+			c.en = r;
+			if (cur === c) renderAr();
+		}, function (err) { c.en = { error: U.errText(err) }; if (cur === c) renderAr(); });
+	}
+	function renderAr() {
+		var c = cur, u = U.esc, X = '<button class="x" data-a="close" title="Close (Esc)" aria-label="Close">×</button>';
+		var head = '<div class="arh"><div class="arw" dir="rtl">' + u(c.selected ? (c.word.length > 90 ? c.word.slice(0, 90) + '…' : c.word) : c.word) + '</div>' + X + '</div>'
+			+ '<div class="arsub">' + (c.selected ? 'In English' : 'In English · click a word for its full card') + '</div>';
+		var rows = '';
+		if (!c.selected) {
+			if (c.hits === null) rows = '<div class="msg"><span class="spin"></span></div>';
+			else rows = c.hits.map(function (h, i) {
+				return '<div class="enrow"><button class="say" data-a="ar-say" data-i="' + i + '" title="Listen">' + SPEAK + '</button><span class="ew" data-a="ar-open" data-i="' + i + '">' + u(h.lemma) + '</span><span class="ep">' + u(h.pos) + (h.level ? ' · ' + u(h.level) : '') + '</span><span class="sp"></span>'
+					+ (h.status === 'known' ? '<span class="ep">✓ known</span>' : '<button class="lb' + (h.status === 'learning' ? ' on' : '') + '" data-a="ar-learn" data-i="' + i + '">' + (h.status === 'learning' ? '★ Learning' : '+ Learning') + '</button>') + '</div>';
+			}).join('');
+			if (c.en && c.en.word && !c.hits.some(function (h) { return h.lemma === c.en.word.toLowerCase(); })) rows += '<div class="enrow"><button class="say" data-a="ar-say-ai" title="Listen">' + SPEAK + '</button><span class="ew" data-a="ar-open-ai">' + u(c.en.word) + '</span><span class="ep">' + u(c.en.pos || '') + ' · here</span></div>';
+		}
+		var sent = '';
+		if (c.en === 'loading') sent = '<div class="ensent"><span class="spin"></span> Translating…</div>';
+		else if (c.en && c.en.error) sent = '<div class="msg bad">' + u(c.en.error) + '</div>';
+		else if (c.en && c.en.english) sent = '<div class="ensent"><div class="lbl">' + (c.selected ? 'English' : 'The sentence in English') + '</div><div dir="ltr">' + u(c.en.english) + '</div></div>';
+		var btns = '<div class="arbtns">'
+			+ (!c.en && c.sentence ? '<button class="pri" data-a="ar-sent">Sentence in English</button>' : '')
+			+ (c.en && c.en.english ? '<button data-a="ar-listen">🔊 Listen</button>' + (c.saved ? '<button disabled>✓ Saved</button>' : '<button data-a="ar-save">Save to review</button>') : '')
+			+ '</div>';
+		el.innerHTML = head + rows + sent + btns + (c.msg ? '<div class="msg' + (c.bad ? ' bad' : '') + '">' + u(c.msg) + '</div>' : '')
+			+ '<div class="brand">Arabic → English · Language Lens · Sawa English</div>';
+	}
+	function arClick(b) {
+		var c = cur, a = b.dataset.a, h = c.hits && c.hits[+b.dataset.i];
+		if (a === 'ar-say' && h) speak(h.lemma, true);
+		else if (a === 'ar-say-ai' && c.en) speak(c.en.word, true);
+		else if (a === 'ar-open' && h) { var r = el.getBoundingClientRect(); hide(); show({ word: h.lemma, rect: r, sentence: '', source: c.source }); }
+		else if (a === 'ar-open-ai' && c.en) { var r2 = el.getBoundingClientRect(); hide(); show({ word: c.en.word.split(' ')[0], rect: r2, sentence: c.en.english || '', source: c.source }); }
+		else if (a === 'ar-learn' && h && h.status !== 'learning') {
+			h.status = 'learning';
+			renderAr();
+			U.send('mark', { lemma: h.lemma, status: 'learning' }).catch(function (err) { c.msg = U.errText(err); c.bad = true; if (cur === c) renderAr(); });
+		} else if (a === 'ar-sent') toEn(c);
+		else if (a === 'ar-listen' && c.en) speak(c.en.english);
+		else if (a === 'ar-save' && c.en) {
+			b.disabled = true;
+			// The English becomes a review card; the Arabic is its translation.
+			U.send('saveSentence', Object.assign({ text: c.en.english, ar: c.selected ? c.word : c.sentence }, c.source || {})).then(function () {
+				c.saved = true; c.msg = 'You\'ll find it in your review cards.'; c.bad = false;
+				if (cur === c) renderAr();
+			}, function (err) { c.msg = U.errText(err); c.bad = true; if (cur === c) renderAr(); });
+		}
 	}
 
 	function hideSoon(ms) {
@@ -481,6 +561,7 @@
 
 	window.LensCard = {
 		show: show,
+		showAr: showAr,
 		hide: hide,
 		hideSoon: hideSoon,
 		isOpen: function () { return !!cur; },

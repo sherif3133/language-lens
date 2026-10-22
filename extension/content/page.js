@@ -10,7 +10,7 @@
 	var PAUSED = false;
 	chrome.storage.local.get('pausedSites', function (o) { PAUSED = (o.pausedSites || []).indexOf(location.origin) >= 0; });
 	var U = window.LensUI, Card = window.LensCard;
-	var WORDCH = /[A-Za-z'’-]/;
+	var WORDCH = /[A-Za-z'’-]/, ARCH = /[\u0621-\u064A\u064B-\u0652\u0670\u0671-\u06D3\u0640]/;
 
 	/* ------------------------------------------------------------ word under the mouse */
 	function caretAt(x, y) {
@@ -33,7 +33,8 @@
 	 * like "Like", "Reply", "7 comments" or a person's name above a comment. Skipped when "Skip links, titles and buttons" is on.
 	 */
 	var UI = 'a,h1,h2,h3,h4,h5,h6,button,label,nav,header,footer,aside,figcaption,summary,option,time,[role=button],[role=link],[role=menu],[role=menuitem],[role=tab],[role=navigation],[role=heading],[role=banner],[role=toolbar],[role=tooltip]';
-	var skipUi = true, shortMemo = new WeakMap();
+	var skipUi = true, shortMemo = new WeakMap(), arOn = true;
+	chrome.storage.local.get('arHover', function (o) { arOn = o.arHover !== false; });
 	chrome.storage.local.get('skipUi', function (o) { skipUi = o.skipUi !== false; });
 	function uiText(node) {
 		if (!skipUi) return false;
@@ -58,22 +59,25 @@
 		var c = caretAt(x, y);
 		if (!c || !c.node || c.node.nodeType !== 3 || skip(c.node)) return null;
 		var t = c.node.data, i = c.offset;
-		if (i >= t.length || !WORDCH.test(t[i])) {
-			if (i > 0 && WORDCH.test(t[i - 1])) i--;
+		// An Arabic word works too: it gets its English (see Card.showAr).
+		var CH = (i < t.length && ARCH.test(t[i])) || (i > 0 && !WORDCH.test(t[i] || '') && ARCH.test(t[i - 1])) ? ARCH : WORDCH;
+		if (i >= t.length || !CH.test(t[i])) {
+			if (i > 0 && CH.test(t[i - 1])) i--;
 			else return null;
 		}
 		var a = i, b = i;
-		while (a > 0 && WORDCH.test(t[a - 1])) a--;
-		while (b < t.length && WORDCH.test(t[b])) b++;
+		while (a > 0 && CH.test(t[a - 1])) a--;
+		while (b < t.length && CH.test(t[b])) b++;
 		var word = t.slice(a, b).replace(/^['’-]+|['’-]+$/g, '');
-		if (!/[A-Za-z]{2,}/.test(word)) return null;
+		var ar = CH === ARCH;
+		if (ar ? word.replace(/[\u064B-\u0652\u0640]/g, '').length < 2 : !/[A-Za-z]{2,}/.test(word)) return null;
 		var range = document.createRange();
 		range.setStart(c.node, a);
 		range.setEnd(c.node, b);
 		var rect = range.getBoundingClientRect();
 		// caretFromPoint snaps to the nearest text even in empty space: make sure we're really over it.
 		if (x < rect.left - 2 || x > rect.right + 2 || y < rect.top - 2 || y > rect.bottom + 2) return null;
-		return { word: word, rect: rect, node: c.node, start: a };
+		return { word: word, rect: rect, node: c.node, start: a, ar: ar };
 	}
 
 	function blockOf(node) {
@@ -122,6 +126,14 @@
 				lastKey = '';
 				return;
 			}
+			if (hit.ar) {
+				if (!arOn) { if (Card.isOpen()) Card.hideSoon(300); lastKey = ''; return; }
+				var akey = hit.word + '@' + Math.round(hit.rect.left) + ',' + Math.round(hit.rect.top);
+				if (akey === lastKey && Card.isOpen()) return;
+				lastKey = akey;
+				Card.showAr({ word: hit.word, rect: hit.rect, sentence: sentenceAround(hit.node, hit.start), source: { url: location.href, title: document.title } });
+				return;
+			}
 			if (looksLikeName(hit.node, hit.start, hit.word)) { if (Card.isOpen()) Card.hideSoon(300); lastKey = ''; return; } // names are not translated
 			var key = hit.word + '@' + Math.round(hit.rect.left) + ',' + Math.round(hit.rect.top);
 			if (key === lastKey && Card.isOpen()) return;
@@ -137,6 +149,13 @@
 		setTimeout(function () {
 			var sel = window.getSelection();
 			var t = sel && !sel.isCollapsed ? sel.toString().replace(/\s+/g, ' ').trim() : '';
+			if (arOn && t.length >= 2 && t.length <= 800 && (t.match(/[\u0621-\u064A]/g) || []).length > t.replace(/\s/g, '').length * 0.4 && !(sel.anchorNode && skip(sel.anchorNode))) {
+				// Arabic selected: show it in English.
+				clearTimeout(timer);
+				var ra = sel.getRangeAt(0);
+				Card.showAr({ word: t, selected: true, rect: ra.getBoundingClientRect(), sentence: t, source: { url: location.href, title: document.title } });
+				return;
+			}
 			if (t.length < (mode === 'select' ? 2 : 3) || t.length > 600 || !/[A-Za-z]{2,}/.test(t) || (sel.anchorNode && skip(sel.anchorNode))) return;
 			var r = sel.getRangeAt(0);
 			clearTimeout(timer);
@@ -363,6 +382,8 @@
 			gradeT = setTimeout(regrade, 600);
 		}
 		if (ch.skipUi) { skipUi = ch.skipUi.newValue !== false; shortMemo = new WeakMap(); clearTimeout(gradeT); lastGrade = 0; gradeT = setTimeout(regrade, 600); }
+		if (ch.arHover) arOn = ch.arHover.newValue !== false;
+		if (ch.arEnglish) { arEnglish = ch.arEnglish.newValue === true; if (arEnglish) arScan(); else arClear(); }
 		if (ch.hoverMode) mode = ch.hoverMode.newValue || 'hover';
 		if (ch.focus) {
 			focus = ch.focus.newValue || '';
@@ -370,9 +391,59 @@
 			if (focus && !hidden && !chip.classList.contains('on')) regrade();
 		}
 	});
+	/* ------------------------------------------------------------ English under Arabic text (opt-in) */
+	// Posts and comments written in Arabic get a small English line under them, so the page stays in English.
+	var arEnglish = false, arDone = new WeakSet(), arQueue = [], arBusy = false, arCount = 0, arT = null, AR_MAX = 80;
+	chrome.storage.local.get('arEnglish', function (o) { arEnglish = o.arEnglish === true; if (arEnglish) setTimeout(arScan, 1200); });
+	var arSeen = new IntersectionObserver(function (es) {
+		es.forEach(function (e) { if (e.isIntersecting) { arSeen.unobserve(e.target); arQueue.push(e.target); } });
+		clearTimeout(arT); arT = setTimeout(arPump, 300);
+	}, { rootMargin: '300px' });
+	function arScan() {
+		if (!arEnglish || PAUSED || !document.body) return;
+		var tw = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, {
+			acceptNode: function (n) {
+				var p = n.parentElement;
+				if (!p || (n.data.match(/[\u0621-\u064A]/g) || []).length < 6 || p.closest(SKIP) || p.closest('sawa-lens-en,[aria-hidden="true"]')) return NodeFilter.FILTER_REJECT;
+				return NodeFilter.FILTER_ACCEPT;
+			}
+		});
+		var n;
+		while ((n = tw.nextNode()) && arCount < AR_MAX) {
+			var b = blockOf(n);
+			if (!b || b === document.body || arDone.has(b)) continue;
+			var txt = (b.textContent || '').replace(/\s+/g, ' ').trim();
+			var arN = (txt.match(/[\u0621-\u064A]/g) || []).length;
+			if (txt.length > 700 || arN < txt.replace(/\s/g, '').length * 0.5) continue; // long mixed blocks: select them instead
+			arDone.add(b); arCount++;
+			arSeen.observe(b);
+		}
+	}
+	function arPump() {
+		if (arBusy || !arQueue.length || !arEnglish) return;
+		arBusy = true;
+		var batch = arQueue.splice(0, 10);
+		U.send('toEnglishMany', { texts: batch.map(function (b) { return (b.textContent || '').replace(/\s+/g, ' ').trim(); }) }).then(function (r) {
+			batch.forEach(function (b, i) {
+				var en = r.english[i];
+				if (!en || !b.isConnected) return;
+				var x = document.createElement('sawa-lens-en');
+				x.setAttribute('dir', 'ltr');
+				x.style.cssText = 'display:block;margin:4px 0 2px;padding:4px 8px;border-left:3px solid #FDE68A;font-size:.92em;line-height:1.45;opacity:.9;text-align:left;unicode-bidi:isolate';
+				x.textContent = en;
+				b.appendChild(x);
+			});
+		}, function (err) { flash(U.errText(err)); arEnglish = false; }).then(function () { arBusy = false; if (arQueue.length) arPump(); });
+	}
+	function arClear() {
+		document.querySelectorAll('sawa-lens-en').forEach(function (x) { x.remove(); });
+		arDone = new WeakSet(); arQueue = []; arCount = 0;
+	}
+
 	// Feeds and single-page sites change their text: re-grade after things settle.
 	new MutationObserver(function (muts) {
-		if (muts.every(function (m) { return m.target.closest && m.target.closest('sawa-lens-card,sawa-lens-page,sawa-lens-select'); })) return;
+		if (muts.every(function (m) { return m.target.closest && m.target.closest('sawa-lens-card,sawa-lens-page,sawa-lens-select,sawa-lens-en') || [].every.call(m.addedNodes, function (x) { return x.tagName === 'SAWA-LENS-EN'; }) && m.addedNodes.length; })) return;
+		if (arEnglish) { clearTimeout(arScan.t); arScan.t = setTimeout(arScan, 1500); }
 		clearTimeout(gradeT);
 		gradeT = setTimeout(regrade, 2500);
 	}).observe(document.body, { childList: true, subtree: true, characterData: true });
