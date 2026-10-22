@@ -41,10 +41,10 @@ with the video; the video's own sound goes through Web Audio and is switched off
 Left / ideas:
 - Better quality on strong computers: UVR MDX-Net Voc_FT (SDR 8.9 vs 5.1 for Spleeter on MUSDB clips, 67 MB)
   is ~1.0× real time on a Ryzen 5 5500U iGPU, too slow there. Offer it when the measured speed allows.
-  Check the UVR models' licence first (Spleeter is MIT).
+  Used for ⏬ Prepared songs (0.5.7). The UVR project is MIT but the weights carry no licence of their own: check before a public release.
 - Phones: no solution yet (no extension WebGPU on m.youtube.com, battery). Maybe server-side later (legal check first).
 - Only Opus/WebM audio (what Chrome gets); AAC/MP4 videos say "not supported yet".
 - BUILT in 0.5.2: 🎵 Music: lyrics in the transcript (LRCLIB first, lined up with the video's captions; switch to the video's subtitles; ±0.5 s nudge), Genius link, 💡 explain a line (English default / عربي).
 - BUILT in 0.5.6: 🎮 Lyrics game (content/game.js): one missing word per line (Learning words first), Choose (4 options) or Type it, the video waits at the end of each line, points + streak, missed words → + Learning. Idea: XP in the Sawa Tracker for finished songs.
-- Prepare songs in advance (album/playlist) with the better Voc_FT model, kept only on the student's computer: asked, not decided yet.
+- BUILT in 0.5.7: ⏬ Prepared songs (vocals/prepare.html): a song or a whole playlist is taken out of its music ahead of time with Voc_FT (WebGPU; Spleeter without a graphics chip), the voice is kept on the student's computer (IndexedDB, Opus, deleted after 30 days), the original sound is not kept. Each song's sound comes from a muted background tab playing it at double speed. Vocals only then starts at once. Ideas: a whole album in one click from the popup; a smaller/faster best model; share nothing (keep it that way).
 - Legal: separation is local and personal, nothing stored or shared, but it is a grey area. Decide before a public release.

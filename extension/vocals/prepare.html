@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Prepared songs · Language Lens</title>
+<link rel="stylesheet" href="../popup/popup.css">
+<style>
+body { width: auto; max-width: 760px; margin: 0 auto; background: #F6F5F3; }
+main { background: #fff; min-height: 100vh; }
+.intro { padding: 16px; }
+.intro p { color: #57534E; margin-top: 6px; }
+.add { display: flex; gap: 8px; padding: 0 16px 16px; }
+.add input { flex: 1; font: 14px 'IBM Plex Sans', sans-serif; padding: 10px 12px; border: 1px solid #E6E3DF; border-radius: 10px; }
+.note { margin: 0 16px 12px; padding: 10px 12px; border-radius: 10px; background: #FFFBEB; border: 1px solid #FDE68A; font-size: 13px; }
+.songs { list-style: none; margin: 0; padding: 0; border-top: 1px solid #E6E3DF; }
+.songs li { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-bottom: 1px solid #E6E3DF; }
+.songs .tt { flex: 1; min-width: 0; }
+.songs .tt b { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.songs .st { font-size: 13px; color: #57534E; }
+.songs .st.ok { color: #047857; }
+.songs .st.bad { color: #B91C1C; }
+.bar2 { height: 6px; border-radius: 99px; background: #EFEDEA; overflow: hidden; margin-top: 6px; }
+.bar2 i { display: block; height: 100%; background: #0F0F10; }
+.empty { padding: 24px 16px; color: #8A8584; }
+.foot2 { padding: 16px; font-size: 12.5px; color: #8A8584; }
+</style>
+</head>
+<body>
+<header class="head"><div class="brand"><span class="wm">Language Lens</span><span class="by">Sawa English</span></div></header>
+<main>
+	<div class="intro">
+		<h1>⏬ Prepared songs</h1>
+		<p>Language Lens takes the music out of these songs ahead of time, with its best voice model. Then, when you play one on YouTube with 🎤 Vocals only on, the voice starts at once and has less music in it.</p>
+	</div>
+	<div class="add"><input id="link" placeholder="Paste a YouTube song or playlist link" autocomplete="off"><button class="btn sm" id="addBtn">Add</button></div>
+	<div class="note" id="note">Keep this tab open while songs are being prepared. Each song opens for a moment in a small muted window, then closes by itself.</div>
+	<ul class="songs" id="songs"></ul>
+	<div class="foot2" id="foot"></div>
+</main>
+<script src="../lib/ort/ort.webgpu.min.js"></script>
+<script src="sep.js"></script>
+<script src="audio.js"></script>
+<script src="prepare.js"></script>
+</body>
+</html>

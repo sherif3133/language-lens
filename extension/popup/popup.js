@@ -80,7 +80,7 @@ async function render() {
 	const hmode = (await chrome.storage.local.get('hoverMode')).hoverMode || 'hover';
 	const proofOn = (await chrome.storage.local.get('proofOn')).proofOn !== false;
 	const skipUi = (await chrome.storage.local.get('skipUi')).skipUi !== false;
-	const arS = await chrome.storage.local.get(['arHover', 'arEnglish']);
+	const arS = await chrome.storage.local.get(['arHover', 'arEnglish', 'hideArabicYT']);
 	// Vocals only: computers only (phones and touch screens don't get it), and not where it was too slow.
 	const vo = await chrome.storage.local.get(['vocalsOnly', 'vocalsSlow', 'songLyrics']);
 	const computer = !matchMedia('(hover: none)').matches && !/Android|iPhone|iPad|Mobile/i.test(navigator.userAgent);
@@ -147,13 +147,13 @@ async function render() {
 			${toggle('showTrans', 'Arabic translation line', 'YouTube\'s auto-translation, under the captions.', st.showTrans !== false)}
 			${toggle('blurCaptions', 'Blur captions until hover', 'Listen first, then check.', !!st.blurCaptions)}
 			${toggle('blurTrans', 'Blur the translation', 'Hover over it, or tap it on a phone, to read it.', !!st.blurTrans)}
-			${toggle('maskSwears', 'Mask swear words', 'Shows f*** in captions and the transcript. Each video still gets a content check.', !!st.maskSwears)}
 			<p class="hint">Hotkeys: <kbd>A</kbd> previous · <kbd>S</kbd> repeat · <kbd>D</kbd> next · <kbd>Q</kbd> auto-pause. Drag the ⋮⋮ grip to move the captions.</p>
 		</div>
 		<div class="sec">
 			<div class="label">🎵 Music</div>
 			${toggle('songlyrics', 'Lyrics for songs', 'On YouTube songs, the transcript shows the lyrics (from the video, or LRCLIB) with a link to Genius. Click 💡 on a line to have it explained.', vo.songLyrics !== false)}
 			${computer ? (vo.vocalsSlow ? '<p class="hint">🎤 Vocals only is off: this computer was too slow for it.</p>' : toggle('vocalsonly', '🎤 Vocals only (test)', 'On songs: hear only the singer’s voice. The music is removed on your computer by an AI model (39 MB download, once).', vo.vocalsOnly === true)) : ''}
+			${computer && !vo.vocalsSlow ? '<div class="row"><div><div class="t">⏬ Prepared songs</div><div class="d">Take the music out ahead of time with the best voice model: better voice, starts at once.</div></div><button class="btn sm ghost" id="prepared">Open</button></div>' : ''}
 		</div>
 		<div class="sec">
 			<div class="label">Focus</div>
@@ -161,6 +161,7 @@ async function render() {
 			<p class="hint">Highlights a grammar point or a sound everywhere, so you notice it.</p>
 			<div style="margin-top:12px"><div class="label">Show meanings on websites</div><select id="hmode" class="fsel"><option value="hover" ${hmode === 'hover' ? 'selected' : ''}>When I hover over a word</option><option value="alt" ${hmode === 'alt' ? 'selected' : ''}>When I hover and hold Alt</option><option value="select" ${hmode === 'select' ? 'selected' : ''}>Only when I select text</option></select><p class="hint">Select or double-click a word for its meaning; select more words to translate or save them.</p></div>
 			<div style="margin-top:12px">${toggle('proof', 'Check my writing on websites', 'Red wavy line = spelling, blue = grammar. Click it to see the fix.', proofOn)}</div>
+			<div style="margin-top:12px">${toggle('hidearyt', 'Hide Arabic videos on YouTube', 'Your Home, Up next and Shorts fill with English; Arabic Shorts are skipped. Search still shows everything.', arS.hideArabicYT === true)}</div>
 			<div style="margin-top:12px">${toggle('arhover', 'Arabic → English', 'Hover an Arabic word for its English. Select Arabic text to read it in English.', arS.arHover !== false)}</div>
 			<div style="margin-top:12px">${toggle('arenglish', 'English under Arabic posts', 'Adds an English line under Arabic posts and comments, so you keep reading English. Uses AI.', arS.arEnglish === true)}</div>
 			<div style="margin-top:12px">${toggle('skipui', 'Skip links, titles and buttons', 'No colours or pop-ups on links, headlines, menus, names and labels like Like · Reply · Share. Select them if you need a meaning.', skipUi)}</div>
@@ -197,15 +198,16 @@ async function render() {
 	pref('showTrans', 'showTrans');
 	pref('blurCaptions', 'blurCaptions');
 	pref('blurTrans', 'blurTrans');
-	pref('maskSwears', 'maskSwears');
 	pref('colors', 'colorPages');
 	pref('pause', 'pauseOnHover');
 	$('#focus').onchange = (e) => send('setPref', { key: 'focus', value: e.target.value });
 	const pf = $('#proof'); if (pf) pf.onchange = () => chrome.storage.local.set({ proofOn: pf.checked });
 	const lc = $('#lcap'); if (lc) lc.onchange = () => send('setLearnCap', { n: +lc.value });
+	const hy = $('#hidearyt'); if (hy) hy.onchange = () => chrome.storage.local.set({ hideArabicYT: hy.checked });
 	const ah = $('#arhover'); if (ah) ah.onchange = () => chrome.storage.local.set({ arHover: ah.checked });
 	const ae = $('#arenglish'); if (ae) ae.onchange = () => chrome.storage.local.set({ arEnglish: ae.checked });
 	const sl = $('#songlyrics'); if (sl) sl.onchange = () => chrome.storage.local.set({ songLyrics: sl.checked });
+	const pr = $('#prepared'); if (pr) pr.onclick = () => chrome.tabs.create({ url: chrome.runtime.getURL('vocals/prepare.html') });
 	const vx = $('#vocalsonly'); if (vx) vx.onchange = () => chrome.storage.local.set({ vocalsOnly: vx.checked });
 	const su = $('#skipui'); if (su) su.onchange = () => chrome.storage.local.set({ skipUi: su.checked });
 	const hm = $('#hmode'); if (hm) hm.onchange = (e) => chrome.storage.local.set({ hoverMode: e.target.value });

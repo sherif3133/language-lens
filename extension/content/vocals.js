@@ -69,7 +69,11 @@
 	}
 
 	/* ------------------------------------------------------------ the engine page */
-	function engine() {
+	function videoId() {
+		var m = location.search.match(/[?&]v=([\w-]{11})/);
+		return m ? m[1] : '';
+	}
+	function engine(onReady) {
 		if (V.frame && V.frame.isConnected) return;
 		var f = document.createElement('iframe');
 		f.src = chrome.runtime.getURL('vocals/vocals.html');
@@ -81,7 +85,9 @@
 			V.port = ch.port1;
 			V.port.onmessage = onEngine;
 			f.contentWindow.postMessage({ sawaVocals: 'port' }, '*', [ch.port2]);
-			V.port.postMessage({ t: 'start' });
+			V.vid = videoId();
+			V.port.postMessage({ t: 'video', id: V.vid }); // a song prepared ahead plays from this computer at once
+			if (onReady) onReady(); else V.port.postMessage({ t: 'start' });
 			window.postMessage({ source: 'sawa-lens-vocals', type: 'arm' }, location.origin);
 		});
 		(document.body || document.documentElement).appendChild(f);
@@ -110,12 +116,14 @@
 	function onEngine(e) {
 		var m = e.data;
 		if (m.t === 'win') {
-			var b = V.ctx.createBuffer(2, m.L.length, 44100);
+			var sr = m.sr || 44100, b = V.ctx.createBuffer(2, m.L.length, sr);
 			b.copyToChannel(m.L, 0); b.copyToChannel(m.R, 1);
-			V.wins[m.k] = { k: m.k, start: m.start, dur: m.L.length / 44100, buf: b, node: null };
+			V.wins[m.k] = { k: m.k, start: m.start, dur: m.L.length / sr, buf: b, node: null };
 			V.backend = m.backend; V.rtf = m.rtf;
 			log('win ' + m.k + ' @' + m.start.toFixed(2) + ' ' + m.ms + 'ms rtf ' + m.rtf.toFixed(3) + ' ' + m.backend);
 			tick();
+		} else if (m.t === 'cover' || m.t === 'saved') {
+			if (V.capture) V.capture(m);
 		} else if (m.t === 'eta') {
 			V.eta = m.sec;
 			if (V.waiting) show('preparing');
@@ -150,10 +158,15 @@
 	}
 	function adShowing() { return !!document.querySelector('#movie_player.ad-showing'); }
 	function tick() {
-		if (!V.on) return;
+		if (!V.on || CAPTURE) return;
 		var v = useVideo();
 		if (!v || !V.ctx) return;
 		var t = v.currentTime, now = performance.now();
+		if (V.port && V.vid !== videoId()) {
+			V.vid = videoId();
+			stopAll(); V.wins = {};
+			V.port.postMessage({ t: 'video', id: V.vid });
+		}
 		if (V.port && (now - V.posAt > 250)) {
 			V.posAt = now;
 			V.port.postMessage({ t: 'pos', time: t, playing: !v.paused, dur: isFinite(v.duration) ? v.duration : 0 });
@@ -273,7 +286,7 @@
 			V.badge.style.cssText = 'position:absolute;top:12px;left:12px;z-index:61;background:rgba(15,15,16,.86);color:#fff;border-radius:999px;padding:6px 12px;font:600 13px/1.2 ' + FONT + ';pointer-events:none;display:none';
 			player.appendChild(V.badge);
 		}
-		var msg = V.on || V.state === 'error' ? '🎤 Vocals only' + (V.text ? ' · ' + V.text : '') : '';
+		var msg = V.on || CAPTURE || V.state === 'error' ? '🎤 Vocals only' + (V.text ? ' · ' + V.text : '') : '';
 		V.badge.textContent = msg;
 		V.badge.style.display = msg ? '' : 'none';
 		if (V.state === 'error') { clearTimeout(V.errT); V.errT = setTimeout(function () { if (V.state === 'error') show('off'); }, 8000); }
@@ -282,14 +295,77 @@
 	try {
 		chrome.storage.local.get(['vocalsOnly', 'vocalsSlow'], function (o) {
 			V.slow = !!o.vocalsSlow;
-			if (o.vocalsOnly && CAN && !V.slow) setTimeout(function () { set(true); }, 1500);
+			if (o.vocalsOnly && CAN && !V.slow && !CAPTURE) setTimeout(function () { set(true); }, 1500);
 		});
 		chrome.storage.onChanged.addListener(function (ch) {
 			if (ch.vocalsOnly && !!ch.vocalsOnly.newValue !== V.on) set(ch.vocalsOnly.newValue);
 		});
 	} catch (e) { /* ignore */ }
 
+	/* ------------------------------------------------------------ preparing songs ahead (vocals/prepare.html) */
+	/** Add songs [{id, title}] to the list to prepare, and open the Prepared songs page. */
+	function prepare(songs) {
+		chrome.storage.local.get('vocalsQueue', function (o) {
+			var q = o.vocalsQueue || [], have = {};
+			q.forEach(function (x) { have[x.id] = 1; });
+			songs.forEach(function (x) { if (x.id && !have[x.id]) { have[x.id] = 1; q.push({ id: x.id, title: x.title || '', addedAt: Date.now() }); } });
+			chrome.storage.local.set({ vocalsQueue: q }, function () { window.open(chrome.runtime.getURL('vocals/prepare.html'), '_blank'); });
+		});
+	}
+	/** The songs of the playlist open next to the video. */
+	function playlist() {
+		var out = [], seen = {};
+		document.querySelectorAll('ytd-playlist-panel-renderer #items ytd-playlist-panel-video-renderer').forEach(function (r) {
+			var a = r.querySelector('a[href*="v="]'), m = a && a.getAttribute('href').match(/[?&]v=([\w-]{11})/), t = r.querySelector('#video-title');
+			if (m && !seen[m[1]]) { seen[m[1]] = 1; out.push({ id: m[1], title: t ? t.textContent.trim() : '' }); }
+		});
+		return out;
+	}
+	/** Capture mode: this muted background tab was opened by the Prepared songs page to collect one song's sound.
+	    The video plays at double speed until YouTube has sent the whole song, then the sound is kept for that page.
+	    Ads play as they are (the tab is muted). */
+	var CAPTURE = CAN && (/[?&]sawa_prepare=1/.test(location.search) || sessionStorage.getItem('sawaPrepare') === '1');
+	if (CAPTURE) {
+		sessionStorage.setItem('sawaPrepare', '1');
+		var cap = { saving: false, done: false, started: 0 };
+		V.capture = function (m) {
+			if (m.t === 'cover' && m.complete && !cap.saving) { cap.saving = true; V.port.postMessage({ t: 'save' }); show('playing', 'Saving the song…'); }
+			if (m.t === 'saved') {
+				cap.done = !!m.ok;
+				var vv = document.querySelector('#movie_player video');
+				if (vv && cap.muted) { vv.pause(); vv.muted = cap.wasMuted; } // YouTube remembers mute: leave it as the student had it
+				show(m.ok ? 'playing' : 'error', m.ok ? '⏬ Song ready for the Prepared songs page ✓' : 'Could not keep this song: ' + (m.msg || ''));
+			}
+		};
+		var capTick = setInterval(function () {
+			var v = document.querySelector('#movie_player video');
+			if (!v || !(v.duration > 0)) return;
+			if (!V.frame) {
+				engine(function () { V.port.postMessage({ t: 'capture', id: videoId(), title: document.title.replace(/ - YouTube$/, '') }); });
+				show('playing', '⏬ Getting this song for Vocals only (Prepared songs). This window closes by itself.');
+			}
+			if (cap.done) { clearInterval(capTick); v.pause(); return; }
+			if (adShowing()) return;
+			if (!cap.started) { cap.started = Date.now(); if (v.currentTime > 1) v.currentTime = 0; }
+			// browsers only start videos by themselves when muted (the window is muted too)
+			if (!cap.muted) { cap.muted = true; cap.wasMuted = v.muted; }
+			if (!cap.done) v.muted = true;
+			if (v.paused) v.play().catch(function () { /* */ });
+			if (v.playbackRate !== 2) v.playbackRate = 2;
+			if (V.port) {
+				V.port.postMessage({ t: 'pos', time: v.currentTime, playing: !v.paused, dur: v.duration });
+				V.port.postMessage({ t: 'cover?' });
+			}
+			// played to the end but a piece is missing: go back to the start of the gap
+			if (v.ended && !cap.saving) v.currentTime = 0;
+		}, 1000);
+	}
+
 	window.LensVocals = {
+		/** Prepare songs ahead (better voice, kept on this computer): this song, or the whole playlist. */
+		prepare: prepare,
+		playlist: playlist,
+		capturing: function () { return CAPTURE; },
 		/** Show the button? Computers only, and not on computers that were too slow before. */
 		supported: function () { return CAN && !V.slow; },
 		toggle: toggle,

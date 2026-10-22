@@ -31,7 +31,7 @@
 		'.tr{font:500 clamp(14px,1.8vw,21px)/1.5 ' + AR + ';direction:rtl;color:#E6E3DF}' +
 		':host(.blur-en) .line.en{filter:blur(7px)}:host(.blur-en) .line.en:hover{filter:none}' +
 		':host(.blur-tr) .line.tr{filter:blur(6px);pointer-events:auto;cursor:pointer}:host(.blur-tr) .line.tr:hover,:host(.blur-tr) .line.tr.peek{filter:none}' +
-		':host(.no-tr) .line.tr{display:none}.line.snd{font-size:.7em;color:#FDE68A;letter-spacing:.02em;cursor:help;pointer-events:auto}.line.snd:empty{display:none}.no-snd .line.snd{display:none}.box{position:relative}.sndtip{position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%);width:min(520px,90vw);background:#fff;color:#0F0F10;border-radius:12px;padding:10px 14px;font:500 14px/1.45 ' + FONT + ';text-align:left;display:none;box-shadow:0 8px 24px rgba(0,0,0,.3);pointer-events:auto}.sndtip.on{display:block}.sndtip ul{margin:6px 0 0;padding-left:18px}.lensmenu{position:absolute;right:12px;bottom:60px;width:270px;background:rgba(15,15,16,.94);color:#fff;border-radius:12px;padding:10px;display:none;flex-direction:column;gap:6px;pointer-events:auto;font:500 13px/1.3 ' + FONT + '}.lensmenu.on{display:flex}.lensmenu .lmmusic{display:flex;flex-direction:column;gap:6px}.lensmenu .lmmusic[hidden],.lensmenu a.gen[hidden]{display:none}.lensmenu a.t{text-decoration:none;box-sizing:border-box}.lensmenu .t{display:flex;justify-content:space-between;align-items:center;width:100%;border-radius:8px;text-align:left}.lensmenu .lmh{font:700 11px/1 ' + FONT + ';letter-spacing:.06em;text-transform:uppercase;color:#FDE68A;margin-top:4px}.lensmenu .menu{position:static;display:block;background:transparent;color:#fff;padding:0;min-width:0}.lensmenu .menu label{display:flex;gap:8px;align-items:center;padding:4px 2px}' +
+		':host(.no-tr) .line.tr{display:none}.line.snd{font-size:.7em;color:#FDE68A;letter-spacing:.02em;cursor:help;pointer-events:auto}.line.snd:empty{display:none}.no-snd .line.snd{display:none}.box{position:relative}.sndtip{position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%);width:min(520px,90vw);background:#fff;color:#0F0F10;border-radius:12px;padding:10px 14px;font:500 14px/1.45 ' + FONT + ';text-align:left;display:none;box-shadow:0 8px 24px rgba(0,0,0,.3);pointer-events:auto}.sndtip.on{display:block}.sndtip ul{margin:6px 0 0;padding-left:18px}.lensmenu{position:absolute;right:12px;bottom:60px;width:270px;background:rgba(15,15,16,.94);color:#fff;border-radius:12px;padding:10px;display:none;flex-direction:column;gap:6px;pointer-events:auto;font:500 13px/1.3 ' + FONT + '}.lensmenu.on{display:flex}.lensmenu{max-height:calc(100% - 72px);overflow-y:auto;overscroll-behavior:contain}.lensmenu .lmmusic{display:flex;flex-direction:column;gap:6px}.lensmenu .lmmusic[hidden],.lensmenu a.gen[hidden]{display:none}.lensmenu a.t{text-decoration:none;box-sizing:border-box}.lensmenu .t{display:flex;justify-content:space-between;align-items:center;width:100%;border-radius:8px;text-align:left}.lensmenu .lmh{font:700 11px/1 ' + FONT + ';letter-spacing:.06em;text-transform:uppercase;color:#FDE68A;margin-top:4px}.lensmenu .menu{position:static;display:block;background:transparent;color:#fff;padding:0;min-width:0}.lensmenu .menu label{display:flex;gap:10px;align-items:center;justify-content:space-between;padding:6px 2px;min-height:36px;cursor:pointer}.lensmenu input[type=checkbox]{-webkit-appearance:none;appearance:none;order:2;margin:0 0 0 auto;flex:none;width:36px;height:20px;border-radius:99px;background:#8A8584;position:relative;cursor:pointer;transition:background .15s}.lensmenu input[type=checkbox]::after{content:"";position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:#fff;transition:transform .15s;box-shadow:0 1px 2px rgba(0,0,0,.3)}.lensmenu input[type=checkbox]:checked{background:#22C55E}.lensmenu input[type=checkbox]:checked::after{transform:translateX(16px)}.lensmenu input[type=checkbox]:focus-visible{outline:2px solid #FDE68A;outline-offset:2px}' +
 		'.wd{cursor:pointer;border-radius:4px;padding:0 1px}' +
 		'.wd:hover{background:#fff;color:#0F0F10;text-decoration:none}' +
 		':host(.colors) .wd.next{background:rgba(52,211,153,.32);border-radius:4px;box-shadow:0 0 0 2px rgba(52,211,153,.32)}' +
@@ -43,7 +43,7 @@
 		'.t{font:600 12.5px/1 ' + FONT + ';background:rgba(15,15,16,.9);color:#fff;border:1px solid rgba(255,255,255,.25);border-radius:999px;padding:7px 11px;cursor:pointer}' +
 		'.t:hover{border-color:#fff}.t.on{background:#fff;color:#0F0F10}.t[disabled]{opacity:.6;cursor:default}.t kbd{font:600 10.5px/1 ' + FONT + ';opacity:.6;margin-left:4px}' +
 		'.menu{position:absolute;bottom:calc(100% + 8px);right:0;background:#fff;color:#0F0F10;border-radius:12px;padding:8px;font:500 13.5px/1.4 ' + FONT + ';text-align:left;display:none;min-width:220px;pointer-events:auto}' +
-		'.menu.on{display:block}.menu label{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:8px;cursor:pointer}.menu label:hover{background:#F6F5F3}' +
+		'.menu.on{display:block}.menu label{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:6px 8px;min-height:36px;border-radius:8px;cursor:pointer}.menu input[type=checkbox]{-webkit-appearance:none;appearance:none;order:2;margin:0 0 0 auto;flex:none;width:36px;height:20px;border-radius:99px;background:#8A8584;position:relative;cursor:pointer;transition:background .15s}.menu input[type=checkbox]::after{content:"";position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:#fff;transition:transform .15s;box-shadow:0 1px 2px rgba(0,0,0,.3)}.menu input[type=checkbox]:checked{background:#22C55E}.menu input[type=checkbox]:checked::after{transform:translateX(16px)}.menu input[type=checkbox]:focus-visible{outline:2px solid #FDE68A;outline-offset:2px}.menu label:hover{background:#F6F5F3}' +
 		'.chip{position:absolute;top:12px;right:12px;z-index:61;font:600 13px/1 ' + FONT + ';background:#0F0F10;color:#fff;border:1px solid rgba(255,255,255,.3);border-radius:999px;padding:8px 12px;cursor:pointer;pointer-events:auto}' +
 		'.chip b{font:800 14px/1 Changa,sans-serif;margin:0 4px}' +
 		'.chip .dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#fff;margin-right:6px;vertical-align:1px}' +
@@ -114,7 +114,7 @@
 		'.snd{margin-top:6px;padding:8px 10px;background:#F6F5F3;border-radius:8px;font-size:13px;color:#4A4847;cursor:auto}.snd b{color:#0F0F10}.snd .sl{font-weight:600;color:#0F0F10}.snd ul{margin:4px 0 0;padding-left:16px}.snd li{margin-top:3px}' +
 		'.acts{flex:none;display:flex;flex-direction:column;gap:2px}' +
 		'.rep{border:0;background:transparent;color:#8A8584;cursor:pointer;padding:3px 4px;border-radius:6px;line-height:0}' +
-		'.rep:hover{color:#0F0F10;background:#fff}.rep svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}' +
+		'.rep:hover{color:#0F0F10;background:#fff}.rep.on{color:#fff;background:#6250d6}.rep.star{font:16px/16px Arial,sans-serif;min-width:24px;min-height:22px}.rep.star.on{background:transparent;color:#EAB308}.s.looping{box-shadow:inset 3px 0 0 #6250d6}.loopnote{margin-top:6px;font-size:12px;color:#6250d6;font-weight:600}.rep svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}' +
 		'.wd{border-radius:3px;padding:0 1px}' +
 		'.wd:hover{background:#0F0F10;color:#fff;text-decoration:none}' +
 		':host(.colors) .wd.next{background:rgba(34,197,94,.2);border-radius:3px}' +
@@ -137,13 +137,12 @@
 		'<label><input type="checkbox" data-pref="blurTrans"> Blur translation until ' + HOV + '</label>' +
 		'<label><input type="checkbox" data-pref="colors"> Colour words</label>' +
 		'<label><input type="checkbox" data-pref="pauseOnHover"> Pause when I ' + HOV + ' a word</label>' +
-		'<label><input type="checkbox" data-pref="maskSwears"> Mask swear words (f***)</label>' +
 		'<label><input type="checkbox" data-pref="wordQuiz"> Quiz me on my Learning words</label>';
 
 	var REPEAT = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17 2l3 3-3 3M4 11V9a4 4 0 0 1 4-4h12M7 22l-3-3 3-3M20 13v2a4 4 0 0 1-4 4H4"/></svg>';
 	var WAVE = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h2M7 8v8M11 5v14M15 8v8M19 11v2"/></svg>';
 
-	var S = { videoId: '', cues: [], lines: null, sents: [], sentToks: null, tcues: [], cueTr: null, sentTr: null, grade: null, idx: -1, sIdx: -1, host: null, root: null, side: null, sRoot: null, video: null, pausedByUs: false, raf: 0, primed: '', stopAt: 0, follow: true, scrolledAt: 0, sounds: {} };
+	var S = { videoId: '', cues: [], lines: null, sents: [], sentToks: null, tcues: [], cueTr: null, sentTr: null, grade: null, idx: -1, sIdx: -1, host: null, root: null, side: null, sRoot: null, video: null, pausedByUs: false, raf: 0, primed: '', stopAt: 0, follow: true, scrolledAt: 0, sounds: {}, loopI: -1, savedRows: {} };
 	var prefs = { sidebar: true, colors: true, pauseOnHover: true, sideMin: false, focus: '', showTrans: true, showSound: true, blurCaptions: false, blurTrans: false, barPos: 0.12, autoPause: false, maskSwears: false, wordQuiz: true, songLyrics: true, lyricLang: 'en' };
 	var PREF_KEYS = ['sidebar', 'lensColors', 'pauseOnHover', 'sideMin', 'focus', 'showTrans', 'showSound', 'blurCaptions', 'blurTrans', 'barPos', 'autoPause', 'maskSwears', 'wordQuiz', 'songLyrics', 'explainLang'];
 	function readPrefs(o) {
@@ -158,7 +157,7 @@
 		prefs.blurTrans = !!o.blurTrans;
 		prefs.barPos = typeof o.barPos === 'number' ? o.barPos : 0.12;
 		prefs.autoPause = !!o.autoPause;
-		prefs.maskSwears = !!o.maskSwears;
+		prefs.maskSwears = false; // the option was removed
 		prefs.wordQuiz = o.wordQuiz !== false;
 		prefs.songLyrics = o.songLyrics !== false;
 		prefs.lyricLang = o.explainLang === 'ar' ? 'ar' : 'en'; // the one "Explanations" setting (popup), saved with the account
@@ -187,6 +186,7 @@
 		if (d.none) {
 			S.adv = null;
 			S.videoId = d.videoId;
+			S.savedRows = {}; S.loopI = -1; clearTimeout(S.loopT); // a new video: no loop, no saved marks
 			S.cues = [];
 			S.sents = [];
 			mount();
@@ -276,6 +276,10 @@
 			if (gen) { gen.hidden = !song; if (song) gen.href = LensMusic.genius(S.media); }
 			var gm = S.root.querySelector('.lmmusic [data-a=game]');
 			if (gm) gm.hidden = !canGame();
+			// ⏬ preparing songs ahead: computers that can do Vocals only
+			var pp = S.root.querySelector('.lmmusic [data-a=prep]'), pl = S.root.querySelector('.lmmusic [data-a=prepList]'), n = vocals && /[?&]list=/.test(location.search) ? LensVocals.playlist().length : 0;
+			if (pp) pp.hidden = !(vocals && song);
+			if (pl) { pl.hidden = n < 2; pl.textContent = '⏬ Prepare the whole playlist (' + n + ' songs)'; }
 		}
 		if (!S.sRoot) return;
 		var el = S.sRoot.querySelector('.music');
@@ -563,6 +567,8 @@
 				// Computers only (content/vocals.js decides): hear the singer without the music.
 				(window.LensVocals && LensVocals.supported() ? '<button class="t" data-a="vocals" title="Hear only the singer’s voice: the music is removed on your computer (test)">🎤 Vocals only<span class="vst"></span></button>' : '') +
 				'<button class="t" data-a="game" hidden>🎮 Lyrics game</button>' +
+				'<button class="t" data-a="prep" hidden title="Take the music out ahead of time with the best voice model (kept on this computer)">⏬ Prepare this song ahead</button>' +
+				'<button class="t" data-a="prepList" hidden>⏬ Prepare the whole playlist</button>' +
 				'<a class="t gen" target="_blank" rel="noopener" hidden>Check the lyrics on Genius ↗</a></div>' +
 				'<div class="lmh">Display</div><div class="menu on">' + OPTS + '</div></div>';
 			if (MOBILE) S.host.classList.add('mob');
@@ -608,7 +614,7 @@
 		b.title = 'Language Lens (A ◀ · S ↻ · D ▶ · Q auto-pause)';
 		b.setAttribute('aria-label', 'Language Lens');
 		b.innerHTML = '<span style="display:flex;align-items:center;justify-content:center;height:100%;font:700 15px/1 Arial,sans-serif;color:#fff">Aa</span>';
-		b.addEventListener('click', function (e) { e.stopPropagation(); S.root.querySelector('.lensmenu').classList.toggle('on'); });
+		b.addEventListener('click', function (e) { e.stopPropagation(); paintMusic(); S.root.querySelector('.lensmenu').classList.toggle('on'); });
 		bar.insertBefore(b, bar.firstChild);
 		document.addEventListener('click', function (e) { if (!e.composedPath().some(function (n) { return n === S.host || (n.classList && n.classList.contains('sawa-lens-ytbtn')); })) S.root.querySelector('.lensmenu').classList.remove('on'); });
 	}
@@ -877,7 +883,7 @@
 		return '<div class="s" data-i="' + i + '"><button class="tm" data-a="seek">' + fmt(s.start) + '</button><div class="body"><div class="tx">' +
 			U.markup(mask(s.text), S.sentToks ? S.sentToks[i] : null, S.fxSents ? S.fxSents[i] : null) + '</div>' + tr +
 			(S.sounds[i] ? soundBox(S.sounds[i]) : '') + (S.lyrExp && S.lyrExp[i] ? lyricBox(S.lyrExp[i]) : '') + '</div>' +
-			'<div class="acts"><button class="rep" data-a="once" title="Play only this sentence">' + REPEAT + '</button><button class="rep" data-a="sound" title="How it sounds in fast speech">' + WAVE + '</button>' +
+			'<div class="acts"><button class="rep' + (S.loopI === i ? ' on' : '') + '" data-a="once" title="Loop" aria-label="Loop this sentence (say it after the speaker)">' + REPEAT + '</button><button class="rep star' + (S.savedRows && S.savedRows[i] ? ' on' : '') + '" data-a="star" title="' + (S.savedRows && S.savedRows[i] ? 'Saved to your review cards' : 'Save this sentence') + '" aria-label="Save this sentence">' + (S.savedRows && S.savedRows[i] ? '★' : '☆') + '</button><button class="rep" data-a="sound" title="How it sounds in fast speech">' + WAVE + '</button>' +
 			(isSong() ? '<button class="rep" data-a="lyr" title="Explain this line">💡</button>' : '') + '</div></div>';
 	}
 
@@ -967,6 +973,15 @@
 		var row = e.target.closest('.s');
 		if (!row || !S.video) return;
 		var i = +row.dataset.i, s = S.sents[i];
+		if (b && b.dataset.a === 'star') {
+			S.savedRows = S.savedRows || {};
+			if (S.savedRows[i]) return;
+			S.savedRows[i] = 1;
+			repaintRow(i);
+			U.send('saveSentence', { text: s.text, url: 'https://www.youtube.com/watch?v=' + S.videoId + '&t=' + Math.floor(s.start / 1000), title: document.title.replace(/ - YouTube$/, ''), videoId: S.videoId, startMs: s.start, endMs: s.end })
+				.then(function () { say('Saved ★ It will come back in your review cards.'); }, function (err) { delete S.savedRows[i]; repaintRow(i); say(U.errText(err)); });
+			return;
+		}
 		if (b && b.dataset.a === 'lyr') {
 			S.lyrExp = S.lyrExp || {};
 			if (S.lyrExp[i] && S.lyrExp[i] !== 'loading') {
@@ -995,8 +1010,13 @@
 		// Selecting text to save an expression shouldn't jump the video.
 		var sel = S.sRoot.getSelection ? S.sRoot.getSelection() : window.getSelection();
 		if (sel && !sel.isCollapsed && String(sel).trim().length > 1) return;
-		if (b && b.dataset.a === 'once') play(s.start, s.end);
-		else play(s.start, 0);
+		if (b && b.dataset.a === 'once') {
+			if (S.loopI === i) return stopLoop();
+			S.loopI = i;
+			markLoop();
+			return play(s.start, s.end, true);
+		}
+		play(s.start, 0);
 	}
 
 	function repaintRow(i) {
@@ -1008,8 +1028,9 @@
 	}
 
 	/** Play from startMs; stop at endMs if given (0 = keep playing). */
-	function play(startMs, endMs) {
+	function play(startMs, endMs, keepLoop) {
 		if (!S.video) return;
+		if (!keepLoop && S.loopI >= 0) stopLoop();
 		S.stopAt = endMs || 0;
 		S.video.currentTime = Math.max(0, startMs / 1000 - 0.05);
 		var p = S.video.play();
@@ -1160,10 +1181,33 @@
 	}
 
 	function checkStop() {
-		if (S.stopAt && S.video && S.video.currentTime * 1000 >= S.stopAt - 120) {
-			S.stopAt = 0;
-			S.video.pause();
-		}
+		if (S.stopAt && S.video && S.video.currentTime * 1000 >= S.stopAt - 120) atStop();
+	}
+
+	/** Reached the end of a "play only this" sentence: stop, or in a loop, pause for the student to say it, then replay. */
+	function atStop() {
+		S.stopAt = 0;
+		S.video.pause();
+		var s = S.loopI >= 0 && S.sents[S.loopI];
+		if (!s) return;
+		clearTimeout(S.loopT);
+		S.loopT = setTimeout(function () { if (S.sents[S.loopI] === s) play(s.start, s.end, true); }, Math.min(6000, Math.max(1500, s.end - s.start + 500)));
+	}
+	/** Loop (shadowing): the sentence repeats, with a pause after each time for the student to repeat it. */
+	function stopLoop() {
+		clearTimeout(S.loopT);
+		S.loopI = -1;
+		markLoop();
+	}
+	function markLoop() {
+		if (!S.sRoot) return;
+		S.sRoot.querySelectorAll('.s').forEach(function (r) {
+			var on = +r.dataset.i === S.loopI, btn = r.querySelector('[data-a=once]'), note = r.querySelector('.loopnote');
+			r.classList.toggle('looping', on);
+			if (btn) btn.classList.toggle('on', on);
+			if (on && !note) r.querySelector('.body').insertAdjacentHTML('beforeend', '<div class="loopnote">🔁 Looping: say it after the speaker. Tap 🔁 again to stop.</div>');
+			if (!on && note) note.remove();
+		});
 	}
 
 	function tick(force) {
@@ -1177,10 +1221,7 @@
 			return;
 		}
 		var ms = S.video.currentTime * 1000;
-		if (S.stopAt && ms >= S.stopAt) {
-			S.stopAt = 0;
-			S.video.pause();
-		}
+		if (S.stopAt && ms >= S.stopAt) atStop();
 		if (Card.isOpen() && S.pausedByUs) return;
 		var i = find(S.cues, ms, 400);
 		if (i !== S.idx || force) {
@@ -1200,7 +1241,8 @@
 						row.classList.add('now');
 						if (S.follow && Date.now() - S.scrolledAt > 5000 && !Card.isOpen()) {
 							var list = S.sRoot.querySelector('.list');
-							list.scrollTo({ top: row.offsetTop - list.clientHeight / 3, behavior: 'smooth' });
+							var y = list.scrollTop + row.getBoundingClientRect().top - list.getBoundingClientRect().top;
+							list.scrollTo({ top: Math.max(0, y - list.clientHeight / 3), behavior: 'smooth' });
 						}
 					}
 				}
@@ -1377,6 +1419,10 @@
 			setPref('autoPause', !prefs.autoPause);
 		} else if (a === 'menu') {
 			S.root.querySelector('.menu').classList.toggle('on');
+		} else if (a === 'prep') {
+			LensVocals.prepare([{ id: S.videoId, title: document.title.replace(/^\(\d+\)\s*/, '').replace(/ - YouTube$/, '') }]);
+		} else if (a === 'prepList') {
+			LensVocals.prepare(LensVocals.playlist());
 		} else if (a === 'game') {
 			startGame();
 		} else if (a === 'vocals') {

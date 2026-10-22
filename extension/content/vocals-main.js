@@ -8,6 +8,8 @@
 	'use strict';
 	if (window.__sawaVocalsMain || !window.MediaSource || !window.SourceBuffer) return;
 	window.__sawaVocalsMain = true;
+	// A tab opened by the Prepared songs page: YouTube soon drops the marker from the address, so remember it for this tab.
+	try { if (/[?&]sawa_prepare=1/.test(location.search)) sessionStorage.setItem('sawaPrepare', '1'); } catch (e) { /* no storage */ }
 	var MAX = 24 * 1024 * 1024; // bytes kept per page (~20 minutes of audio)
 	var streams = []; // {id, ms, mime, chunks: [{bytes|ev}], size}
 	var nextId = 1, armed = false, sent = null; // sent: the stream being forwarded and how far

@@ -13,9 +13,10 @@ Browser extension for Chrome and Edge. Learners hover any word in YouTube captio
   - `content/vocals-main.js` + `content/vocals.js` + `vocals/`: 🎤 Vocals only (test, computers only): the singer's voice without the music, separated in the browser (`lib/ort/` = onnxruntime-web).
   - `content/music.js`: 🎵 Music: lyrics for songs (LRCLIB, lined up with the video's captions), a Genius link, and 💡 line explanations (server: `/lyric` in sawa-lens).
   - `content/game.js`: 🎮 Lyrics game (fill in the missing words while the song plays).
+  - `vocals/prepare.html` + `prepare.js` + `audio.js`: ⏬ Prepared songs: the voice taken out ahead of time with the best model and kept on this computer.
   - `popup/`: the toolbar popup.
   - `data/lexicon.json`: built word list (do not edit by hand).
-- `tools/`: scripts that build the word list and icons, and the end-to-end tests (`mobile-test.js`, `vocals-test.js`, `music-test.js`).
+- `tools/`: scripts that build the word list and icons, and the end-to-end tests (`mobile-test.js`, `vocals-test.js`, `music-test.js`, `prepare-test.js`).
 
 ## Try the beta (load unpacked)
 
@@ -44,5 +45,5 @@ node build-lexicon.js
 - Word frequencies: wordfreq data by Robyn Speer et al., CC BY-SA 4.0 (https://github.com/rspeer/wordfreq). The derived ranking extension/data/freq.json is shared under the same licence.
 - Grammar tagging: compromise (MIT), bundled in extension/lib.
 - Word forms built with compromise (MIT).
-- Vocals only: onnxruntime-web 1.30.0 (Microsoft, MIT, in extension/lib/ort). Voice model: Spleeter 2-stems by Deezer (MIT), fp16 ONNX export by sherpa-onnx (k2-fsa), downloaded once from Hugging Face at a pinned commit and checked by SHA-256.
+- Vocals only: onnxruntime-web 1.30.0 (Microsoft, MIT, in extension/lib/ort). Voice model: Spleeter 2-stems by Deezer (MIT), fp16 ONNX export by sherpa-onnx (k2-fsa); for Prepared songs UVR MDX-Net Voc_FT (UVR project, MIT; the weights state no licence), ONNX by sherpa-onnx; both downloaded once from Hugging Face at a pinned commit and checked by SHA-256.
 - Song lyrics: LRCLIB (lrclib.net), a free open database of timed lyrics; the lyrics belong to their writers. Genius is only linked.
