@@ -379,8 +379,12 @@ async function saveSentence(d) {
 async function saveExpression(d) {
 	const phrase = String(d.phrase || '').toLowerCase().replace(/[’]/g, "'").replace(/[^a-z' -]+/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 64);
 	if (phrase.split(' ').length < 2) throw new Error('Select at least two words.');
-	await mark(phrase, 'learning');
-	return saveSentence(Object.assign({}, d, { text: d.sentence || d.phrase, focus: phrase, kind: d.kind || 'phrase' }));
+	// Over today's Learning limit, the expression is still saved (it becomes one review card); it just isn't
+	// highlighted as Learning until a later day.
+	let limited = false;
+	try { await mark(phrase, 'learning'); } catch (e) { if (e.code !== 'learn_cap') throw e; limited = true; }
+	const x = await saveSentence(Object.assign({}, d, { text: d.sentence || d.phrase, focus: phrase, kind: d.kind || 'phrase' }));
+	return Object.assign({}, x, { limited });
 }
 
 let pron = null;

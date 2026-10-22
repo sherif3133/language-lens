@@ -545,7 +545,7 @@
 		if (b.dataset.a === 'sentence') {
 			U.send('saveSentence', Object.assign({ text: c.sentence || c.text }, src)).then(function () { done('Sentence saved ✓'); }, failS);
 		} else if (b.dataset.k) {
-			U.send('saveExpression', Object.assign({ phrase: c.text, sentence: c.sentence, kind: 'phrase', tag: b.dataset.k }, src)).then(function () { done('Expression saved ✓ It will be highlighted wherever you meet it.'); }, failS);
+			U.send('saveExpression', Object.assign({ phrase: c.text, sentence: c.sentence, kind: 'phrase', tag: b.dataset.k }, src)).then(function (r) { done(r && r.limited ? 'Expression saved ✓ It\'s in your review cards. You reached today\'s Learning limit, so it isn\'t highlighted yet.' : 'Expression saved ✓ It will be highlighted wherever you meet it.'); }, failS);
 		} else if (b.dataset.g) {
 			U.send('saveSentence', Object.assign({ text: c.sentence || c.text, focus: c.text, kind: 'grammar', tag: b.dataset.g }, src)).then(function () { done('Sentence saved with its grammar point ✓'); }, failS);
 		}
