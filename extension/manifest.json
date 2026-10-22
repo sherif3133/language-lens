@@ -3,7 +3,7 @@
 	"name": "Language Lens – Sawa English",
 	"short_name": "Language Lens",
 	"version": "0.4.9",
-	"description": "Learn English from YouTube and the web: meanings on hover, IPA and sounds-like, grammar and pronunciation focus, vocabulary goals and review cards. For Sawa English members.",
+	"description": "Learn English from YouTube and every website: meanings on hover, word levels, pronunciation, a writing checker and review cards.",
 	"minimum_chrome_version": "116",
 	"permissions": [
 		"storage",
