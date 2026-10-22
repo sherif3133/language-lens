@@ -63,3 +63,4 @@ p { margin: 0; }
 kbd { font: 600 11px/1 'IBM Plex Sans', sans-serif; border: 1px solid #E6E3DF; border-bottom-width: 2px; border-radius: 4px; padding: 1px 5px; }
 .lcap { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 10px; font-size: 13px; }
 .lcap select { border: 1px solid #E6E3DF; border-radius: 8px; padding: 2px 6px; font: inherit; }
+.lcap .pill { background: #FEF3C7; border-radius: 99px; padding: 2px 8px; font-size: 12px; font-weight: 700; }

@@ -1,7 +1,8 @@
 /* Language Lens: service worker.
    Owns the word list, the learner's marks, saved sentences, sign-in and sync with sawaenglish.com. */
 'use strict';
-importScripts('core/lens-core.js', 'lib/compromise.js', 'core/grammar.js', 'core/pron.js');
+// Chrome runs this as a service worker; Firefox loads the same files as a background page (see tools/build-zips.js).
+if (typeof importScripts === 'function') importScripts('core/lens-core.js', 'lib/compromise.js', 'core/grammar.js', 'core/pron.js');
 
 const DEFAULT_SERVER = 'https://sawaenglish.com';
 let lens = null;
@@ -85,8 +86,10 @@ async function curious(lemma) {
 
 /** Is there room for another new Learning word today? */
 async function learnRoom() {
-	const [d, { learnCap }] = await Promise.all([daily(), get('learnCap')]);
-	return { used: d.learning, cap: learnCap, left: Math.max(0, learnCap - d.learning) };
+	const [d, { learnCap, cards }] = await Promise.all([daily(), get(['learnCap', 'cards'])]);
+	// Signed in: the card level decides (its new cards a day + a little room; none while the waiting line is long).
+	const cap = cards ? cards.learnPerDay : learnCap;
+	return { used: d.learning, cap, left: Math.max(0, cap - d.learning), level: cards ? cards.level : 0, full: !!(cards && cards.full), catchup: !!(cards && cards.catchup), waiting: cards ? cards.waiting : 0 };
 }
 
 async function bumpLocal(kind, n) {
@@ -182,15 +185,39 @@ async function openLevelTest() {
 	return chrome.tabs.create({ url: server + '/placement/' });
 }
 
+/** Phones (Firefox for Android, Safari on iPhone, Lemur) have no sign-in window: sign in in a normal tab instead. */
+function tabLogin() {
+	return !(chrome.identity && chrome.identity.launchWebAuthFlow) || /Android|iPhone|iPad|Mobile/i.test(navigator.userAgent);
+}
+
 async function login() {
 	const { server } = await get('server');
 	const state = crypto.randomUUID();
+	if (tabLogin()) {
+		// The site sends the token back to its own "connected" page; content/connect.js hands it to us (loginTab).
+		await set({ pendingLogin: { state, t: Date.now() } });
+		const redirect = server + '/?sawa_lens=connected';
+		await chrome.tabs.create({ url: server + '/?sawa_lens=connect&redirect_uri=' + encodeURIComponent(redirect) + '&state=' + state });
+		return { pending: true };
+	}
 	const redirect = chrome.identity.getRedirectURL('lens');
 	const url = server + '/?sawa_lens=connect&redirect_uri=' + encodeURIComponent(redirect) + '&state=' + state;
 	const back = await chrome.identity.launchWebAuthFlow({ url, interactive: true });
 	const hash = new URLSearchParams(new URL(back).hash.slice(1));
 	if (hash.get('state') !== state || !/^[a-f0-9]{64}$/.test(hash.get('token') || '')) throw new Error('Sign-in did not finish. Try again.');
-	await set({ token: hash.get('token'), cursor: 0 });
+	return finishLogin(hash.get('token'));
+}
+
+/** The token from the sign-in tab: only for the sign-in this device started in the last 15 minutes. */
+async function loginTab({ token, state }) {
+	const { pendingLogin: p } = await chrome.storage.local.get('pendingLogin');
+	if (!p || p.state !== state || Date.now() - p.t > 15 * 60000 || !/^[a-f0-9]{64}$/.test(token || '')) throw new Error('Sign-in did not finish. Open Language Lens and press "Sign in" again.');
+	await chrome.storage.local.remove('pendingLogin');
+	return finishLogin(token);
+}
+
+async function finishLogin(token) {
+	await set({ token, cursor: 0 });
 	const me = await api('/me');
 	const patch = { me, progress: me.progress };
 	if (me.progress && me.progress.level) patch.level = me.progress.level;
@@ -246,7 +273,7 @@ async function sync() {
 	// Drop what was just pushed (unless it changed again meanwhile).
 	for (const w of pushWords) if (fresh.pending.words[w.lemma] && fresh.pending.words[w.lemma].t === w.t) delete fresh.pending.words[w.lemma];
 	for (const x of pushSent) if (fresh.pending.sentences[x.uuid] && fresh.pending.sentences[x.uuid].t === x.t) delete fresh.pending.sentences[x.uuid];
-	await set({ words: fresh.words, wordTs: fresh.wordTs, sentences: fresh.sentences, pending: fresh.pending, cursor: res.cursor, progress: res.progress, level: res.level || s.level });
+	await set({ words: fresh.words, wordTs: fresh.wordTs, sentences: fresh.sentences, pending: fresh.pending, cursor: res.cursor, progress: res.progress, level: res.level || s.level, cards: res.cards || null });
 	if (res.more) scheduleSync(500);
 	return res;
 }
@@ -270,7 +297,9 @@ async function mark(lemma, status, baseline, ctx) {
 	if (newLearning) {
 		const room = await learnRoom();
 		if (!room.left) {
-			const e = new Error('You added ' + room.cap + ' new Learning words today — that\'s plenty! Tap 💡 Curious to earn XP for this one instead.');
+			const e = new Error(room.catchup ? 'Catch-up time: finish your due review cards first, then you can add new Learning words again. Tap 💡 Curious to earn XP for this one.'
+				: room.full ? room.waiting + ' words are already waiting to become cards. Review every day to raise your card level and add more. Tap 💡 Curious to earn XP for this one.'
+				: 'You added ' + room.cap + ' new Learning words today — your card level\'s limit. Tap 💡 Curious to earn XP for this one instead.');
 			e.code = 'learn_cap';
 			throw e;
 		}
@@ -649,6 +678,7 @@ const handlers = {
 		return { signedIn: !!s.token, me: s.me, level: s.level, progress: s.progress, local, sites: s.sites, pauseOnHover: s.pauseOnHover, glossLang: s.glossLang, colorPages: s.colorPages, sidebar: s.sidebar, focus: s.focus, focusList: focusList(), showIPA: s.showIPA, showTrans: s.showTrans, blurCaptions: s.blurCaptions, blurTrans: s.blurTrans, maskSwears: s.maskSwears, wordQuiz: s.wordQuiz !== false };
 	},
 	login: () => login(),
+	loginTab: (d) => loginTab(d),
 	logout: () => logout(),
 	sync: () => sync(),
 	setLevel: async ({ level }) => {

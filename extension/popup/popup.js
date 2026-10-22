@@ -34,8 +34,10 @@ function signedOut(err) {
 		$('#login').disabled = true;
 		$('#login').textContent = 'Signing in…';
 		try {
-			await send('login');
-			render();
+			const r = await send('login');
+			// Phones: sign-in continues in a new tab, and this popup closes.
+			if (r && r.pending) $('#login').textContent = 'Continue in the new tab…';
+			else render();
 		} catch (e) {
 			signedOut(e.message && e.message !== 'error' ? e.message : 'Sign-in did not finish. Try again.');
 		}
@@ -111,8 +113,8 @@ async function render() {
 				<div><b>${n(dy.heard)}</b><span>🎧 words heard in videos</span></div>
 				<div><b>${n(dy.curious)}</b><span>💡 curious about</span></div>
 			</div>
-			<div class="lcap"><span>★ New Learning words today: <b>${dy.used} / ${dy.cap}</b></span>
-				<select id="lcap" title="New Learning words a day">${[20, 30, 40].map((x) => `<option ${x === dy.cap ? 'selected' : ''}>${x}</option>`).join('')}</select></div>
+			<div class="lcap"><span>★ New Learning words today: <b>${dy.used} / ${dy.cap}</b></span>${dy.level ? `<span class="pill">Card level ${dy.level}</span>` : `<select id="lcap" title="New Learning words a day">${[20, 30, 40].map((x) => `<option ${x === dy.cap ? 'selected' : ''}>${x}</option>`).join('')}</select>`}</div>
+			${dy.catchup ? '<p class="hint"><b>Catch-up time:</b> finish your due review cards, then new words open again.</p>' : dy.full ? `<p class="hint"><b>${dy.waiting} words</b> are waiting to become cards. Review every day to raise your card level.</p>` : ''}
 			<p class="hint">Hover any word you're curious about and tap <b>💡 Curious</b> for XP. It isn't added to your reviews, so you never get overwhelmed.</p>
 		</div>
 		<div class="sec">
