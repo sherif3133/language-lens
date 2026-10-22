@@ -23,7 +23,7 @@ const DEFAULTS = {
 	cursor: 0,
 	sites: [], // origins where the learner switched Lens on
 	pauseOnHover: true,
-	glossLang: 'ar', // 'ar' Arabic meanings, 'en' English definitions
+	glossLang: 'en', // 'en' English definitions (default), 'ar' Arabic meanings
 	explainLang: 'en', // "Explanations: English / العربية": notes, pronunciation tips, grammar and lyrics (saved with the account)
 	colorPages: true, // colour words on websites
 	sidebar: true, // full transcript next to YouTube videos
@@ -730,7 +730,7 @@ const handlers = {
 	},
 	setPause: async ({ on }) => set({ pauseOnHover: !!on }),
 	setPref: async ({ key, value }) => {
-		if (key === 'glossLang') return set({ glossLang: value === 'en' ? 'en' : 'ar' });
+		if (key === 'glossLang') return set({ glossLang: value === 'ar' ? 'ar' : 'en' });
 		if (key === 'explainLang') {
 			await set({ explainLang: value === 'ar' ? 'ar' : 'en', explainDirty: true });
 			scheduleSync(500); // saved with the account, so /app shows the same

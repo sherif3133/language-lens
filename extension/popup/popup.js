@@ -135,7 +135,7 @@ async function render() {
 		</div>
 		<div class="sec">
 			<div class="label">Meanings</div>
-			<div class="seg2"><button data-g="ar" aria-pressed="${st.glossLang !== 'en'}">Arabic</button><button data-g="en" aria-pressed="${st.glossLang === 'en'}">English → English</button></div>
+			<div class="seg2"><button data-g="en" aria-pressed="${st.glossLang !== 'ar'}">English → English</button><button data-g="ar" lang="ar" aria-pressed="${st.glossLang === 'ar'}">العربية</button></div>
 			<div class="label" style="margin-top:12px">Explanations</div>
 			<div class="seg2"><button data-x="en" aria-pressed="${st.explainLang !== 'ar'}">English</button><button data-x="ar" lang="ar" aria-pressed="${st.explainLang === 'ar'}">العربية</button></div>
 			<p class="hint">Notes on words, pronunciation tips, grammar and lyrics. Saved with your account, so the Sawa app uses it too.</p>

@@ -96,13 +96,13 @@
 	}
 
 	/* ------------------------------------------------------------ card */
-	var host, root, el, cur = null, hideT = null, onState = null, lang = 'ar', showIPA = true;
+	var host, root, el, cur = null, hideT = null, onState = null, lang = 'en', showIPA = true;
 	chrome.storage.local.get(['glossLang', 'showIPA'], function (o) {
-		lang = o.glossLang === 'en' ? 'en' : 'ar';
+		lang = o.glossLang === 'ar' ? 'ar' : 'en'; // English by default; Arabic when the learner chose it
 		showIPA = o.showIPA !== false;
 	});
 	chrome.storage.onChanged.addListener(function (ch) {
-		if (ch.glossLang) lang = ch.glossLang.newValue === 'en' ? 'en' : 'ar';
+		if (ch.glossLang) lang = ch.glossLang.newValue === 'ar' ? 'ar' : 'en';
 		if (ch.showIPA) showIPA = ch.showIPA.newValue !== false;
 	});
 
