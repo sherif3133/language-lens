@@ -82,7 +82,7 @@ async function render() {
 	const skipUi = (await chrome.storage.local.get('skipUi')).skipUi !== false;
 	const arS = await chrome.storage.local.get(['arHover', 'arEnglish']);
 	// Vocals only: computers only (phones and touch screens don't get it), and not where it was too slow.
-	const vo = await chrome.storage.local.get(['vocalsOnly', 'vocalsSlow', 'songLyrics', 'lyricLang']);
+	const vo = await chrome.storage.local.get(['vocalsOnly', 'vocalsSlow', 'songLyrics']);
 	const computer = !matchMedia('(hover: none)').matches && !/Android|iPhone|iPad|Mobile/i.test(navigator.userAgent);
 	const dy = await send('daily').catch(() => ({ read: 0, heard: 0, curious: 0, learning: 0, used: 0, cap: 30 }));
 	const groups = {};
@@ -153,7 +153,6 @@ async function render() {
 		<div class="sec">
 			<div class="label">🎵 Music</div>
 			${toggle('songlyrics', 'Lyrics for songs', 'On YouTube songs, the transcript shows the lyrics (from the video, or LRCLIB) with a link to Genius. Click 💡 on a line to have it explained.', vo.songLyrics !== false)}
-			<div class="row"><div><div class="t">Explain lyrics in</div></div><div class="seg2" style="min-width:160px"><button data-ll="en" aria-pressed="${vo.lyricLang !== 'ar'}">English</button><button data-ll="ar" aria-pressed="${vo.lyricLang === 'ar'}">عربي</button></div></div>
 			${computer ? (vo.vocalsSlow ? '<p class="hint">🎤 Vocals only is off: this computer was too slow for it.</p>' : toggle('vocalsonly', '🎤 Vocals only (test)', 'On songs: hear only the singer’s voice. The music is removed on your computer by an AI model (39 MB download, once).', vo.vocalsOnly === true)) : ''}
 		</div>
 		<div class="sec">
@@ -207,7 +206,6 @@ async function render() {
 	const ah = $('#arhover'); if (ah) ah.onchange = () => chrome.storage.local.set({ arHover: ah.checked });
 	const ae = $('#arenglish'); if (ae) ae.onchange = () => chrome.storage.local.set({ arEnglish: ae.checked });
 	const sl = $('#songlyrics'); if (sl) sl.onchange = () => chrome.storage.local.set({ songLyrics: sl.checked });
-	document.querySelectorAll('[data-ll]').forEach((b) => { b.onclick = () => { chrome.storage.local.set({ lyricLang: b.dataset.ll }); document.querySelectorAll('[data-ll]').forEach((x) => x.setAttribute('aria-pressed', String(x === b))); }; });
 	const vx = $('#vocalsonly'); if (vx) vx.onchange = () => chrome.storage.local.set({ vocalsOnly: vx.checked });
 	const su = $('#skipui'); if (su) su.onchange = () => chrome.storage.local.set({ skipUi: su.checked });
 	const hm = $('#hmode'); if (hm) hm.onchange = (e) => chrome.storage.local.set({ hoverMode: e.target.value });

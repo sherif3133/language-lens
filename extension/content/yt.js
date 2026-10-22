@@ -145,7 +145,7 @@
 
 	var S = { videoId: '', cues: [], lines: null, sents: [], sentToks: null, tcues: [], cueTr: null, sentTr: null, grade: null, idx: -1, sIdx: -1, host: null, root: null, side: null, sRoot: null, video: null, pausedByUs: false, raf: 0, primed: '', stopAt: 0, follow: true, scrolledAt: 0, sounds: {} };
 	var prefs = { sidebar: true, colors: true, pauseOnHover: true, sideMin: false, focus: '', showTrans: true, showSound: true, blurCaptions: false, blurTrans: false, barPos: 0.12, autoPause: false, maskSwears: false, wordQuiz: true, songLyrics: true, lyricLang: 'en' };
-	var PREF_KEYS = ['sidebar', 'lensColors', 'pauseOnHover', 'sideMin', 'focus', 'showTrans', 'showSound', 'blurCaptions', 'blurTrans', 'barPos', 'autoPause', 'maskSwears', 'wordQuiz', 'songLyrics', 'lyricLang'];
+	var PREF_KEYS = ['sidebar', 'lensColors', 'pauseOnHover', 'sideMin', 'focus', 'showTrans', 'showSound', 'blurCaptions', 'blurTrans', 'barPos', 'autoPause', 'maskSwears', 'wordQuiz', 'songLyrics', 'explainLang'];
 	function readPrefs(o) {
 		prefs.sidebar = o.sidebar !== false;
 		prefs.colors = o.lensColors !== false;
@@ -161,7 +161,7 @@
 		prefs.maskSwears = !!o.maskSwears;
 		prefs.wordQuiz = o.wordQuiz !== false;
 		prefs.songLyrics = o.songLyrics !== false;
-		prefs.lyricLang = o.lyricLang === 'ar' ? 'ar' : 'en';
+		prefs.lyricLang = o.explainLang === 'ar' ? 'ar' : 'en'; // the one "Explanations" setting (popup), saved with the account
 	}
 	chrome.storage.local.get(PREF_KEYS, function (o) {
 		readPrefs(o);
@@ -292,7 +292,7 @@
 		el.innerHTML = '<div class="mh">🎵 Music</div><div class="mr">' + U.esc(src) +
 			(S.kind === 'lyrics' ? ' <span class="nud"><button class="ib2" data-a="ly-" title="Lyrics too late: show them earlier">−0.5s</button><button class="ib2" data-a="ly+" title="Lyrics too early: show them later">+0.5s</button></span>' : '') + other + '</div>' +
 			'<div class="mr"><a class="gen" href="' + U.esc(LensMusic.genius(S.media)) + '" target="_blank" rel="noopener">Check the lyrics on Genius ↗</a>' +
-			'<span class="ll">💡 Explain lines in <button class="ib2' + (ar ? '' : ' on') + '" data-a="ll-en">English</button><button class="ib2' + (ar ? ' on' : '') + '" data-a="ll-ar">عربي</button></span></div>';
+			'<span class="ll">💡 Explanations in <button class="ib2' + (ar ? '' : ' on') + '" data-a="ll-en">English</button><button class="ib2' + (ar ? ' on' : '') + '" data-a="ll-ar">عربي</button></span></div>';
 	}
 	/** One lyric line explained: meaning, slang and idioms, the line in plain English. */
 	function lyricBox(r) {
@@ -429,6 +429,7 @@
 			reT = setTimeout(analyse, 300);
 		}
 		if (ch.words || ch.vocabTest) paintGoal();
+		if (ch.explainLang) { S.lyrExp = {}; S.cueSound = {}; S.sounds = {}; } // explained in the other language now
 		var touched = PREF_KEYS.some(function (k) { return ch[k]; });
 		if (!touched) return;
 		chrome.storage.local.get(PREF_KEYS, function (o) {
@@ -910,7 +911,7 @@
 		}
 		if (b && (b.dataset.a === 'll-en' || b.dataset.a === 'll-ar')) {
 			S.lyrExp = {};
-			setPref('lyricLang', b.dataset.a === 'll-ar' ? 'ar' : 'en');
+			U.send('setPref', { key: 'explainLang', value: b.dataset.a === 'll-ar' ? 'ar' : 'en' }).catch(function () {}); // same as the popup's "Explanations"
 			prefs.lyricLang = b.dataset.a === 'll-ar' ? 'ar' : 'en';
 			paintSide();
 			return;
