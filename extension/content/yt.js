@@ -32,7 +32,7 @@
 		'.tr{font:500 clamp(14px,1.8vw,21px)/1.5 ' + AR + ';direction:rtl;color:#E6E3DF}' +
 		':host(.blur-en) .line.en{filter:blur(7px)}:host(.blur-en) .line.en:hover{filter:none}' +
 		':host(.blur-tr) .line.tr{filter:blur(6px);pointer-events:auto;cursor:pointer}:host(.blur-tr) .line.tr:hover,:host(.blur-tr) .line.tr.peek{filter:none}' +
-		':host(.no-tr) .line.tr{display:none}.line.snd{font-size:.7em;color:#FDE68A;letter-spacing:.02em;cursor:help;pointer-events:auto}.line.snd:empty{display:none}.no-snd .line.snd{display:none}.box{position:relative}.sndtip{position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%);width:min(520px,90vw);background:#fff;color:#0F0F10;border-radius:12px;padding:10px 14px;font:500 14px/1.45 ' + FONT + ';text-align:left;display:none;box-shadow:0 8px 24px rgba(0,0,0,.3);pointer-events:auto}.sndtip.on{display:block}.sndtip ul{margin:6px 0 0;padding-left:18px}.lensmenu{position:absolute;right:12px;bottom:60px;width:270px;background:rgba(15,15,16,.94);color:#fff;border-radius:12px;padding:10px;display:none;flex-direction:column;gap:6px;pointer-events:auto;font:500 13px/1.3 ' + FONT + '}.lensmenu.on{display:flex}.lensmenu{max-height:calc(100% - 72px);overflow-y:auto;overscroll-behavior:contain}.lensmenu .lmmusic{display:flex;flex-direction:column;gap:6px}.lensmenu .lmmusic[hidden],.lensmenu a.gen[hidden]{display:none}.lensmenu a.t{text-decoration:none;box-sizing:border-box}.lensmenu .t{display:flex;justify-content:space-between;align-items:center;width:100%;border-radius:8px;text-align:left}.lensmenu .lmh{font:700 11px/1 ' + FONT + ';letter-spacing:.06em;text-transform:uppercase;color:#FDE68A;margin-top:4px}.lensmenu .menu{position:static;display:block;background:transparent;color:#fff;padding:0;min-width:0}.lensmenu .menu label{display:flex;gap:10px;align-items:center;justify-content:space-between;padding:6px 2px;min-height:36px;cursor:pointer}.lensmenu input[type=checkbox]{-webkit-appearance:none;appearance:none;order:2;margin:0 0 0 auto;flex:none;width:36px;height:20px;border-radius:99px;background:#8A8584;position:relative;cursor:pointer;transition:background .15s}.lensmenu input[type=checkbox]::after{content:"";position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:#fff;transition:transform .15s;box-shadow:0 1px 2px rgba(0,0,0,.3)}.lensmenu input[type=checkbox]:checked{background:#22C55E}.lensmenu input[type=checkbox]:checked::after{transform:translateX(16px)}.lensmenu input[type=checkbox]:focus-visible{outline:2px solid #FDE68A;outline-offset:2px}' +
+		':host(.no-en) .line.en{display:none}:host(.no-tr) .line.tr{display:none}.line.snd{font-size:.7em;color:#FDE68A;letter-spacing:.02em;cursor:help;pointer-events:auto}.line.snd:empty{display:none}.no-snd .line.snd{display:none}.box{position:relative}.sndtip{position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%);width:min(520px,90vw);background:#fff;color:#0F0F10;border-radius:12px;padding:10px 14px;font:500 14px/1.45 ' + FONT + ';text-align:left;display:none;box-shadow:0 8px 24px rgba(0,0,0,.3);pointer-events:auto}.sndtip.on{display:block}.sndtip ul{margin:6px 0 0;padding-left:18px}.lensmenu{position:absolute;right:12px;bottom:60px;width:270px;background:rgba(15,15,16,.94);color:#fff;border-radius:12px;padding:10px;display:none;flex-direction:column;gap:6px;pointer-events:auto;font:500 13px/1.3 ' + FONT + '}.lensmenu.on{display:flex}.lensmenu{max-height:calc(100% - 72px);overflow-y:auto;overscroll-behavior:contain}.lensmenu .lmmusic{display:flex;flex-direction:column;gap:6px}.lensmenu .lmmusic[hidden],.lensmenu a.gen[hidden]{display:none}.lensmenu a.t{text-decoration:none;box-sizing:border-box}.lensmenu .t{display:flex;justify-content:space-between;align-items:center;width:100%;border-radius:8px;text-align:left}.lensmenu .lmh{font:700 11px/1 ' + FONT + ';letter-spacing:.06em;text-transform:uppercase;color:#FDE68A;margin-top:4px}.lensmenu .menu{position:static;display:block;background:transparent;color:#fff;padding:0;min-width:0}.lensmenu .menu label{display:flex;gap:10px;align-items:center;justify-content:space-between;padding:6px 2px;min-height:36px;cursor:pointer}.lensmenu input[type=checkbox]{-webkit-appearance:none;appearance:none;order:2;margin:0 0 0 auto;flex:none;width:36px;height:20px;border-radius:99px;background:#8A8584;position:relative;cursor:pointer;transition:background .15s}.lensmenu input[type=checkbox]::after{content:"";position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:#fff;transition:transform .15s;box-shadow:0 1px 2px rgba(0,0,0,.3)}.lensmenu input[type=checkbox]:checked{background:#22C55E}.lensmenu input[type=checkbox]:checked::after{transform:translateX(16px)}.lensmenu input[type=checkbox]:focus-visible{outline:2px solid #FDE68A;outline-offset:2px}' +
 		'.wd{cursor:pointer;border-radius:4px;padding:0 1px}' +
 		'.wd:hover{background:#fff;color:#0F0F10;text-decoration:none}' +
 		':host(.colors) .wd.next{background:rgba(52,211,153,.32);border-radius:4px;box-shadow:0 0 0 2px rgba(52,211,153,.32)}' +
@@ -132,7 +132,8 @@
 		'.opts{display:none;padding:4px 12px 8px;border-bottom:1px solid #E6E3DF;font-size:14px}.opts.on{display:block}.opts label{display:flex;gap:10px;align-items:center;padding:7px 0}.opts input{width:18px;height:18px}';
 
 	var HOV = TOUCH ? 'tap' : 'hover';
-	var OPTS = '<label><input type="checkbox" data-pref="showTrans"> Arabic translation (2nd line)</label>' +
+	var OPTS = '<label><input type="checkbox" data-pref="showEn"> English captions (1st line)</label>' +
+		'<label><input type="checkbox" data-pref="showTrans"> Arabic translation (2nd line)</label>' +
 		'<label><input type="checkbox" data-pref="showSound"> How it sounds (3rd line)</label>' +
 		'<label><input type="checkbox" data-pref="blurCaptions"> Blur captions until ' + HOV + '</label>' +
 		'<label><input type="checkbox" data-pref="blurTrans"> Blur translation until ' + HOV + '</label>' +
@@ -144,8 +145,8 @@
 	var WAVE = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h2M7 8v8M11 5v14M15 8v8M19 11v2"/></svg>';
 
 	var S = { videoId: '', cues: [], lines: null, sents: [], sentToks: null, tcues: [], cueTr: null, sentTr: null, grade: null, idx: -1, sIdx: -1, host: null, root: null, side: null, sRoot: null, video: null, pausedByUs: false, raf: 0, primed: '', stopAt: 0, follow: true, scrolledAt: 0, sounds: {}, loopI: -1, savedRows: {} };
-	var prefs = { sidebar: true, colors: true, pauseOnHover: true, sideMin: false, focus: '', showTrans: true, showSound: true, blurCaptions: false, blurTrans: false, barPos: 0.12, autoPause: false, maskSwears: false, wordQuiz: true, songLyrics: true, lyricLang: 'en' };
-	var PREF_KEYS = ['sidebar', 'lensColors', 'pauseOnHover', 'sideMin', 'focus', 'showTrans', 'showSound', 'blurCaptions', 'blurTrans', 'barPos', 'autoPause', 'maskSwears', 'wordQuiz', 'songLyrics', 'explainLang'];
+	var prefs = { lensYT: true, showEn: true, sidebar: true, colors: true, pauseOnHover: true, sideMin: false, focus: '', showTrans: true, showSound: true, blurCaptions: false, blurTrans: false, barPos: 0.12, autoPause: false, maskSwears: false, wordQuiz: true, songLyrics: true, lyricLang: 'en' };
+	var PREF_KEYS = ['lensYT', 'showEn', 'sidebar', 'lensColors', 'pauseOnHover', 'sideMin', 'focus', 'showTrans', 'showSound', 'blurCaptions', 'blurTrans', 'barPos', 'autoPause', 'maskSwears', 'wordQuiz', 'songLyrics', 'explainLang'];
 	function readPrefs(o) {
 		prefs.sidebar = o.sidebar !== false;
 		prefs.colors = o.lensColors !== false;
@@ -153,6 +154,8 @@
 		prefs.sideMin = !!o.sideMin;
 		prefs.focus = o.focus || '';
 		prefs.showTrans = o.showTrans !== false;
+		prefs.showEn = o.showEn !== false;
+		prefs.lensYT = o.lensYT !== false; // the Lens on/off switch on the player bar
 		prefs.showSound = o.showSound !== false;
 		prefs.blurCaptions = !!o.blurCaptions;
 		prefs.blurTrans = !!o.blurTrans;
@@ -531,12 +534,17 @@
 		[S.host, S.side].forEach(function (h) {
 			if (!h) return;
 			h.classList.toggle('colors', prefs.colors);
+			h.classList.toggle('no-en', !prefs.showEn);
 			h.classList.toggle('no-tr', !prefs.showTrans);
 			h.classList.toggle('no-snd', !prefs.showSound);
 			h.classList.toggle('blur-en', prefs.blurCaptions);
 			h.classList.toggle('blur-tr', prefs.blurTrans);
 		});
 		if (S.host) {
+			S.host.style.display = prefs.lensYT ? '' : 'none';
+			if (S.host.parentNode && S.host.parentNode.classList) S.host.parentNode.classList.toggle('sawa-lens-on', prefs.lensYT);
+			var lt = document.querySelector('.sawa-lens-yttoggle');
+			if (lt) { lt.classList.toggle('off', !prefs.lensYT); lt.title = 'Language Lens: ' + (prefs.lensYT ? 'on' : 'off') + ' (click to turn ' + (prefs.lensYT ? 'off' : 'on') + ')'; lt.setAttribute('aria-pressed', String(prefs.lensYT)); }
 			var bar = S.root.querySelector('.bar');
 			bar.style.setProperty('--pos', Math.round(prefs.barPos * 1000) / 10 + '%');
 			S.root.querySelectorAll('[data-pref]').forEach(function (i) { i.checked = !!prefs[i.dataset.pref]; });
@@ -545,7 +553,7 @@
 		}
 		if (S.side) {
 			S.side.classList.toggle('min', prefs.sideMin);
-			S.side.style.display = prefs.sidebar ? '' : 'none';
+			S.side.style.display = prefs.sidebar && prefs.lensYT ? '' : 'none';
 			var cb = S.sRoot.querySelector('[data-a=colors]');
 			if (cb) cb.classList.toggle('on', prefs.colors);
 			S.sRoot.querySelectorAll('[data-pref]').forEach(function (i) { i.checked = !!prefs[i.dataset.pref]; });
@@ -671,6 +679,23 @@
 		b.innerHTML = '<span style="display:flex;align-items:center;justify-content:center;height:100%;font:700 15px/1 Arial,sans-serif;color:#fff">Aa</span>';
 		b.addEventListener('click', function (e) { e.stopPropagation(); paintMusic(); S.root.querySelector('.lensmenu').classList.toggle('on'); });
 		bar.insertBefore(b, bar.firstChild);
+		var t = document.createElement('button');
+		t.className = 'ytp-button sawa-lens-yttoggle' + (prefs.lensYT ? '' : ' off');
+		t.setAttribute('aria-label', 'Language Lens on or off');
+		t.setAttribute('aria-pressed', String(prefs.lensYT));
+		t.title = 'Language Lens: ' + (prefs.lensYT ? 'on' : 'off');
+		t.innerHTML = '<span class="sl-sw"><i></i></span>';
+		t.addEventListener('click', function (e) { e.stopPropagation(); setPref('lensYT', !prefs.lensYT); });
+		bar.insertBefore(t, bar.firstChild);
+		if (!document.getElementById('sawa-lens-yttoggle-css')) {
+			var cs = document.createElement('style');
+			cs.id = 'sawa-lens-yttoggle-css';
+			cs.textContent = '.sawa-lens-yttoggle{display:inline-flex!important;align-items:center;justify-content:center;width:52px!important}'
+				+ '.sawa-lens-yttoggle .sl-sw{position:relative;width:36px;height:20px;border-radius:99px;background:#22C55E;transition:background .15s}'
+				+ '.sawa-lens-yttoggle .sl-sw i{position:absolute;top:2px;left:18px;width:16px;height:16px;border-radius:50%;background:#fff;transition:left .15s}'
+				+ '.sawa-lens-yttoggle.off .sl-sw{background:#717171}.sawa-lens-yttoggle.off .sl-sw i{left:2px}';
+			document.documentElement.appendChild(cs);
+		}
 		document.addEventListener('click', function (e) { if (!e.composedPath().some(function (n) { return n === S.host || (n.classList && n.classList.contains('sawa-lens-ytbtn')); })) S.root.querySelector('.lensmenu').classList.remove('on'); });
 	}
 

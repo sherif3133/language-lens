@@ -144,7 +144,10 @@ async function render() {
 		<div class="sec">
 			<div class="label">YouTube</div>
 			${toggle('sidebar', 'Transcript next to the video', 'Full sentences with timestamps. Click one to play it.', st.sidebar !== false)}
-			${toggle('showTrans', 'Arabic translation line', 'YouTube\'s auto-translation, under the captions.', st.showTrans !== false)}
+			${toggle('lensYT', 'Language Lens on YouTube', 'Also on the player bar: the switch next to Aa.', st.lensYT !== false)}
+			${toggle('showEn', 'English captions (1st line)', 'Tap any word for its meaning.', st.showEn !== false)}
+			${toggle('showTrans', 'Arabic translation (2nd line)', 'YouTube\'s auto-translation, under the captions.', st.showTrans !== false)}
+			${toggle('showSound', 'How it sounds (3rd line)', 'How fast speech sounds, e.g. “wanna”.', st.showSound !== false)}
 			${toggle('blurCaptions', 'Blur captions until hover', 'Listen first, then check.', !!st.blurCaptions)}
 			${toggle('blurTrans', 'Blur the translation', 'Hover over it, or tap it on a phone, to read it.', !!st.blurTrans)}
 			<p class="hint">Hotkeys: <kbd>A</kbd> previous · <kbd>S</kbd> repeat · <kbd>D</kbd> next · <kbd>Q</kbd> auto-pause. Drag the ⋮⋮ grip to move the captions.</p>
@@ -196,6 +199,9 @@ async function render() {
 	pref('showIPA', 'showIPA');
 	pref('sidebar', 'sidebar');
 	pref('showTrans', 'showTrans');
+	pref('lensYT', 'lensYT');
+	pref('showEn', 'showEn');
+	pref('showSound', 'showSound');
 	pref('blurCaptions', 'blurCaptions');
 	pref('blurTrans', 'blurTrans');
 	pref('colors', 'colorPages');
