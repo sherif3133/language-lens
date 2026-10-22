@@ -127,6 +127,16 @@
 		ort.env.wasm.wasmPaths = chrome.runtime.getURL('lib/ort/');
 		ort.env.wasm.numThreads = 1; // extension pages here aren't cross-origin isolated: no threads
 		backend = backend || ((await hasGpu()) ? 'webgpu' : 'wasm');
+		if (backend === 'webgpu' && !ort.env.webgpu.device) {
+			// Hand onnxruntime our own GPU device: when it asks for one itself it passes powerPreference, and
+			// Chrome on Windows logs a warning each time, which shows up as "Errors" on chrome://extensions.
+			try {
+				var ad = await navigator.gpu.requestAdapter(), lim = {};
+				['maxBufferSize', 'maxStorageBufferBindingSize', 'maxComputeWorkgroupStorageSize', 'maxComputeInvocationsPerWorkgroup', 'maxComputeWorkgroupSizeX',
+					'maxComputeWorkgroupSizeY', 'maxComputeWorkgroupSizeZ', 'maxComputeWorkgroupsPerDimension', 'maxStorageBuffersPerShaderStage'].forEach(function (k) { if (k in ad.limits) lim[k] = ad.limits[k]; });
+				ort.env.webgpu.device = await ad.requestDevice({ requiredFeatures: ['shader-f16', 'subgroups'].filter(function (f) { return ad.features.has(f); }), requiredLimits: lim });
+			} catch (e) { /* onnxruntime asks for one itself */ }
+		}
 		try {
 			return { sep: await LensSep.createSeparator(ort, M.cfg, bufs, backend), backend: backend };
 		} catch (e) {
