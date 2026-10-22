@@ -44,7 +44,7 @@ const cardOpen = (page) => page.evaluate(() => {
 async function launch() {
 	const { spawn } = require('child_process');
 	const prof = path.join(require('os').tmpdir(), 'lens-mprof-' + Date.now());
-	spawn(puppeteer.executablePath(), ['--user-data-dir=' + prof, '--no-first-run', '--no-default-browser-check', '--remote-debugging-port=9334', '--headless=new', '--disable-extensions-except=' + ext, '--load-extension=' + ext, '--window-size=1400,1000', '--autoplay-policy=no-user-gesture-required', '--lang=en-US', 'about:blank'], { detached: true, stdio: 'ignore' }).unref();
+	spawn(puppeteer.executablePath(), ['--user-data-dir=' + prof, '--no-first-run', '--no-default-browser-check', '--remote-debugging-port=9334', '--headless=new', '--disable-extensions-except=' + ext, '--load-extension=' + ext, '--window-size=1400,1000', '--autoplay-policy=no-user-gesture-required', '--mute-audio', '--lang=en-US', 'about:blank'], { detached: true, stdio: 'ignore' }).unref();
 	for (let i = 0; i < 40; i++) {
 		try {
 			return await puppeteer.connect({ browserURL: 'http://127.0.0.1:9334', defaultViewport: null });

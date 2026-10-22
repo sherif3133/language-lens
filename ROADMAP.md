@@ -30,3 +30,19 @@ sign-in in a tab (`content/connect.js` + `?sawa_lens=connected` in sawa-lens), `
 - Read mode: the whole transcript as an article, with tap-for-meaning.
 - AI subtitles for videos with no captions (speech-to-text on the server, cached per video for everyone).
 - AI summary of a video before watching, in Arabic.
+
+## 🎤 Vocals only + lyrics game (songs) — TEST BUILT in 0.5.1 (2026-10-22), waiting for Sherif to listen
+
+For students who avoid musical instruments: on a YouTube song, hear only the singer's voice.
+Built (test): "🎤 Vocals only" in the player's Language Lens menu and in the popup, computers only.
+YouTube's audio bytes are copied ahead of playback (`content/vocals-main.js`), separated in a hidden
+extension page (`vocals/`: Spleeter 2-stems fp16, onnxruntime-web, WebGPU or WASM), and played in step
+with the video; the video's own sound goes through Web Audio and is switched off. `tools/vocals-test.js` checks it silently.
+Left / ideas:
+- Better quality on strong computers: UVR MDX-Net Voc_FT (SDR 8.9 vs 5.1 for Spleeter on MUSDB clips, 67 MB)
+  is ~1.0× real time on a Ryzen 5 5500U iGPU, too slow there. Offer it when the measured speed allows.
+  Check the UVR models' licence first (Spleeter is MIT).
+- Phones: no solution yet (no extension WebGPU on m.youtube.com, battery). Maybe server-side later (legal check first).
+- Only Opus/WebM audio (what Chrome gets); AAC/MP4 videos say "not supported yet".
+- Lyrics game like LingoClip: fill the missing words of the song line by line, with Vocals only as an option.
+- Legal: separation is local and personal, nothing stored or shared, but it is a grey area. Decide before a public release.

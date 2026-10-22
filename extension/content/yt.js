@@ -439,8 +439,11 @@
 				'<button class="t" data-a="autopause" title="Pause after every sentence">Auto-pause<kbd>Q</kbd></button>' +
 				'<button class="t" data-a="save">Save sentence</button>' +
 				'<button class="t" data-a="side">Transcript</button>' +
+				// Computers only (content/vocals.js decides): hear the singer without the music.
+				(window.LensVocals && LensVocals.supported() ? '<button class="t" data-a="vocals" title="Hear only the singer’s voice: the music is removed on your computer (test)">🎤 Vocals only<span class="vst"></span></button>' : '') +
 				'<div class="lmh">Display</div><div class="menu on">' + OPTS + '</div></div>';
 			if (MOBILE) S.host.classList.add('mob');
+			if (window.LensVocals) LensVocals.bindMenu(S.root);
 			player.appendChild(S.host);
 			S.root.querySelector('.line.snd').addEventListener('mouseenter', soundTip);
 			S.root.querySelector('.line.snd').addEventListener('mouseleave', function () { S.root.querySelector('.sndtip').classList.remove('on'); });
@@ -1208,6 +1211,8 @@
 			setPref('autoPause', !prefs.autoPause);
 		} else if (a === 'menu') {
 			S.root.querySelector('.menu').classList.toggle('on');
+		} else if (a === 'vocals') {
+			if (window.LensVocals) LensVocals.toggle();
 		} else if (a === 'side') {
 			chrome.storage.local.set({ sidebar: !prefs.sidebar, sideMin: false });
 		} else if (a === 'save') {

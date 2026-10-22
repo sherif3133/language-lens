@@ -10,9 +10,10 @@ Browser extension for Chrome and Edge. Learners hover any word in YouTube captio
   - `content/yt-main.js` + `content/yt.js`: the caption bar on YouTube.
   - `content/page.js`: hover and save on other websites.
   - `content/card.js`: the word card.
+  - `content/vocals-main.js` + `content/vocals.js` + `vocals/`: 🎤 Vocals only (test, computers only): the singer's voice without the music, separated in the browser (`lib/ort/` = onnxruntime-web).
   - `popup/`: the toolbar popup.
   - `data/lexicon.json`: built word list (do not edit by hand).
-- `tools/`: scripts that build the word list and icons, and the end-to-end test.
+- `tools/`: scripts that build the word list and icons, and the end-to-end tests (`mobile-test.js`, `vocals-test.js`).
 
 ## Try the beta (load unpacked)
 
@@ -41,3 +42,4 @@ node build-lexicon.js
 - Word frequencies: wordfreq data by Robyn Speer et al., CC BY-SA 4.0 (https://github.com/rspeer/wordfreq). The derived ranking extension/data/freq.json is shared under the same licence.
 - Grammar tagging: compromise (MIT), bundled in extension/lib.
 - Word forms built with compromise (MIT).
+- Vocals only: onnxruntime-web 1.30.0 (Microsoft, MIT, in extension/lib/ort). Voice model: Spleeter 2-stems by Deezer (MIT), fp16 ONNX export by sherpa-onnx (k2-fsa), downloaded once from Hugging Face at a pinned commit and checked by SHA-256.

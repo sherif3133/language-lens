@@ -81,6 +81,9 @@ async function render() {
 	const proofOn = (await chrome.storage.local.get('proofOn')).proofOn !== false;
 	const skipUi = (await chrome.storage.local.get('skipUi')).skipUi !== false;
 	const arS = await chrome.storage.local.get(['arHover', 'arEnglish']);
+	// Vocals only: computers only (phones and touch screens don't get it), and not where it was too slow.
+	const vo = await chrome.storage.local.get(['vocalsOnly', 'vocalsSlow']);
+	const computer = !matchMedia('(hover: none)').matches && !/Android|iPhone|iPad|Mobile/i.test(navigator.userAgent);
 	const dy = await send('daily').catch(() => ({ read: 0, heard: 0, curious: 0, learning: 0, used: 0, cap: 30 }));
 	const groups = {};
 	(st.focusList || []).forEach((f) => { (groups[f.group] = groups[f.group] || []).push(f); });
@@ -142,6 +145,7 @@ async function render() {
 			${toggle('blurCaptions', 'Blur captions until hover', 'Listen first, then check.', !!st.blurCaptions)}
 			${toggle('blurTrans', 'Blur translation until hover', '', !!st.blurTrans)}
 			${toggle('maskSwears', 'Mask swear words', 'Shows f*** in captions and the transcript. Each video still gets a content check.', !!st.maskSwears)}
+			${computer ? (vo.vocalsSlow ? '<p class="hint">🎤 Vocals only is off: this computer was too slow for it.</p>' : toggle('vocalsonly', '🎤 Vocals only (test)', 'On songs: hear only the singer’s voice. The music is removed on your computer by an AI model (39 MB download, once).', vo.vocalsOnly === true)) : ''}
 			<p class="hint">Hotkeys: <kbd>A</kbd> previous · <kbd>S</kbd> repeat · <kbd>D</kbd> next · <kbd>Q</kbd> auto-pause. Drag the ⋮⋮ grip to move the captions.</p>
 		</div>
 		<div class="sec">
@@ -188,6 +192,7 @@ async function render() {
 	const lc = $('#lcap'); if (lc) lc.onchange = () => send('setLearnCap', { n: +lc.value });
 	const ah = $('#arhover'); if (ah) ah.onchange = () => chrome.storage.local.set({ arHover: ah.checked });
 	const ae = $('#arenglish'); if (ae) ae.onchange = () => chrome.storage.local.set({ arEnglish: ae.checked });
+	const vx = $('#vocalsonly'); if (vx) vx.onchange = () => chrome.storage.local.set({ vocalsOnly: vx.checked });
 	const su = $('#skipui'); if (su) su.onchange = () => chrome.storage.local.set({ skipUi: su.checked });
 	const hm = $('#hmode'); if (hm) hm.onchange = (e) => chrome.storage.local.set({ hoverMode: e.target.value });
 	const test = $('#test');
