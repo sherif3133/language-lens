@@ -496,7 +496,7 @@
 			if (vid !== S.videoId || f !== prefs.focus) return;
 			S.fxCues = r[0].spans;
 			S.fxSents = r[1].spans;
-			S.fxInfo = { name: r[1].name, rule: r[1].rule, count: r[1].count };
+			S.fxInfo = { name: r[1].name, rule: r[1].rule, ruleLang: r[1].ruleLang, count: r[1].count };
 			paintSide();
 			S.idx = -1;
 			tick(true);
@@ -835,6 +835,7 @@
 		var n = S.fxInfo.count, inS = S.fxSents ? S.fxSents.filter(function (x) { return x && x.length; }).length : 0;
 		bar.querySelector('.fcount').textContent = n ? n + ' examples in ' + inS + ' sentences' : 'none in this video';
 		bar.querySelector('.rule').textContent = S.fxInfo.rule;
+		bar.querySelector('.rule').dir = S.fxInfo.ruleLang === 'ar' ? 'rtl' : 'ltr';
 	}
 
 	function soundBox(r) {
@@ -842,7 +843,7 @@
 		if (r === 'loading') return '<div class="snd">Listening closely…</div>';
 		if (r.error) return '<div class="snd" style="color:#E3262B">' + u(r.error) + '</div>';
 		return '<div class="snd"><div><b>Sounds like:</b> <span class="sl">' + u(r.soundsLike) + '</span></div>' +
-			(r.features && r.features.length ? '<ul>' + r.features.map(function (f) { return '<li><b>' + u(f.where) + '</b> · ' + u(f.feature) + ': ' + u(f.why) + '</li>'; }).join('') + '</ul>' : '') + '</div>';
+			(r.features && r.features.length ? '<ul>' + r.features.map(function (f) { return '<li><b>' + u(f.where) + '</b> · ' + u(f.feature) + (r.lang === 'ar' ? '<div dir="rtl" lang="ar" style="text-align:right;font-family:' + AR.replace(/"/g, "'") + '">' + u(f.why) + '</div>' : ': ' + u(f.why)) + '</li>'; }).join('') + '</ul>' : '') + '</div>';
 	}
 
 	function rowHtml(s, i) {

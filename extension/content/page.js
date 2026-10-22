@@ -338,7 +338,7 @@
 					}
 				});
 			});
-			focusInfo = { name: r.name, rule: r.rule, count: r.count };
+			focusInfo = { name: r.name, rule: r.rule, ruleLang: r.ruleLang, count: r.count };
 			if (ranges.length) CSS.highlights.set('lens-focus', new Highlight(...ranges));
 			if (panel.classList.contains('on') && grade) paint();
 		}, function () {});
@@ -358,7 +358,7 @@
 		var u = U.esc, g = grade;
 		panel.innerHTML = '<h3>New words on this page</h3><div class="sub">You know ' + g.percent + '% of the words (your level: ' + U.LEVEL_NAMES[(g.level || 2) - 1] + ').</div>' +
 			(focusList ? '<div class="focus"><label>Focus on</label><select class="fsel"><option value="">— none —</option>' + focusList.map(function (f) { return '<option value="' + f.key + '"' + (f.key === focus ? ' selected' : '') + '>' + u(f.name) + '</option>'; }).join('') + '</select></div>' +
-				(focus && focusInfo ? '<div class="fbar"><b>' + u(focusInfo.name) + '</b> · ' + (focusInfo.count ? focusInfo.count + ' examples' : 'none on this page') + '<div>' + u(focusInfo.rule) + '</div></div>' : '') : '') +
+				(focus && focusInfo ? '<div class="fbar"><b>' + u(focusInfo.name) + '</b> · ' + (focusInfo.count ? focusInfo.count + ' examples' : 'none on this page') + '<div' + (focusInfo.ruleLang === 'ar' ? ' dir="rtl" lang="ar"' : '') + '>' + u(focusInfo.rule) + '</div></div>' : '') : '') +
 			'<div class="legend"><span><i class="sw next"></i>Worth checking</span><span><i class="sw hard"></i>Above your level / rare</span><span><i class="sw learning"></i>Learning</span></div><ul>' +
 			g.top.slice(0, 20).map(function (w) {
 				return '<li><div><span class="en">' + u(w.lemma) + '</span>' + (w.level ? '<span class="lv">' + U.LEVEL_NAMES[w.level - 1] + '</span>' : '') + (w.ar ? '<div class="ar">' + u(w.ar) + '</div>' : '') + '</div><button class="k" data-l="' + u(w.lemma) + '">I know it</button></li>';

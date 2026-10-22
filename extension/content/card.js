@@ -83,14 +83,16 @@
 		var u = U.esc;
 		return '<div><b>Sounds like:</b> <span class="sl">' + u(r.soundsLike) + '</span></div>' +
 			(r.ipa ? '<div class="muted" style="margin-top:2px">' + u(r.ipa) + '</div>' : '') +
-			(r.features && r.features.length ? '<ul class="notes">' + r.features.map(function (f) { return '<li><b>' + u(f.where) + '</b> · ' + u(f.feature) + ': ' + u(f.why) + '</li>'; }).join('') + '</ul>' : '');
+			(r.features && r.features.length ? '<ul class="notes">' + r.features.map(function (f) { return '<li><b>' + u(f.where) + '</b> · ' + u(f.feature) + (r.lang === 'ar' ? '<div class="ar-text">' + u(f.why) + '</div>' : ': ' + u(f.why)) + '</li>'; }).join('') + '</ul>' : '');
 	}
+	/** The note's own language ("Explanations" setting); older answers have none and follow the meaning. */
+	function noteCls(r, lang) { return (r.noteLang || lang) === 'ar' ? 'ar-text ' : ''; }
 	/** AI translation / explanation of a selected phrase. */
 	function transHtml(r, lang) {
 		var u = U.esc, cls = lang === 'ar' ? ' class="ar-text"' : '';
 		return '<div' + cls + '><b>' + (lang === 'ar' ? 'المعنى:' : 'Meaning:') + '</b> ' + u(r.meaning) + '</div>' +
 			(r.sentence ? '<div' + cls + ' style="margin-top:4px;color:#4A4847">' + u(r.sentence) + '</div>' : '') +
-			(r.note ? '<div' + cls + ' style="margin-top:4px;font-size:13px;color:#4A4847">' + u(r.note) + '</div>' : '');
+			(r.note ? '<div class="' + noteCls(r, lang) + '" style="margin-top:4px;font-size:13px;color:#4A4847">' + u(r.note) + '</div>' : '');
 	}
 
 	/* ------------------------------------------------------------ card */
@@ -179,8 +181,8 @@
 		else if (cur.ctx && cur.ctx.error) ctx = '<div class="res"><div class="msg bad">' + u(cur.ctx.error) + '</div></div>';
 		else if (cur.ctx) {
 			ctx = '<div class="res">' + (lang === 'ar'
-				? '<div class="ar-text"><b>في هذه الجملة:</b> ' + u(cur.ctx.meaning) + '</div>' + (cur.ctx.sentence ? '<div class="ar-text muted" style="margin-top:4px">' + u(cur.ctx.sentence) + '</div>' : '') + (cur.ctx.note ? '<div class="ar-text note">' + u(cur.ctx.note) + '</div>' : '')
-				: '<div><b>Here:</b> ' + u(cur.ctx.meaning) + '</div>' + (cur.ctx.sentence ? '<div class="muted" style="margin-top:4px">' + u(cur.ctx.sentence) + '</div>' : '') + (cur.ctx.note ? '<div class="note">' + u(cur.ctx.note) + '</div>' : '')) + '</div>';
+				? '<div class="ar-text"><b>في هذه الجملة:</b> ' + u(cur.ctx.meaning) + '</div>' + (cur.ctx.sentence ? '<div class="ar-text muted" style="margin-top:4px">' + u(cur.ctx.sentence) + '</div>' : '') + (cur.ctx.note ? '<div class="' + noteCls(cur.ctx, 'ar') + 'note">' + u(cur.ctx.note) + '</div>' : '')
+				: '<div><b>Here:</b> ' + u(cur.ctx.meaning) + '</div>' + (cur.ctx.sentence ? '<div class="muted" style="margin-top:4px">' + u(cur.ctx.sentence) + '</div>' : '') + (cur.ctx.note ? '<div class="' + noteCls(cur.ctx, 'en') + 'note">' + u(cur.ctx.note) + '</div>' : '')) + '</div>';
 		}
 		var snd = '';
 		if (cur.snd === 'loading') snd = '<div class="res"><span class="spin"></span></div>';

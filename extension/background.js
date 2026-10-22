@@ -24,6 +24,7 @@ const DEFAULTS = {
 	sites: [], // origins where the learner switched Lens on
 	pauseOnHover: true,
 	glossLang: 'ar', // 'ar' Arabic meanings, 'en' English definitions
+	explainLang: 'en', // "Explanations: English / العربية": notes, pronunciation tips, grammar and lyrics (saved with the account)
 	colorPages: true, // colour words on websites
 	sidebar: true, // full transcript next to YouTube videos
 	focus: '', // grammar or pronunciation focus key, '' for none
@@ -221,6 +222,7 @@ async function finishLogin(token) {
 	const me = await api('/me');
 	const patch = { me, progress: me.progress };
 	if (me.progress && me.progress.level) patch.level = me.progress.level;
+	if (me.explainLang) patch.explainLang = me.explainLang; // the account's setting (old servers: keep this device's)
 	await set(patch);
 	await sync();
 	// First time: start with the vocabulary test.
@@ -250,10 +252,16 @@ async function sync() {
 	if (!s.token) return null;
 	const pushWords = Object.keys(s.pending.words).map((lemma) => Object.assign({ lemma }, s.pending.words[lemma]));
 	const pushSent = Object.values(s.pending.sentences);
-	const { vocabTest, levelDirty } = await get(['vocabTest', 'levelDirty']);
+	const { vocabTest, levelDirty, explainLang, explainDirty } = await get(['vocabTest', 'levelDirty', 'explainLang', 'explainDirty']);
 	// Send the level only when the learner changed it here, so the level test's result isn't overwritten.
-	const res = await api('/sync', { since: s.cursor, level: levelDirty ? s.level : 0, words: pushWords, sentences: pushSent, vocab: vocabTest || null });
+	const res = await api('/sync', { since: s.cursor, level: levelDirty ? s.level : 0, words: pushWords, sentences: pushSent, vocab: vocabTest || null, explainLang: explainDirty ? explainLang : '' });
 	if (levelDirty) await set({ levelDirty: false });
+	if (res.explainLang) {
+		// The account's value wins, unless the learner changed it here meanwhile (then it's sent next time).
+		const now = await get(['explainLang', 'explainDirty']);
+		if (!now.explainDirty) await set({ explainLang: res.explainLang });
+		else if (explainDirty && now.explainLang === explainLang) await set({ explainDirty: false });
+	}
 	if (res.vocab && (!vocabTest || res.vocab.t > vocabTest.t)) await set({ vocabTest: res.vocab });
 	// Apply the server's changes unless this device has an even newer local change.
 	const fresh = await get(['pending', 'words', 'wordTs', 'sentences']);
@@ -475,14 +483,40 @@ function focusList() {
 		.concat(Object.keys(P).map((k) => ({ key: k, name: P[k][0], rule: P[k][1], group: 'Pronunciation' })));
 }
 
+/** The grammar and pronunciation focus rules in Arabic, for "Explanations: العربية" (English examples stay English). */
+const RULE_AR = {
+	verbs: 'اضغط على أي فعل أو مرّر المؤشر عليه لترى صيغه الثلاث: base · past · past participle.',
+	past: 'الفعل + ed، أو الصيغة الثانية للأفعال الشاذة: walked · went.',
+	present: 'الفعل في صيغته الأصلية، ونضيف s مع he / she / it: I work · she works.',
+	future: 'will + الفعل، أو am / is / are going to + الفعل.',
+	continuous: 'am / is / are / was / were + الفعل مع ing: is running · was running.',
+	perfect: 'have / has / had + التصريف الثالث للفعل: has lived · had known.',
+	passive: 'be + التصريف الثالث للفعل: was built · is made.',
+	modal: 'can · could · should · must · might · may · would + الفعل في صيغته الأصلية.',
+	conditional: 'الصفري: مضارع + مضارع · الأول: مضارع + will · الثاني: ماضٍ + would · الثالث: had + would have.',
+	relative: 'who للأشخاص · which للأشياء · that للاثنين · whose للملكية · where للأماكن.',
+	pronouns: 'الضمائر: I · you · he · she · it · we · they · me · him · her · us · them · my · your · his …',
+	adjectives: 'الصفة تصف الاسم، وتأتي غالبًا قبله: a big house · the house is big.',
+	comparatives: 'الصفة + er أو more للمقارنة، والصفة + est أو most للتفضيل: bigger · the biggest · more useful.',
+	phrasal: 'فعل + كلمة صغيرة (particle) بمعنى جديد: give up · look after · find out.',
+	th: 'ضع لسانك بين أسنانك. /θ/ مثل «ث» (think)، و/ð/ مثل «ذ» (this).',
+	p: '/p/ فيها نفخة هواء وبلا اهتزاز في الحنجرة: put, happy. لا تقل "but" بدل "put".',
+	v: '/v/ فيها اهتزاز في الحنجرة: very, over. أما /f/ فبلا اهتزاز: fine.',
+	ed: '/ɪd/ بعد t أو d (wanted) · /t/ بعد الأصوات المهموسة (walked) · /d/ بعد باقي الأصوات (played).',
+	cluster: 'حرفان ساكنان أو أكثر معًا: street, next, texts. لا تُضف حركة بينهما.',
+	flap: 'حرف t بين حركتين يُنطق مثل d سريعة: water, better, a lot of → "a lodda".'
+};
+
 async function focusSpans(texts, focus) {
+	let r;
 	if (self.LensPron.FOCUS[focus]) {
 		const L = await loadLens();
 		const P = await loadPron();
 		const st = await userState();
-		return P.spans(texts, texts.map((t) => L.analyze(t, st)), focus);
-	}
-	return self.LensGrammar.grammar(texts, focus);
+		r = P.spans(texts, texts.map((t) => L.analyze(t, st)), focus);
+	} else r = self.LensGrammar.grammar(texts, focus);
+	const { explainLang } = await get('explainLang');
+	return explainLang === 'ar' && RULE_AR[focus] && r && r.rule ? Object.assign({}, r, { rule: RULE_AR[focus], ruleLang: 'ar' }) : r;
 }
 
 async function lookup(word) {
@@ -614,9 +648,16 @@ async function proofText(text, grammar) {
 			proofCache.set(text, r.errors || []);
 			if (proofCache.size > 40) proofCache.delete(proofCache.keys().next().value);
 		}
-		gram = proofCache.get(text).filter((e) => !spell.some((s) => s.wrong === e.wrong));
+		const { explainLang } = await get('explainLang');
+		gram = proofCache.get(text).filter((e) => !spell.some((s) => s.wrong === e.wrong)).map((e) => (explainLang === 'ar' ? e : Object.assign({}, e, { why_ar: '' })));
 	}
 	return { spell, gram };
+}
+
+/** Explanations in English: the Arabic "why" is shown only when the learner chose العربية. */
+async function noArabicWhy(r) {
+	const { explainLang } = await get('explainLang');
+	return r && explainLang !== 'ar' ? Object.assign({}, r, { why_ar: '' }) : r;
 }
 
 /** "Sounds like" respellings for whole caption lines (the third caption line), from the built-in dictionary. */
@@ -664,7 +705,7 @@ const handlers = {
 	soundLines: ({ texts }) => soundLines((texts || []).slice(0, 2000)),
 	proof: ({ text, grammar }) => proofText(String(text || '').slice(0, 2000), !!grammar),
 	state: async () => {
-		const s = await get(['token', 'me', 'level', 'progress', 'local', 'sites', 'pauseOnHover', 'glossLang', 'colorPages', 'sidebar', 'focus', 'showIPA', 'showTrans', 'blurCaptions', 'blurTrans', 'maskSwears', 'wordQuiz']);
+		const s = await get(['token', 'me', 'level', 'progress', 'local', 'sites', 'pauseOnHover', 'glossLang', 'explainLang', 'colorPages', 'sidebar', 'focus', 'showIPA', 'showTrans', 'blurCaptions', 'blurTrans', 'maskSwears', 'wordQuiz']);
 		if (s.token && !s.me) {
 			try {
 				s.me = await api('/me');
@@ -675,7 +716,7 @@ const handlers = {
 			}
 		}
 		const local = s.local.day === today() ? s.local : { words: 0, sentences: 0 };
-		return { signedIn: !!s.token, me: s.me, level: s.level, progress: s.progress, local, sites: s.sites, pauseOnHover: s.pauseOnHover, glossLang: s.glossLang, colorPages: s.colorPages, sidebar: s.sidebar, focus: s.focus, focusList: focusList(), showIPA: s.showIPA, showTrans: s.showTrans, blurCaptions: s.blurCaptions, blurTrans: s.blurTrans, maskSwears: s.maskSwears, wordQuiz: s.wordQuiz !== false };
+		return { signedIn: !!s.token, me: s.me, level: s.level, progress: s.progress, local, sites: s.sites, pauseOnHover: s.pauseOnHover, glossLang: s.glossLang, explainLang: s.explainLang, colorPages: s.colorPages, sidebar: s.sidebar, focus: s.focus, focusList: focusList(), showIPA: s.showIPA, showTrans: s.showTrans, blurCaptions: s.blurCaptions, blurTrans: s.blurTrans, maskSwears: s.maskSwears, wordQuiz: s.wordQuiz !== false };
 	},
 	login: () => login(),
 	loginTab: (d) => loginTab(d),
@@ -690,6 +731,11 @@ const handlers = {
 	setPause: async ({ on }) => set({ pauseOnHover: !!on }),
 	setPref: async ({ key, value }) => {
 		if (key === 'glossLang') return set({ glossLang: value === 'en' ? 'en' : 'ar' });
+		if (key === 'explainLang') {
+			await set({ explainLang: value === 'ar' ? 'ar' : 'en', explainDirty: true });
+			scheduleSync(500); // saved with the account, so /app shows the same
+			return null;
+		}
 		if (['colorPages', 'sidebar', 'showIPA', 'showTrans', 'blurCaptions', 'blurTrans', 'pauseOnHover', 'maskSwears', 'wordQuiz'].includes(key)) return set({ [key]: !!value });
 		if (key === 'focus') return set({ focus: self.LensGrammar.FOCUS[value] || self.LensPron.FOCUS[value] ? value : '' });
 		return null;
@@ -707,20 +753,20 @@ const handlers = {
 	images: ({ word, pos }) => api('/image?word=' + encodeURIComponent(word) + (pos ? '&pos=' + encodeURIComponent(pos) : ''), null, 'GET'),
 	aiImage: ({ word, sentence }) => api('/image/ai', { word, sentence }),
 	explain: async ({ word, sentence, lang }) => {
-		const { glossLang } = await get('glossLang');
-		return api('/explain', { word, sentence, lang: lang || glossLang });
+		const { glossLang, explainLang } = await get(['glossLang', 'explainLang']);
+		return api('/explain', { word, sentence, lang: lang || glossLang, expl: explainLang });
 	},
 	/** 🎵 Music: one lyric line explained (meaning, slang and idioms, plain English), in English (default) or Arabic. */
 	lyric: async ({ line, song, context, lang }) => api('/lyric', { line, song, context, lang: lang === 'ar' ? 'ar' : 'en' }),
 	/** How a sentence or phrase sounds in natural fast speech, and why (connected speech). */
-	sound: ({ text }) => api('/sound', { text }),
+	sound: async ({ text }) => api('/sound', { text, lang: (await get('explainLang')).explainLang }),
 	saveSentence: (d) => saveSentence(d),
 	lesson: async ({ videoId }) => {
 		const { me } = await get('me');
 		const r = await api('/video/' + encodeURIComponent(videoId), null, 'GET');
 		return { lesson: r.lesson, admin: !!(me && me.admin) };
 	},
-	lessonAnswer: ({ id, qid, a }) => api('/lesson/' + id + '/answer', { qid, a }),
+	lessonAnswer: async ({ id, qid, a }) => noArabicWhy(await api('/lesson/' + id + '/answer', { qid, a })),
 	lessonDraft: async ({ videoId, title, lines }) => {
 		const r = await api('/lessons/draft', { videoId, title, lines });
 		chrome.tabs.create({ url: r.edit });

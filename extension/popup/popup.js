@@ -136,6 +136,9 @@ async function render() {
 		<div class="sec">
 			<div class="label">Meanings</div>
 			<div class="seg2"><button data-g="ar" aria-pressed="${st.glossLang !== 'en'}">Arabic</button><button data-g="en" aria-pressed="${st.glossLang === 'en'}">English → English</button></div>
+			<div class="label" style="margin-top:12px">Explanations</div>
+			<div class="seg2"><button data-x="en" aria-pressed="${st.explainLang !== 'ar'}">English</button><button data-x="ar" lang="ar" aria-pressed="${st.explainLang === 'ar'}">العربية</button></div>
+			<p class="hint">Notes on words, pronunciation tips, grammar and lyrics. Saved with your account, so the Sawa app uses it too.</p>
 			<div style="margin-top:12px">${toggle('showIPA', 'IPA and "sounds like"', 'Under each word, with sounds Arabic speakers find hard.', st.showIPA !== false)}</div>
 		</div>
 		<div class="sec">
@@ -177,9 +180,15 @@ async function render() {
 			render();
 		};
 	});
-	document.querySelectorAll('.seg2 button').forEach((b) => {
+	document.querySelectorAll('.seg2 button[data-g]').forEach((b) => {
 		b.onclick = async () => {
 			await send('setPref', { key: 'glossLang', value: b.dataset.g });
+			render();
+		};
+	});
+	document.querySelectorAll('.seg2 button[data-x]').forEach((b) => {
+		b.onclick = async () => {
+			await send('setPref', { key: 'explainLang', value: b.dataset.x });
 			render();
 		};
 	});
