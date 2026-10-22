@@ -27,8 +27,20 @@
 		}
 	}
 
+	/** Title, channel, length and YouTube's category: 🎵 Music finds a song's lyrics with them. */
+	function media() {
+		try {
+			var p = document.querySelector('#movie_player');
+			var pr = (p && p.getPlayerResponse && p.getPlayerResponse()) || window.ytInitialPlayerResponse || {};
+			var vd = pr.videoDetails || {}, mf = (pr.microformat && pr.microformat.playerMicroformatRenderer) || {};
+			return { title: vd.title || '', author: vd.author || '', seconds: +vd.lengthSeconds || 0, category: mf.category || '', live: !!vd.isLiveContent };
+		} catch (e) {
+			return null;
+		}
+	}
+
 	function post(msg) {
-		if (msg.type === 'captions') msg.safety = safety();
+		if (msg.type === 'captions') { msg.safety = safety(); msg.media = media(); }
 		dbg('post ' + msg.type + ' ' + msg.videoId + (msg.none ? ' none' : '') + (msg.body ? ' len=' + msg.body.length + ' kind=' + msg.kind : ''));
 		window.postMessage(Object.assign({ source: 'sawa-lens-main' }, msg), location.origin);
 	}

@@ -31,7 +31,7 @@
 		'.tr{font:500 clamp(14px,1.8vw,21px)/1.5 ' + AR + ';direction:rtl;color:#E6E3DF}' +
 		':host(.blur-en) .line.en{filter:blur(7px)}:host(.blur-en) .line.en:hover{filter:none}' +
 		':host(.blur-tr) .line.tr{filter:blur(6px)}:host(.blur-tr) .line.tr:hover{filter:none}' +
-		':host(.no-tr) .line.tr{display:none}.line.snd{font-size:.7em;color:#FDE68A;letter-spacing:.02em;cursor:help;pointer-events:auto}.line.snd:empty{display:none}.no-snd .line.snd{display:none}.box{position:relative}.sndtip{position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%);width:min(520px,90vw);background:#fff;color:#0F0F10;border-radius:12px;padding:10px 14px;font:500 14px/1.45 ' + FONT + ';text-align:left;display:none;box-shadow:0 8px 24px rgba(0,0,0,.3);pointer-events:auto}.sndtip.on{display:block}.sndtip ul{margin:6px 0 0;padding-left:18px}.lensmenu{position:absolute;right:12px;bottom:60px;width:270px;background:rgba(15,15,16,.94);color:#fff;border-radius:12px;padding:10px;display:none;flex-direction:column;gap:6px;pointer-events:auto;font:500 13px/1.3 ' + FONT + '}.lensmenu.on{display:flex}.lensmenu .t{display:flex;justify-content:space-between;align-items:center;width:100%;border-radius:8px;text-align:left}.lensmenu .lmh{font:700 11px/1 ' + FONT + ';letter-spacing:.06em;text-transform:uppercase;color:#FDE68A;margin-top:4px}.lensmenu .menu{position:static;display:block;background:transparent;color:#fff;padding:0;min-width:0}.lensmenu .menu label{display:flex;gap:8px;align-items:center;padding:4px 2px}' +
+		':host(.no-tr) .line.tr{display:none}.line.snd{font-size:.7em;color:#FDE68A;letter-spacing:.02em;cursor:help;pointer-events:auto}.line.snd:empty{display:none}.no-snd .line.snd{display:none}.box{position:relative}.sndtip{position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%);width:min(520px,90vw);background:#fff;color:#0F0F10;border-radius:12px;padding:10px 14px;font:500 14px/1.45 ' + FONT + ';text-align:left;display:none;box-shadow:0 8px 24px rgba(0,0,0,.3);pointer-events:auto}.sndtip.on{display:block}.sndtip ul{margin:6px 0 0;padding-left:18px}.lensmenu{position:absolute;right:12px;bottom:60px;width:270px;background:rgba(15,15,16,.94);color:#fff;border-radius:12px;padding:10px;display:none;flex-direction:column;gap:6px;pointer-events:auto;font:500 13px/1.3 ' + FONT + '}.lensmenu.on{display:flex}.lensmenu .lmmusic{display:flex;flex-direction:column;gap:6px}.lensmenu .lmmusic[hidden],.lensmenu a.gen[hidden]{display:none}.lensmenu a.t{text-decoration:none;box-sizing:border-box}.lensmenu .t{display:flex;justify-content:space-between;align-items:center;width:100%;border-radius:8px;text-align:left}.lensmenu .lmh{font:700 11px/1 ' + FONT + ';letter-spacing:.06em;text-transform:uppercase;color:#FDE68A;margin-top:4px}.lensmenu .menu{position:static;display:block;background:transparent;color:#fff;padding:0;min-width:0}.lensmenu .menu label{display:flex;gap:8px;align-items:center;padding:4px 2px}' +
 		'.wd{cursor:pointer;border-radius:4px;padding:0 1px}' +
 		'.wd:hover{background:#fff;color:#0F0F10;text-decoration:none}' +
 		':host(.colors) .wd.next{background:rgba(52,211,153,.32);border-radius:4px;box-shadow:0 0 0 2px rgba(52,211,153,.32)}' +
@@ -72,6 +72,8 @@
 		':host(.mob) .grip,:host(.mob) .chip,:host(.mob) .advb,:host(.mob) .panel,:host(.mob) .lensmenu{display:none!important}:host(.mob) .msg{font-size:13px;max-width:90%;text-align:center}' +
 		':host(.mob) .quiz{position:fixed;left:0;right:0;top:auto;bottom:0;transform:none;width:100%;max-height:70vh;border-radius:16px 16px 0 0;padding-bottom:calc(18px + env(safe-area-inset-bottom))}';
 
+	var MUSIC_CSS = '.music{margin:8px 10px;padding:8px 10px;border:1px solid #E6E3DF;border-radius:10px;background:#FFFBEB;font-size:13px}.music .mh{font:700 11px/1 ' + FONT + ';letter-spacing:.06em;text-transform:uppercase;color:#8A6D00;margin-bottom:6px}' +
+		'.music .mr{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;justify-content:space-between;margin-top:4px}.music a{color:#0F0F10;font-weight:600}.ib2{font:600 12px/1 ' + FONT + ';border:1px solid #E6E3DF;background:#fff;border-radius:999px;padding:5px 8px;cursor:pointer;margin-left:4px}.ib2.on{background:#0F0F10;color:#fff;border-color:#0F0F10}.snd.lyr{background:#FFFBEB}';
 	var SIDE_CSS = '' +
 		':host{all:initial;display:block;margin-bottom:16px}*{box-sizing:border-box}' +
 		'.side{font:14px/1.55 ' + FONT + ';color:#0F0F10;background:#fff;border:1px solid #E6E3DF;border-radius:12px;overflow:hidden}' +
@@ -142,8 +144,8 @@
 	var WAVE = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h2M7 8v8M11 5v14M15 8v8M19 11v2"/></svg>';
 
 	var S = { videoId: '', cues: [], lines: null, sents: [], sentToks: null, tcues: [], cueTr: null, sentTr: null, grade: null, idx: -1, sIdx: -1, host: null, root: null, side: null, sRoot: null, video: null, pausedByUs: false, raf: 0, primed: '', stopAt: 0, follow: true, scrolledAt: 0, sounds: {} };
-	var prefs = { sidebar: true, colors: true, pauseOnHover: true, sideMin: false, focus: '', showTrans: true, showSound: true, blurCaptions: false, blurTrans: false, barPos: 0.12, autoPause: false, maskSwears: false, wordQuiz: true };
-	var PREF_KEYS = ['sidebar', 'lensColors', 'pauseOnHover', 'sideMin', 'focus', 'showTrans', 'showSound', 'blurCaptions', 'blurTrans', 'barPos', 'autoPause', 'maskSwears', 'wordQuiz'];
+	var prefs = { sidebar: true, colors: true, pauseOnHover: true, sideMin: false, focus: '', showTrans: true, showSound: true, blurCaptions: false, blurTrans: false, barPos: 0.12, autoPause: false, maskSwears: false, wordQuiz: true, songLyrics: true, lyricLang: 'en' };
+	var PREF_KEYS = ['sidebar', 'lensColors', 'pauseOnHover', 'sideMin', 'focus', 'showTrans', 'showSound', 'blurCaptions', 'blurTrans', 'barPos', 'autoPause', 'maskSwears', 'wordQuiz', 'songLyrics', 'lyricLang'];
 	function readPrefs(o) {
 		prefs.sidebar = o.sidebar !== false;
 		prefs.colors = o.lensColors !== false;
@@ -158,6 +160,8 @@
 		prefs.autoPause = !!o.autoPause;
 		prefs.maskSwears = !!o.maskSwears;
 		prefs.wordQuiz = o.wordQuiz !== false;
+		prefs.songLyrics = o.songLyrics !== false;
+		prefs.lyricLang = o.lyricLang === 'ar' ? 'ar' : 'en';
 	}
 	chrome.storage.local.get(PREF_KEYS, function (o) {
 		readPrefs(o);
@@ -179,6 +183,7 @@
 		}
 		if (d.type !== 'captions') return;
 		S.safety = d.safety || null;
+		if (d.media) { S.media = d.media; S.mediaFor = d.videoId; }
 		if (d.none) {
 			S.adv = null;
 			S.videoId = d.videoId;
@@ -187,18 +192,36 @@
 			mount();
 			paintSide();
 			say('This video has no English captions.');
+			maybeLyrics(d.videoId, null);
 			return;
 		}
 		// Keep hand-made captions over auto-generated ones if both arrive.
 		if (S.videoId === d.videoId && S.kind && S.kind !== 'asr' && d.kind === 'asr' && S.cues.length) return;
 		var cues = parse(d.body, d.kind === 'asr');
 		if (!cues.length) return;
-		S.videoId = d.videoId;
+		// 🎵 Songs: LRCLIB's lyrics are shown when found (the uploader's subtitles of music videos are often messy:
+		// ♪ signs, capitals, skits); the video's own captions line their timing up, and the student can switch back.
+		if (S.videoId === d.videoId && S.kind === 'lyrics') {
+			if (d.kind !== 'asr' || !S.subs) S.subs = { cues: cues, kind: d.kind };
+			return paintMusic();
+		}
+		S.subs = { cues: cues, kind: d.kind };
+		useCues(d.videoId, cues, d.kind);
+		if (!S.music || S.music.vid !== d.videoId) maybeLyrics(d.videoId, cues);
+		else paintMusic();
+	});
+
+	/** Show these caption lines (or lyric lines) on the video and in the transcript. */
+	function useCues(vid, cues, kind) {
+		if (isSong()) cues = cues.map(function (c) { return { start: c.start, end: c.end, text: c.text.replace(/[♪♫]/g, ' ').replace(/\s+/g, ' ').trim(), words: c.words }; }).filter(function (c) { return c.text; });
+		S.videoId = vid;
 		S.cues = cues;
 		S.heardSeen = {};
-		S.kind = d.kind;
-		S.sents = sentences(cues, d.kind === 'asr');
+		S.kind = kind;
+		// lyrics: one line of the song = one row
+		S.sents = kind === 'lyrics' ? cues.map(function (c) { return { start: c.start, end: c.end, text: c.text }; }) : sentences(cues, kind === 'asr');
 		S.sounds = {};
+		S.lyrExp = {};
 		S.adv = window.LensExplicit ? window.LensExplicit.scan(S.sents.map(function (x) { return x.text; })) : null;
 		S.advOpen = '';
 		alignTranslation();
@@ -206,8 +229,81 @@
 		S.fxCues = S.fxSents = null;
 		analyse();
 		runFocus();
-		loadLesson(d.videoId);
-	});
+		loadLesson(vid);
+	}
+
+	/* ------------------------------------------------------------ 🎵 Music: lyrics for songs */
+	function isSong() {
+		return !!(window.LensMusic && S.media && S.mediaFor === S.videoId && !S.media.live && LensMusic.isSong(S.media));
+	}
+	/** A song with only auto-generated captions (or none): look for its timed lyrics on LRCLIB. */
+	function maybeLyrics(vid, asr) {
+		if (!prefs.songLyrics || !isSong()) return paintMusic();
+		S.music = { state: 'looking', vid: vid };
+		paintMusic();
+		LensMusic.lookup(S.media).then(function (hit) {
+			if (vid !== S.videoId || !S.music || S.music.vid !== vid) return;
+			if (!hit) { S.music = { state: 'none', vid: vid }; return paintMusic(); }
+			var off = LensMusic.offsetFrom(hit.lines, S.subs ? S.subs.cues : asr);
+			S.music = { state: 'lrclib', vid: vid, hit: hit, offset: off, auto: off };
+			useCues(vid, LensMusic.cues(hit.lines, off), 'lyrics');
+			paintMusic();
+		});
+	}
+	/** Switch between LRCLIB's lyrics and the video's own captions. */
+	function swapLyrics() {
+		var mu = S.music;
+		if (!mu || mu.state !== 'lrclib') return;
+		if (S.kind === 'lyrics') { if (S.subs) useCues(S.videoId, S.subs.cues, S.subs.kind); }
+		else useCues(S.videoId, LensMusic.cues(mu.hit.lines, mu.offset), 'lyrics');
+		paintMusic();
+	}
+	/** Lyrics a little early or late: move them (ms). */
+	function nudgeLyrics(ms) {
+		var mu = S.music;
+		if (!mu || mu.state !== 'lrclib') return;
+		mu.offset += ms;
+		useCues(S.videoId, LensMusic.cues(mu.hit.lines, mu.offset), 'lyrics');
+		paintMusic();
+		say('Lyrics ' + (mu.offset >= 0 ? '+' : '') + (mu.offset / 1000).toFixed(1) + 's');
+	}
+	/** The 🎵 Music bar above the transcript, and the Music part of the player menu. */
+	function paintMusic() {
+		var song = isSong(), vocals = !!(window.LensVocals && LensVocals.supported());
+		if (S.root) {
+			var sec = S.root.querySelector('.lmmusic'), gen = S.root.querySelector('.lmmusic .gen');
+			if (sec) sec.hidden = !song && !vocals;
+			if (gen) { gen.hidden = !song; if (song) gen.href = LensMusic.genius(S.media); }
+		}
+		if (!S.sRoot) return;
+		var el = S.sRoot.querySelector('.music');
+		if (!el) return;
+		if (!song) { el.hidden = true; el.innerHTML = ''; return; }
+		var mu = S.music || {}, src;
+		var other = mu.state === 'lrclib' && S.subs ? '<button class="ib2" data-a="ly-src">' + (S.kind === 'lyrics' ? (S.subs.kind === 'asr' ? 'Show YouTube’s auto captions' : 'Show the video’s subtitles') : 'Show LRCLIB lyrics') + '</button>' : '';
+		if (S.kind === 'lyrics') src = 'Lyrics from LRCLIB' + (mu.offset ? ' (moved ' + (mu.offset > 0 ? '+' : '') + (mu.offset / 1000).toFixed(1) + 's to fit the video)' : '');
+		else if (mu.state === 'looking') src = 'Looking for the lyrics…';
+		else if (S.kind && S.kind !== 'asr') src = 'Lyrics from the video’s own subtitles';
+		else if (mu.state === 'lrclib') src = 'YouTube’s auto captions';
+		else if (!prefs.songLyrics) src = 'Song lyrics are off (Language Lens popup → Music)';
+		else src = S.cues.length ? 'No timed lyrics found: these are YouTube’s auto captions, often wrong in songs' : 'No timed lyrics found for this song';
+		var ar = prefs.lyricLang === 'ar';
+		el.hidden = false;
+		el.innerHTML = '<div class="mh">🎵 Music</div><div class="mr">' + U.esc(src) +
+			(S.kind === 'lyrics' ? ' <span class="nud"><button class="ib2" data-a="ly-" title="Lyrics too late: show them earlier">−0.5s</button><button class="ib2" data-a="ly+" title="Lyrics too early: show them later">+0.5s</button></span>' : '') + other + '</div>' +
+			'<div class="mr"><a class="gen" href="' + U.esc(LensMusic.genius(S.media)) + '" target="_blank" rel="noopener">Check the lyrics on Genius ↗</a>' +
+			'<span class="ll">💡 Explain lines in <button class="ib2' + (ar ? '' : ' on') + '" data-a="ll-en">English</button><button class="ib2' + (ar ? ' on' : '') + '" data-a="ll-ar">عربي</button></span></div>';
+	}
+	/** One lyric line explained: meaning, slang and idioms, the line in plain English. */
+	function lyricBox(r) {
+		var u = U.esc;
+		if (r === 'loading') return '<div class="snd lyr">Explaining…</div>';
+		if (r.error) return '<div class="snd lyr" style="color:#E3262B">' + u(r.error) + '</div>';
+		var ar = r.lang === 'ar', dir = ar ? ' dir="rtl" style="text-align:right;font-family:' + AR.replace(/"/g, '&quot;') + '"' : '';
+		return '<div class="snd lyr"' + dir + '><div><b>' + (ar ? 'المعنى:' : 'Meaning:') + '</b> ' + u(r.meaning) + '</div>' +
+			(r.parts && r.parts.length ? '<ul>' + r.parts.map(function (p) { return '<li><b dir="ltr">' + u(p.text) + '</b> · ' + u(p.why) + '</li>'; }).join('') + '</ul>' : '') +
+			(r.plain ? '<div dir="ltr" style="text-align:left"><b>In plain English:</b> ' + u(r.plain) + '</div>' : '') + '</div>';
+	}
 
 	function parse(body, asr) {
 		var j;
@@ -439,8 +535,10 @@
 				'<button class="t" data-a="autopause" title="Pause after every sentence">Auto-pause<kbd>Q</kbd></button>' +
 				'<button class="t" data-a="save">Save sentence</button>' +
 				'<button class="t" data-a="side">Transcript</button>' +
+				'<div class="lmmusic" hidden><div class="lmh">🎵 Music</div>' +
 				// Computers only (content/vocals.js decides): hear the singer without the music.
 				(window.LensVocals && LensVocals.supported() ? '<button class="t" data-a="vocals" title="Hear only the singer’s voice: the music is removed on your computer (test)">🎤 Vocals only<span class="vst"></span></button>' : '') +
+				'<a class="t gen" target="_blank" rel="noopener" hidden>Check the lyrics on Genius ↗</a></div>' +
 				'<div class="lmh">Display</div><div class="menu on">' + OPTS + '</div></div>';
 			if (MOBILE) S.host.classList.add('mob');
 			if (window.LensVocals) LensVocals.bindMenu(S.root);
@@ -462,6 +560,7 @@
 			loop();
 		}
 		applyPrefs();
+		paintMusic();
 		ytButton(player);
 		if (prefs.sidebar) mountSide();
 	}
@@ -591,14 +690,14 @@
 		S.side = document.createElement('sawa-lens-side');
 		if (MOBILE) S.side.classList.add('mob');
 		S.sRoot = S.side.attachShadow({ mode: 'open' });
-		S.sRoot.innerHTML = '<style>' + SIDE_CSS + '.vprof{margin:6px 10px;font:500 13px/1.4 ' + FONT + '}.vprof summary{cursor:pointer;padding:6px 0}.vprof summary small{color:#8A8584}.vbar{display:flex;height:10px;border-radius:5px;overflow:hidden;margin:6px 0}.vbar i{display:block;height:100%}.vt{width:100%;border-collapse:collapse;font-size:12.5px}.vt td{padding:2px 4px}.vt td:nth-child(n+2){text-align:right;color:#57534E}.vd{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:6px}.vv{margin:8px 0;font-size:13px}.lmh2{font:700 11px/1 ' + FONT + ';letter-spacing:.06em;text-transform:uppercase;color:#8A8584;margin:8px 0 4px}.vtop{display:flex;flex-wrap:wrap;gap:4px}.vtop span{background:#F3F1EE;border-radius:99px;padding:3px 8px;font-size:12.5px}.vtop small{color:#8A8584}</style><div class="side">' +
+		S.sRoot.innerHTML = '<style>' + SIDE_CSS + MUSIC_CSS + '.vprof{margin:6px 10px;font:500 13px/1.4 ' + FONT + '}.vprof summary{cursor:pointer;padding:6px 0}.vprof summary small{color:#8A8584}.vbar{display:flex;height:10px;border-radius:5px;overflow:hidden;margin:6px 0}.vbar i{display:block;height:100%}.vt{width:100%;border-collapse:collapse;font-size:12.5px}.vt td{padding:2px 4px}.vt td:nth-child(n+2){text-align:right;color:#57534E}.vd{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:6px}.vv{margin:8px 0;font-size:13px}.lmh2{font:700 11px/1 ' + FONT + ';letter-spacing:.06em;text-transform:uppercase;color:#8A8584;margin:8px 0 4px}.vtop{display:flex;flex-wrap:wrap;gap:4px}.vtop span{background:#F3F1EE;border-radius:99px;padding:3px 8px;font-size:12.5px}.vtop small{color:#8A8584}</style><div class="side">' +
 			'<div class="head"><div class="ttl">Language Lens <small class="g"></small></div><div class="hb">' +
 			'<button class="ib" data-a="follow" title="Follow the current sentence">Follow</button>' +
 			'<button class="ib" data-a="colors" title="Colour words">Colours</button>' +
 			'<button class="ib" data-a="min" title="Collapse">—</button></div></div>' +
 			(MOBILE ? '<div class="ctl"><button class="cb" data-a="prev" aria-label="Previous sentence">◀</button><button class="cb" data-a="repeat" aria-label="Repeat sentence">↻ Repeat</button><button class="cb" data-a="next" aria-label="Next sentence">▶</button>' +
 				'<button class="cb" data-a="autopause">Auto-pause</button><button class="cb" data-a="save">Save sentence</button><button class="cb" data-a="opts">Aa Display ▾</button></div><div class="opts">' + OPTS + '</div>' : '') +
-			'<div class="goal"></div><div class="vprof"></div><div class="lq"></div><div class="adv"></div>' +
+			'<div class="music" hidden></div><div class="goal"></div><div class="vprof"></div><div class="lq"></div><div class="adv"></div>' +
 			'<div class="legend"><span><i class="sw known"></i>Known</span><span><i class="sw next"></i>Worth checking</span><span><i class="sw hard"></i>Above your level / rare</span><span><i class="sw learning"></i>Learning</span></div>' +
 			'<div class="focus"><label for="fsel">Focus on</label><select class="fsel" id="fsel"><option value="">— none —</option></select></div>' +
 			'<div class="fbar"><div class="row"><div><i class="sw2"></i><b class="fname"></b> · <span class="fcount"></span></div><div class="fnav"><button data-a="fprev" title="Previous example">▲</button><button data-a="fnext" title="Next example">▼</button></div></div><div class="rule"></div></div>' +
@@ -750,8 +849,9 @@
 		var tr = S.sentTr && S.sentTr[i] ? '<div class="trs">' + U.esc(S.sentTr[i]) + '</div>' : '';
 		return '<div class="s" data-i="' + i + '"><button class="tm" data-a="seek">' + fmt(s.start) + '</button><div class="body"><div class="tx">' +
 			U.markup(mask(s.text), S.sentToks ? S.sentToks[i] : null, S.fxSents ? S.fxSents[i] : null) + '</div>' + tr +
-			(S.sounds[i] ? soundBox(S.sounds[i]) : '') + '</div>' +
-			'<div class="acts"><button class="rep" data-a="once" title="Play only this sentence">' + REPEAT + '</button><button class="rep" data-a="sound" title="How it sounds in fast speech">' + WAVE + '</button></div></div>';
+			(S.sounds[i] ? soundBox(S.sounds[i]) : '') + (S.lyrExp && S.lyrExp[i] ? lyricBox(S.lyrExp[i]) : '') + '</div>' +
+			'<div class="acts"><button class="rep" data-a="once" title="Play only this sentence">' + REPEAT + '</button><button class="rep" data-a="sound" title="How it sounds in fast speech">' + WAVE + '</button>' +
+			(isSong() ? '<button class="rep" data-a="lyr" title="Explain this line">💡</button>' : '') + '</div></div>';
 	}
 
 	function paintSide() {
@@ -762,6 +862,7 @@
 		paintFocusBar();
 		paintAdvisory();
 		paintLessonInfo();
+		paintMusic();
 		if (!S.sents.length) {
 			list.innerHTML = '<div class="empty">' + (S.cues.length || !S.videoId ? 'Preparing the transcript…' : 'This video has no English captions.') + '</div>';
 			return;
@@ -798,6 +899,21 @@
 			jumpFocus(b.dataset.a === 'fnext' ? 1 : -1);
 			return;
 		}
+		if (b && b.dataset.a === 'ly-src') {
+			swapLyrics();
+			return;
+		}
+		if (b && (b.dataset.a === 'ly-' || b.dataset.a === 'ly+')) {
+			nudgeLyrics(b.dataset.a === 'ly+' ? 500 : -500);
+			return;
+		}
+		if (b && (b.dataset.a === 'll-en' || b.dataset.a === 'll-ar')) {
+			S.lyrExp = {};
+			setPref('lyricLang', b.dataset.a === 'll-ar' ? 'ar' : 'en');
+			prefs.lyricLang = b.dataset.a === 'll-ar' ? 'ar' : 'en';
+			paintSide();
+			return;
+		}
 		var lq = e.target.closest('[data-lq]');
 		if (lq) {
 			if (lq.dataset.lq === 'make') makeQuiz();
@@ -812,12 +928,26 @@
 			}
 			return;
 		}
-		if (e.target.closest('.focus,.goal,.snd,.adv,.opts')) return;
+		if (e.target.closest('.focus,.goal,.snd,.adv,.opts,.music')) return;
 		var wd = TOUCH && e.target.closest('.wd');
 		if (wd) return openWord(wd, 'side');
 		var row = e.target.closest('.s');
 		if (!row || !S.video) return;
 		var i = +row.dataset.i, s = S.sents[i];
+		if (b && b.dataset.a === 'lyr') {
+			S.lyrExp = S.lyrExp || {};
+			if (S.lyrExp[i] && S.lyrExp[i] !== 'loading') {
+				delete S.lyrExp[i];
+				row.outerHTML = rowHtml(s, i);
+				return;
+			}
+			S.lyrExp[i] = 'loading';
+			row.outerHTML = rowHtml(s, i);
+			var ctx = [S.sents[i - 1], S.sents[i + 1]].filter(Boolean).map(function (x) { return x.text; }).join(' / ');
+			var n = LensMusic.names(S.media);
+			U.send('lyric', { line: s.text, song: n.artist + ' – ' + n.track, context: ctx, lang: prefs.lyricLang }).then(function (r) { S.lyrExp[i] = r; repaintRow(i); }, function (err) { S.lyrExp[i] = { error: U.errText(err) }; repaintRow(i); });
+			return;
+		}
 		if (b && b.dataset.a === 'sound') {
 			if (S.sounds[i] && S.sounds[i] !== 'loading') {
 				delete S.sounds[i];
@@ -1279,6 +1409,9 @@
 		S.quizzed = {};
 		S.quizAt = 0;
 		S.lastEnded = -1;
+		S.music = null;
+		S.subs = null;
+		S.lyrExp = {};
 		var tries = 0;
 		(function wait() {
 			if (document.querySelector('#movie_player video')) {

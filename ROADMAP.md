@@ -44,5 +44,7 @@ Left / ideas:
   Check the UVR models' licence first (Spleeter is MIT).
 - Phones: no solution yet (no extension WebGPU on m.youtube.com, battery). Maybe server-side later (legal check first).
 - Only Opus/WebM audio (what Chrome gets); AAC/MP4 videos say "not supported yet".
-- Lyrics game like LingoClip: fill the missing words of the song line by line, with Vocals only as an option.
+- BUILT in 0.5.2: 🎵 Music: lyrics in the transcript (LRCLIB first, lined up with the video's captions; switch to the video's subtitles; ±0.5 s nudge), Genius link, 💡 explain a line (English default / عربي).
+- Next: lyrics game like LingoClip (fill the missing words line by line), with Vocals only as an option.
+- Prepare songs in advance (album/playlist) with the better Voc_FT model, kept only on the student's computer: asked, not decided yet.
 - Legal: separation is local and personal, nothing stored or shared, but it is a grey area. Decide before a public release.

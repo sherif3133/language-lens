@@ -710,6 +710,8 @@ const handlers = {
 		const { glossLang } = await get('glossLang');
 		return api('/explain', { word, sentence, lang: lang || glossLang });
 	},
+	/** 🎵 Music: one lyric line explained (meaning, slang and idioms, plain English), in English (default) or Arabic. */
+	lyric: async ({ line, song, context, lang }) => api('/lyric', { line, song, context, lang: lang === 'ar' ? 'ar' : 'en' }),
 	/** How a sentence or phrase sounds in natural fast speech, and why (connected speech). */
 	sound: ({ text }) => api('/sound', { text }),
 	saveSentence: (d) => saveSentence(d),

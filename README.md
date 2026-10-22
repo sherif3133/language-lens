@@ -11,9 +11,10 @@ Browser extension for Chrome and Edge. Learners hover any word in YouTube captio
   - `content/page.js`: hover and save on other websites.
   - `content/card.js`: the word card.
   - `content/vocals-main.js` + `content/vocals.js` + `vocals/`: 🎤 Vocals only (test, computers only): the singer's voice without the music, separated in the browser (`lib/ort/` = onnxruntime-web).
+  - `content/music.js`: 🎵 Music: lyrics for songs (LRCLIB, lined up with the video's captions), a Genius link, and 💡 line explanations (server: `/lyric` in sawa-lens).
   - `popup/`: the toolbar popup.
   - `data/lexicon.json`: built word list (do not edit by hand).
-- `tools/`: scripts that build the word list and icons, and the end-to-end tests (`mobile-test.js`, `vocals-test.js`).
+- `tools/`: scripts that build the word list and icons, and the end-to-end tests (`mobile-test.js`, `vocals-test.js`, `music-test.js`).
 
 ## Try the beta (load unpacked)
 
@@ -43,3 +44,4 @@ node build-lexicon.js
 - Grammar tagging: compromise (MIT), bundled in extension/lib.
 - Word forms built with compromise (MIT).
 - Vocals only: onnxruntime-web 1.30.0 (Microsoft, MIT, in extension/lib/ort). Voice model: Spleeter 2-stems by Deezer (MIT), fp16 ONNX export by sherpa-onnx (k2-fsa), downloaded once from Hugging Face at a pinned commit and checked by SHA-256.
+- Song lyrics: LRCLIB (lrclib.net), a free open database of timed lyrics; the lyrics belong to their writers. Genius is only linked.
