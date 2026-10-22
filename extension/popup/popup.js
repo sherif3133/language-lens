@@ -146,7 +146,7 @@ async function render() {
 			${toggle('sidebar', 'Transcript next to the video', 'Full sentences with timestamps. Click one to play it.', st.sidebar !== false)}
 			${toggle('showTrans', 'Arabic translation line', 'YouTube\'s auto-translation, under the captions.', st.showTrans !== false)}
 			${toggle('blurCaptions', 'Blur captions until hover', 'Listen first, then check.', !!st.blurCaptions)}
-			${toggle('blurTrans', 'Blur translation until hover', '', !!st.blurTrans)}
+			${toggle('blurTrans', 'Blur the translation', 'Hover over it, or tap it on a phone, to read it.', !!st.blurTrans)}
 			${toggle('maskSwears', 'Mask swear words', 'Shows f*** in captions and the transcript. Each video still gets a content check.', !!st.maskSwears)}
 			<p class="hint">Hotkeys: <kbd>A</kbd> previous · <kbd>S</kbd> repeat · <kbd>D</kbd> next · <kbd>Q</kbd> auto-pause. Drag the ⋮⋮ grip to move the captions.</p>
 		</div>
