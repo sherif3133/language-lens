@@ -8,6 +8,7 @@
 	'use strict';
 	if (window.LensCard) return;
 	var U = window.LensUI;
+	var TOUCH = !!(window.matchMedia && matchMedia('(hover: none)').matches);
 
 	var FONT = '"IBM Plex Sans","IBM Plex Sans Arabic","Segoe UI",system-ui,sans-serif';
 	var BASE = ':host{all:initial}*{box-sizing:border-box}' +
@@ -18,6 +19,9 @@
 		'.ar-text{direction:rtl;text-align:right;font-family:"IBM Plex Sans Arabic",' + FONT + '}' +
 		'.res{margin-top:10px;padding-top:10px;border-top:1px solid #E6E3DF;font-size:14px}.res b{font-weight:600}.res .muted{color:#4A4847}' +
 		'.sl{font:600 15px/1.4 ' + FONT + ';letter-spacing:.2px}.notes{margin:6px 0 0;padding:0;list-style:none}.notes li{margin-top:6px;font-size:13px;color:#4A4847}.notes li b{color:#0F0F10}';
+	// Phones: a sheet along the bottom of the screen, with bigger buttons for fingers (added last, so it wins).
+	var SHEET = '@media (max-width:600px){.card,.pop{left:0!important;right:0;top:auto!important;bottom:0;width:100%;max-width:100%;max-height:65vh;border-radius:16px 16px 0 0;border-width:1px 0 0;box-shadow:0 -8px 30px rgba(0,0,0,.25);padding-bottom:calc(14px + env(safe-area-inset-bottom))}}' +
+		'@media (pointer:coarse){button{padding:10px 14px;font-size:14px}}';
 
 	var CSS = BASE +
 		'.card{position:fixed;z-index:2147483646;width:340px;max-width:calc(100vw - 16px);max-height:calc(100vh - 16px);overflow:auto;background:#fff;color:#0F0F10;border:1px solid #0F0F10;border-radius:12px;' +
@@ -50,7 +54,7 @@
 		'.gram{display:inline-block;margin-top:8px;font-size:12.5px;font-weight:600;background:#EDE9FE;border:1px solid #A78BFA;border-radius:6px;padding:2px 8px}' +
 		'.vf{margin-top:8px;padding:8px 10px;background:#F6F5F3;border-radius:8px}' +
 		'.forms{display:flex;gap:6px;align-items:center;font:600 15px/1.3 ' + FONT + ';flex-wrap:wrap}.forms i{color:#8A8584;font-style:normal}' +
-		'.vmeta{font-size:12px;color:#4A4847;margin-top:4px}.vmeta em{font-style:normal;font-weight:600}.vmeta em.irr{color:#B45309}';
+		'.vmeta{font-size:12px;color:#4A4847;margin-top:4px}.vmeta em{font-style:normal;font-weight:600}.vmeta em.irr{color:#B45309}' + SHEET;
 
 	var SPEAK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9zM16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12"/></svg>';
 
@@ -109,7 +113,7 @@
 		el = root.querySelector('.card');
 		(document.fullscreenElement || document.documentElement).appendChild(host);
 		el.addEventListener('mouseenter', function () { clearTimeout(hideT); });
-		el.addEventListener('mouseleave', function () { hideSoon(); });
+		if (!TOUCH) el.addEventListener('mouseleave', function () { hideSoon(); }); // phones close it with × or a tap elsewhere
 		el.addEventListener('click', onClick);
 	}
 
@@ -443,7 +447,7 @@
 		'.pop{position:fixed;z-index:2147483646;width:330px;max-width:calc(100vw - 16px);max-height:calc(100vh - 16px);overflow:auto;background:#fff;color:#0F0F10;border:1px solid #0F0F10;border-radius:12px;font:14px/1.5 ' + FONT + ';text-align:left;padding:12px;display:none}' +
 		'.pop.on{display:block}.sel{font-weight:600;margin:0 0 8px 0;padding-inline-end:24px;max-height:72px;overflow:auto}' +
 		'.grid{display:flex;flex-wrap:wrap;gap:6px}.h{font-size:12px;color:#8A8584;margin:10px 0 6px}' +
-		'.close{position:absolute;top:6px;right:6px;border:0;padding:4px 8px;font-size:16px;line-height:1;background:transparent}';
+		'.close{position:absolute;top:6px;right:6px;border:0;padding:4px 8px;font-size:16px;line-height:1;background:transparent}' + SHEET;
 	var sHost, sRoot, sEl, sCur = null;
 
 	function sEnsure() {

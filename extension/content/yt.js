@@ -12,6 +12,10 @@
 	if (window.__sawaLensYT) return;
 	window.__sawaLensYT = true;
 	var U = window.LensUI, Card = window.LensCard;
+	// Phones: YouTube's phone site has the player fixed on top and the page scrolling under it,
+	// so the controls and transcript go under the player. No mouse: tap a word instead of hovering it.
+	var MOBILE = location.hostname === 'm.youtube.com';
+	var TOUCH = !!(window.matchMedia && matchMedia('(hover: none)').matches);
 
 	var FONT = '"IBM Plex Sans","IBM Plex Sans Arabic","Segoe UI",system-ui,sans-serif';
 	var AR = '"IBM Plex Sans Arabic","Segoe UI",Tahoma,sans-serif';
@@ -63,7 +67,10 @@
 		'.panel .lv{font-size:11px;border:1px solid #E6E3DF;border-radius:5px;padding:1px 5px;margin-left:6px}' +
 		'.panel .k{font:600 12px/1 ' + FONT + ';border:1px solid #E6E3DF;background:#fff;border-radius:999px;padding:6px 9px;cursor:pointer;white-space:nowrap}' +
 		'.panel .k:hover{border-color:#0F0F10}' +
-		'.msg{position:absolute;left:50%;transform:translateX(-50%);top:14%;z-index:63;font:600 14px/1.4 ' + FONT + ';background:rgba(15,15,16,.9);color:#fff;border-radius:10px;padding:8px 14px;pointer-events:none}';
+		'.msg{position:absolute;left:50%;transform:translateX(-50%);top:14%;z-index:63;font:600 14px/1.4 ' + FONT + ';background:rgba(15,15,16,.9);color:#fff;border-radius:10px;padding:8px 14px;pointer-events:none}' +
+		':host(.mob) .bar{font-size:15px;max-width:96%;bottom:var(--pos,8%)}:host(.mob) .tr{font-size:13px}:host(.mob) .line{padding:3px 10px;border-radius:8px}' +
+		':host(.mob) .grip,:host(.mob) .chip,:host(.mob) .advb,:host(.mob) .panel,:host(.mob) .lensmenu{display:none!important}:host(.mob) .msg{font-size:13px;max-width:90%;text-align:center}' +
+		':host(.mob) .quiz{position:fixed;left:0;right:0;top:auto;bottom:0;transform:none;width:100%;max-height:70vh;border-radius:16px 16px 0 0;padding-bottom:calc(18px + env(safe-area-inset-bottom))}';
 
 	var SIDE_CSS = '' +
 		':host{all:initial;display:block;margin-bottom:16px}*{box-sizing:border-box}' +
@@ -114,7 +121,22 @@
 		'.fx{background:#EDE9FE;box-shadow:0 0 0 1px #A78BFA;border-radius:3px}' +
 		'.empty{padding:16px;color:#8A8584}' +
 		'.foot{padding:8px 12px;border-top:1px solid #E6E3DF;font-size:12px;color:#8A8584}.foot kbd{font:600 11px/1 ' + FONT + ';border:1px solid #E6E3DF;border-bottom-width:2px;border-radius:4px;padding:1px 5px;color:#0F0F10}' +
-		':host(.min) .legend,:host(.min) .list,:host(.min) .foot,:host(.min) .focus,:host(.min) .fbar{display:none!important}';
+		':host(.min) .legend,:host(.min) .list,:host(.min) .foot,:host(.min) .focus,:host(.min) .fbar,:host(.min) .opts{display:none!important}' +
+		// Phones: the player's controls live in a row under the header, and the transcript scrolls inside the card.
+		':host(.mob){margin:8px 12px 16px}:host(.mob) .list{max-height:45vh}:host(.mob) .tx{font-size:16px}' +
+		'.ctl{display:flex;gap:6px;padding:8px 10px;border-bottom:1px solid #E6E3DF;overflow-x:auto;scrollbar-width:none}' +
+		'.cb{flex:none;font:600 13px/1 ' + FONT + ';border:1px solid #E6E3DF;background:#fff;color:#0F0F10;border-radius:999px;padding:9px 12px;white-space:nowrap;cursor:pointer}.cb.on{background:#0F0F10;border-color:#0F0F10;color:#fff}.cb[disabled]{opacity:.6}' +
+		'.opts{display:none;padding:4px 12px 8px;border-bottom:1px solid #E6E3DF;font-size:14px}.opts.on{display:block}.opts label{display:flex;gap:10px;align-items:center;padding:7px 0}.opts input{width:18px;height:18px}';
+
+	var HOV = TOUCH ? 'tap' : 'hover';
+	var OPTS = '<label><input type="checkbox" data-pref="showTrans"> Arabic translation (2nd line)</label>' +
+		'<label><input type="checkbox" data-pref="showSound"> How it sounds (3rd line)</label>' +
+		'<label><input type="checkbox" data-pref="blurCaptions"> Blur captions until ' + HOV + '</label>' +
+		'<label><input type="checkbox" data-pref="blurTrans"> Blur translation until ' + HOV + '</label>' +
+		'<label><input type="checkbox" data-pref="colors"> Colour words</label>' +
+		'<label><input type="checkbox" data-pref="pauseOnHover"> Pause when I ' + HOV + ' a word</label>' +
+		'<label><input type="checkbox" data-pref="maskSwears"> Mask swear words (f***)</label>' +
+		'<label><input type="checkbox" data-pref="wordQuiz"> Quiz me on my Learning words</label>';
 
 	var REPEAT = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17 2l3 3-3 3M4 11V9a4 4 0 0 1 4-4h12M7 22l-3-3 3-3M20 13v2a4 4 0 0 1-4 4H4"/></svg>';
 	var WAVE = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h2M7 8v8M11 5v14M15 8v8M19 11v2"/></svg>';
@@ -347,6 +369,9 @@
 			S.side.style.display = prefs.sidebar ? '' : 'none';
 			var cb = S.sRoot.querySelector('[data-a=colors]');
 			if (cb) cb.classList.toggle('on', prefs.colors);
+			S.sRoot.querySelectorAll('[data-pref]').forEach(function (i) { i.checked = !!prefs[i.dataset.pref]; });
+			var sap = S.sRoot.querySelector('.ctl [data-a=autopause]');
+			if (sap) sap.classList.toggle('on', prefs.autoPause);
 		}
 		if (prefs.sidebar && S.videoId && !S.side) mountSide();
 	}
@@ -414,16 +439,8 @@
 				'<button class="t" data-a="autopause" title="Pause after every sentence">Auto-pause<kbd>Q</kbd></button>' +
 				'<button class="t" data-a="save">Save sentence</button>' +
 				'<button class="t" data-a="side">Transcript</button>' +
-				'<div class="lmh">Display</div><div class="menu on">' +
-				'<label><input type="checkbox" data-pref="showTrans"> Arabic translation (2nd line)</label>' +
-				'<label><input type="checkbox" data-pref="showSound"> How it sounds (3rd line)</label>' +
-				'<label><input type="checkbox" data-pref="blurCaptions"> Blur captions until hover</label>' +
-				'<label><input type="checkbox" data-pref="blurTrans"> Blur translation until hover</label>' +
-				'<label><input type="checkbox" data-pref="colors"> Colour words</label>' +
-				'<label><input type="checkbox" data-pref="pauseOnHover"> Pause when I hover a word</label>' +
-				'<label><input type="checkbox" data-pref="maskSwears"> Mask swear words (f***)</label>' +
-				'<label><input type="checkbox" data-pref="wordQuiz"> Quiz me on my Learning words</label>' +
-				'</div></div>';
+				'<div class="lmh">Display</div><div class="menu on">' + OPTS + '</div></div>';
+			if (MOBILE) S.host.classList.add('mob');
 			player.appendChild(S.host);
 			S.root.querySelector('.line.snd').addEventListener('mouseenter', soundTip);
 			S.root.querySelector('.line.snd').addEventListener('mouseleave', function () { S.root.querySelector('.sndtip').classList.remove('on'); });
@@ -438,10 +455,7 @@
 			});
 			S.root.addEventListener('mouseup', function (e) { onSelect(e, S.root, 'bar'); });
 			setupDrag(player);
-			S.video = player.querySelector('video');
-			// Also check on the video's own time updates: screen refreshes slow down when the tab is in the background.
-			S.video.addEventListener('timeupdate', checkStop);
-			S.video.addEventListener('timeupdate', checkQuiz);
+			useVideo(player.querySelector('video'));
 			loop();
 		}
 		applyPrefs();
@@ -449,8 +463,17 @@
 		if (prefs.sidebar) mountSide();
 	}
 
+	/** Follow the player's video. The phone site swaps in a new <video> (after ads, for example): keep up with it. */
+	function useVideo(v) {
+		if (!v || v === S.video) return;
+		S.video = v;
+		// Also check on the video's own time updates: screen refreshes slow down when the tab is in the background.
+		v.addEventListener('timeupdate', function () { if (S.video === v) { checkStop(); tick(false); checkQuiz(); } });
+	}
+
 	/** The Language Lens button on YouTube's own control bar: it opens the menu with the controls and display options. */
 	function ytButton(player) {
+		if (MOBILE) return; // the phone player has no control bar to add to: the controls are under the player
 		var bar = player.querySelector('.ytp-right-controls');
 		if (!bar || bar.querySelector('.sawa-lens-ytbtn')) return;
 		var b = document.createElement('button');
@@ -557,27 +580,38 @@
 	/* ------------------------------------------------------------ transcript sidebar */
 	function mountSide() {
 		if (!prefs.sidebar || !S.videoId) return;
-		var col = document.querySelector('#secondary-inner') || document.querySelector('#secondary');
+		// Computer: the right column. Phone: under the video's title, above the next videos.
+		var col = MOBILE ? document.querySelector('ytm-single-column-watch-next-results-renderer') : document.querySelector('#secondary-inner') || document.querySelector('#secondary');
 		if (!col) return;
 		if (S.side && S.side.isConnected && S.side.parentNode === col) return;
 		if (S.side) S.side.remove();
 		S.side = document.createElement('sawa-lens-side');
+		if (MOBILE) S.side.classList.add('mob');
 		S.sRoot = S.side.attachShadow({ mode: 'open' });
 		S.sRoot.innerHTML = '<style>' + SIDE_CSS + '.vprof{margin:6px 10px;font:500 13px/1.4 ' + FONT + '}.vprof summary{cursor:pointer;padding:6px 0}.vprof summary small{color:#8A8584}.vbar{display:flex;height:10px;border-radius:5px;overflow:hidden;margin:6px 0}.vbar i{display:block;height:100%}.vt{width:100%;border-collapse:collapse;font-size:12.5px}.vt td{padding:2px 4px}.vt td:nth-child(n+2){text-align:right;color:#57534E}.vd{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:6px}.vv{margin:8px 0;font-size:13px}.lmh2{font:700 11px/1 ' + FONT + ';letter-spacing:.06em;text-transform:uppercase;color:#8A8584;margin:8px 0 4px}.vtop{display:flex;flex-wrap:wrap;gap:4px}.vtop span{background:#F3F1EE;border-radius:99px;padding:3px 8px;font-size:12.5px}.vtop small{color:#8A8584}</style><div class="side">' +
 			'<div class="head"><div class="ttl">Language Lens <small class="g"></small></div><div class="hb">' +
 			'<button class="ib" data-a="follow" title="Follow the current sentence">Follow</button>' +
 			'<button class="ib" data-a="colors" title="Colour words">Colours</button>' +
 			'<button class="ib" data-a="min" title="Collapse">—</button></div></div>' +
+			(MOBILE ? '<div class="ctl"><button class="cb" data-a="prev" aria-label="Previous sentence">◀</button><button class="cb" data-a="repeat" aria-label="Repeat sentence">↻ Repeat</button><button class="cb" data-a="next" aria-label="Next sentence">▶</button>' +
+				'<button class="cb" data-a="autopause">Auto-pause</button><button class="cb" data-a="save">Save sentence</button><button class="cb" data-a="opts">Aa Display ▾</button></div><div class="opts">' + OPTS + '</div>' : '') +
 			'<div class="goal"></div><div class="vprof"></div><div class="lq"></div><div class="adv"></div>' +
 			'<div class="legend"><span><i class="sw known"></i>Known</span><span><i class="sw next"></i>Worth checking</span><span><i class="sw hard"></i>Above your level / rare</span><span><i class="sw learning"></i>Learning</span></div>' +
 			'<div class="focus"><label for="fsel">Focus on</label><select class="fsel" id="fsel"><option value="">— none —</option></select></div>' +
 			'<div class="fbar"><div class="row"><div><i class="sw2"></i><b class="fname"></b> · <span class="fcount"></span></div><div class="fnav"><button data-a="fprev" title="Previous example">▲</button><button data-a="fnext" title="Next example">▼</button></div></div><div class="rule"></div></div>' +
-			'<div class="list"></div><div class="foot">Click a sentence to play it. <kbd>A</kbd> previous · <kbd>S</kbd> repeat · <kbd>D</kbd> next · <kbd>Q</kbd> auto-pause. Select words to translate, hear or save them.</div></div>';
-		col.insertBefore(S.side, col.firstChild);
+			'<div class="list"></div><div class="foot">' + (TOUCH
+				? 'Tap a sentence to play it, ↻ to hear only that sentence. Tap a word for its meaning. Press and hold to select words to translate or save.'
+				: 'Click a sentence to play it. <kbd>A</kbd> previous · <kbd>S</kbd> repeat · <kbd>D</kbd> next · <kbd>Q</kbd> auto-pause. Select words to translate, hear or save them.') + '</div></div>';
+		var meta = MOBILE && col.querySelector(':scope > ytm-slim-video-metadata-section-renderer');
+		col.insertBefore(S.side, meta ? meta.nextSibling : col.firstChild);
 		S.sRoot.addEventListener('mouseover', function (e) { onOver(e, 'side'); });
 		S.sRoot.addEventListener('mouseout', onOut);
 		S.sRoot.addEventListener('click', onSideClick);
 		S.sRoot.addEventListener('mouseup', function (e) { onSelect(e, S.sRoot, 'side'); });
+		S.sRoot.addEventListener('change', function (e) {
+			var k = e.target.dataset.pref;
+			if (k) setPref(k === 'colors' ? 'lensColors' : k, e.target.checked);
+		});
 		var list = S.sRoot.querySelector('.list');
 		list.addEventListener('wheel', function () { S.scrolledAt = Date.now(); }, { passive: true });
 		list.addEventListener('touchmove', function () { S.scrolledAt = Date.now(); }, { passive: true });
@@ -737,6 +771,11 @@
 
 	function onSideClick(e) {
 		var b = e.target.closest('[data-a]');
+		if (b && b.closest('.ctl')) {
+			if (b.dataset.a === 'opts') S.sRoot.querySelector('.opts').classList.toggle('on');
+			else doAction(b.dataset.a, b);
+			return;
+		}
 		if (b && b.closest('.head')) {
 			var a = b.dataset.a;
 			if (a === 'follow') {
@@ -770,7 +809,9 @@
 			}
 			return;
 		}
-		if (e.target.closest('.focus,.goal,.snd,.adv')) return;
+		if (e.target.closest('.focus,.goal,.snd,.adv,.opts')) return;
+		var wd = TOUCH && e.target.closest('.wd');
+		if (wd) return openWord(wd, 'side');
 		var row = e.target.closest('.s');
 		if (!row || !S.video) return;
 		var i = +row.dataset.i, s = S.sents[i];
@@ -960,6 +1001,7 @@
 	}
 
 	function tick(force) {
+		if (S.host && S.host.parentNode) useVideo(S.host.parentNode.querySelector('video'));
 		if (!S.video || !S.root) return;
 		if (document.querySelector('#movie_player.ad-showing')) {
 			if (S.idx !== -2) {
@@ -1040,6 +1082,7 @@
 	/* ------------------------------------------------------------ hover, select, clicks */
 	var overT = null;
 	function onOver(e, where) {
+		if (TOUCH) return; // phones open the card on tap (onClick / onSideClick)
 		var w = e.target.closest && e.target.closest('.wd');
 		if (!w) {
 			if (Card.isOpen()) Card.keepOpen();
@@ -1047,39 +1090,43 @@
 		}
 		if (Card.selectOpen && Card.selectOpen()) return;
 		clearTimeout(overT);
-		overT = setTimeout(function () {
-			var src;
-			if (where === 'side') {
-				var row = w.closest('.s'), s = row && S.sents[+row.dataset.i];
-				if (!s) return;
-				src = { text: s.text, start: s.start, end: s.end };
-			} else {
-				var cue = S.cues[S.idx];
-				if (!cue) return;
-				// The full sentence around this caption line is the better context.
-				var si = find(S.sents, cue.start + 1, null), sent = S.sents[si];
-				src = sent && sent.text.indexOf(w.textContent) >= 0 ? { text: sent.text, start: sent.start, end: sent.end } : { text: cue.text, start: cue.start, end: cue.end };
-				if (prefs.pauseOnHover && S.video && !S.video.paused) {
-					S.video.pause();
-					S.pausedByUs = true;
-				}
+		overT = setTimeout(function () { openWord(w, where); }, where === 'side' ? 250 : 120);
+	}
+
+	/** The word card for a caption or transcript word, with its sentence as context. */
+	function openWord(w, where) {
+		var src;
+		if (where === 'side') {
+			var row = w.closest('.s'), s = row && S.sents[+row.dataset.i];
+			if (!s) return;
+			src = { text: s.text, start: s.start, end: s.end };
+		} else {
+			var cue = S.cues[S.idx];
+			if (!cue) return;
+			// The full sentence around this caption line is the better context.
+			var si = find(S.sents, cue.start + 1, null), sent = S.sents[si];
+			src = sent && sent.text.indexOf(w.textContent) >= 0 ? { text: sent.text, start: sent.start, end: sent.end } : { text: cue.text, start: cue.start, end: cue.end };
+			if (prefs.pauseOnHover && S.video && !S.video.paused) {
+				S.video.pause();
+				S.pausedByUs = true;
 			}
-			Card.show({
-				word: w.textContent,
-				grammar: w.closest('.fx') ? w.closest('.fx').dataset.l : '',
-				rect: w.getBoundingClientRect(),
-				sentence: src.text,
-				source: { url: 'https://www.youtube.com/watch?v=' + S.videoId + '&t=' + Math.floor(src.start / 1000), title: document.title.replace(/ - YouTube$/, ''), videoId: S.videoId, startMs: src.start, endMs: src.end },
-				onHide: resume,
-				onReplay: function (a, b) {
-					S.pausedByUs = false;
-					play(a, b);
-				}
-			});
-		}, where === 'side' ? 250 : 120);
+		}
+		Card.show({
+			word: w.textContent,
+			grammar: w.closest('.fx') ? w.closest('.fx').dataset.l : '',
+			rect: w.getBoundingClientRect(),
+			sentence: src.text,
+			source: { url: 'https://www.youtube.com/watch?v=' + S.videoId + '&t=' + Math.floor(src.start / 1000), title: document.title.replace(/ - YouTube$/, ''), videoId: S.videoId, startMs: src.start, endMs: src.end },
+			onHide: resume,
+			onReplay: function (a, b) {
+				S.pausedByUs = false;
+				play(a, b);
+			}
+		});
 	}
 
 	function onOut(e) {
+		if (TOUCH) return;
 		var w = e.target.closest && e.target.closest('.wd');
 		if (w) {
 			clearTimeout(overT);
@@ -1097,6 +1144,12 @@
 		setTimeout(function () {
 			var sel = root.getSelection ? root.getSelection() : window.getSelection();
 			var text = sel && !sel.isCollapsed ? String(sel).replace(/\s+/g, ' ').trim() : '';
+			if (!e) {
+				// Phone selection (no mouseup): only a new selection inside this box or transcript.
+				if (!sel || !sel.anchorNode || !root.contains(sel.anchorNode)) return;
+				if (text === S.lastSel) return;
+				S.lastSel = text;
+			}
 			if (!/[A-Za-z]{2,}/.test(text) || text.length > 400) return;
 			var s;
 			if (where === 'side') {
@@ -1126,6 +1179,11 @@
 	}
 
 	function onClick(e) {
+		var wd = TOUCH && e.target.closest('.wd');
+		if (wd) {
+			e.stopPropagation();
+			return openWord(wd, 'bar');
+		}
 		var b = e.target.closest('[data-a], .chip');
 		if (!b) return;
 		e.stopPropagation();
@@ -1135,7 +1193,12 @@
 			if (p.classList.contains('on')) paintPanel();
 			return;
 		}
-		var a = b.dataset.a, j = currentSentence();
+		doAction(b.dataset.a, b);
+	}
+
+	/** The sentence controls, from the player menu (computer) or the row under the player (phone). */
+	function doAction(a, b) {
+		var j = currentSentence();
 		if (a === 'prev' || a === 'next') {
 			var n = a === 'next' ? Math.min(S.sents.length - 1, j + 1) : Math.max(0, j - 1);
 			if (S.sents[n]) play(S.sents[n].start, prefs.autoPause ? S.sents[n].end : 0);
@@ -1224,8 +1287,27 @@
 		})();
 	}
 
+	// Phones: press-and-hold selects words but there is no mouseup, so wait until the selection settles.
+	if (TOUCH) {
+		var selT = null;
+		document.addEventListener('selectionchange', function () {
+			clearTimeout(selT);
+			selT = setTimeout(function () {
+				if (S.sRoot) onSelect(null, S.sRoot, 'side');
+				if (S.root) onSelect(null, S.root, 'bar');
+			}, 600);
+		});
+	}
+
 	// YouTube rebuilds the right column on navigation: keep the sidebar in place.
 	setInterval(function () { if (S.videoId && prefs.sidebar) mountSide(); }, 2000);
 	document.addEventListener('yt-navigate-finish', function () { setTimeout(start, 300); });
+	// The phone site has no yt-navigate-finish: notice the address changing instead.
+	var lastHref = location.href;
+	if (MOBILE) setInterval(function () {
+		if (location.href === lastHref) return;
+		lastHref = location.href;
+		setTimeout(start, 300);
+	}, 1000);
 	start();
 })();

@@ -146,24 +146,38 @@
 	document.addEventListener('mouseup', function (e) {
 		if (PAUSED) return;
 		if (e.composedPath().some(function (n) { return n.tagName && /^SAWA-LENS/.test(n.tagName); })) return;
-		setTimeout(function () {
-			var sel = window.getSelection();
-			var t = sel && !sel.isCollapsed ? sel.toString().replace(/\s+/g, ' ').trim() : '';
-			if (arOn && t.length >= 2 && t.length <= 800 && (t.match(/[\u0621-\u064A]/g) || []).length > t.replace(/\s/g, '').length * 0.4 && !(sel.anchorNode && skip(sel.anchorNode))) {
-				// Arabic selected: show it in English.
-				clearTimeout(timer);
-				var ra = sel.getRangeAt(0);
-				Card.showAr({ word: t, selected: true, rect: ra.getBoundingClientRect(), sentence: t, source: { url: location.href, title: document.title } });
-				return;
-			}
-			if (t.length < (mode === 'select' ? 2 : 3) || t.length > 600 || !/[A-Za-z]{2,}/.test(t) || (sel.anchorNode && skip(sel.anchorNode))) return;
-			var r = sel.getRangeAt(0);
-			clearTimeout(timer);
-			// One word selected (or double-clicked): its word card. More words: the phrase / sentence card.
-			if (/^[A-Za-z'’-]+$/.test(t)) { Card.show({ word: t, grammar: '', rect: r.getBoundingClientRect(), sentence: sentenceAround(r.startContainer, r.startOffset) || t, source: { url: location.href, title: document.title } }); return; }
-			Card.select({ text: t, sentence: sentenceAround(r.startContainer, r.startOffset) || t, rect: r.getBoundingClientRect(), source: { url: location.href, title: document.title } });
-		}, 10);
+		setTimeout(checkSelection, 10);
 	});
+	// Phones: press-and-hold selects text without a mouseup, so wait until the selection settles.
+	if (window.matchMedia && matchMedia('(hover: none)').matches) {
+		var selT = null, lastSel = '';
+		document.addEventListener('selectionchange', function () {
+			clearTimeout(selT);
+			selT = setTimeout(function () {
+				var t = String(window.getSelection() || '').trim();
+				if (PAUSED || t === lastSel) return;
+				lastSel = t;
+				checkSelection();
+			}, 700);
+		});
+	}
+	function checkSelection() {
+		var sel = window.getSelection();
+		var t = sel && !sel.isCollapsed ? sel.toString().replace(/\s+/g, ' ').trim() : '';
+		if (arOn && t.length >= 2 && t.length <= 800 && (t.match(/[\u0621-\u064A]/g) || []).length > t.replace(/\s/g, '').length * 0.4 && !(sel.anchorNode && skip(sel.anchorNode))) {
+			// Arabic selected: show it in English.
+			clearTimeout(timer);
+			var ra = sel.getRangeAt(0);
+			Card.showAr({ word: t, selected: true, rect: ra.getBoundingClientRect(), sentence: t, source: { url: location.href, title: document.title } });
+			return;
+		}
+		if (t.length < (mode === 'select' ? 2 : 3) || t.length > 600 || !/[A-Za-z]{2,}/.test(t) || (sel.anchorNode && skip(sel.anchorNode))) return;
+		var r = sel.getRangeAt(0);
+		clearTimeout(timer);
+		// One word selected (or double-clicked): its word card. More words: the phrase / sentence card.
+		if (/^[A-Za-z'’-]+$/.test(t)) { Card.show({ word: t, grammar: '', rect: r.getBoundingClientRect(), sentence: sentenceAround(r.startContainer, r.startOffset) || t, source: { url: location.href, title: document.title } }); return; }
+		Card.select({ text: t, sentence: sentenceAround(r.startContainer, r.startOffset) || t, rect: r.getBoundingClientRect(), source: { url: location.href, title: document.title } });
+	}
 
 	/* ------------------------------------------------------------ chip, panel, toast */
 	var host = document.createElement('sawa-lens-page');
