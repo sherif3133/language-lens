@@ -237,12 +237,26 @@ async function api(path, body, method) {
 	});
 	const j = await res.json().catch(() => ({}));
 	if (res.status === 401) {
-		await set({ token: '', me: null });
+		// Forget the sign-in only when the server really doesn't know this token: one odd 401 (a cache, a proxy, a lost header)
+		// used to sign members out, so the next browser start asked them to sign in again.
+		if (path !== '/me' && await tokenStillGood(server, token)) throw new Error('Connection problem. Try again.');
+		const now = await get('token');
+		if (now.token === token) await set({ token: '', me: null });
 		throw new Error('signed_out');
 	}
 	if (res.status === 403 && j.code === 'locked') throw new Error('locked'); // not in a free account's plan (Sawa Lens 0.25.0+)
 	if (!res.ok) throw new Error(j.message || 'Connection problem. Try again.');
 	return j;
+}
+
+/** A second opinion before signing out: does /me still accept this token? (true also when the check can't run.) */
+async function tokenStillGood(server, token) {
+	try {
+		const r = await fetch(server + '/wp-json/sawa-lens/v1/me', { headers: { Authorization: 'Bearer ' + token, 'X-Sawa-Token': token }, cache: 'no-store' });
+		return r.status !== 401;
+	} catch (e) {
+		return true;
+	}
 }
 
 /** Free or member: what this account may use. Old servers send no plan, so everything stays open. */
@@ -263,19 +277,37 @@ function tabLogin() {
 	return !(chrome.identity && chrome.identity.launchWebAuthFlow) || /Android|iPhone|iPad|Mobile/i.test(navigator.userAgent);
 }
 
-async function login() {
+/** One sign-in at a time: a second click joins the one already running. */
+let loginRunning = null;
+function login() {
+	if (!loginRunning) loginRunning = startLogin().finally(() => { loginRunning = null; });
+	return loginRunning;
+}
+
+/** Sign in in a normal tab: the site sends the token back to its own "connected" page; content/connect.js hands it to us (loginTab). */
+async function loginInTab(server, state) {
+	await set({ pendingLogin: { state, t: Date.now() } });
+	const redirect = server + '/?sawa_lens=connected';
+	await chrome.tabs.create({ url: server + '/?sawa_lens=connect&redirect_uri=' + encodeURIComponent(redirect) + '&state=' + state });
+	return { pending: true };
+}
+
+async function startLogin() {
 	const { server } = await get('server');
 	const state = crypto.randomUUID();
-	if (tabLogin()) {
-		// The site sends the token back to its own "connected" page; content/connect.js hands it to us (loginTab).
-		await set({ pendingLogin: { state, t: Date.now() } });
-		const redirect = server + '/?sawa_lens=connected';
-		await chrome.tabs.create({ url: server + '/?sawa_lens=connect&redirect_uri=' + encodeURIComponent(redirect) + '&state=' + state });
-		return { pending: true };
-	}
+	if (tabLogin()) return loginInTab(server, state);
 	const redirect = chrome.identity.getRedirectURL('lens');
 	const url = server + '/?sawa_lens=connect&redirect_uri=' + encodeURIComponent(redirect) + '&state=' + state;
-	const back = await chrome.identity.launchWebAuthFlow({ url, interactive: true });
+	let back;
+	try {
+		back = await chrome.identity.launchWebAuthFlow({ url, interactive: true });
+	} catch (e) {
+		// The learner closed the window: nothing to do. Anything else ("Only one web auth flow is allowed at a time" when an
+		// earlier sign-in window is stuck, a blocked pop-up, a network error): sign in in a normal tab instead, like on phones.
+		if (/did not approve|cancel/i.test(String((e && e.message) || e))) throw new Error('Sign-in was closed. Press "Sign in" to try again.');
+		return loginInTab(server, state);
+	}
+	if (!back) return loginInTab(server, state);
 	const hash = new URLSearchParams(new URL(back).hash.slice(1));
 	if (hash.get('state') !== state || !/^[a-f0-9]{64}$/.test(hash.get('token') || '')) throw new Error('Sign-in did not finish. Try again.');
 	return finishLogin(hash.get('token'));

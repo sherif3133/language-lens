@@ -46,7 +46,7 @@ function signedOut(err) {
 		try {
 			const r = await send('login');
 			// Phones: sign-in continues in a new tab, and this popup closes.
-			if (r && r.pending) $('#login').textContent = 'Continue in the new tab…';
+			if (r && r.pending) $('#login').textContent = 'A sign-in tab opened: finish there';
 			else render();
 		} catch (e) {
 			signedOut(e.message && e.message !== 'error' ? e.message : 'Sign-in did not finish. Try again.');
