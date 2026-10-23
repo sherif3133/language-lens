@@ -21,7 +21,7 @@
 		'.sl{font:600 15px/1.4 ' + FONT + ';letter-spacing:.2px}.notes{margin:6px 0 0;padding:0;list-style:none}.notes li{margin-top:6px;font-size:13px;color:#4A4847}.notes li b{color:#0F0F10}';
 	// Phones: a sheet along the bottom of the screen, with bigger buttons for fingers (added last, so it wins).
 	var SHEET = '@media (max-width:600px){.card,.pop{left:0!important;right:0;top:auto!important;bottom:0;width:100%;max-width:100%;max-height:65vh;border-radius:16px 16px 0 0;border-width:1px 0 0;box-shadow:0 -8px 30px rgba(0,0,0,.25);padding-bottom:calc(14px + env(safe-area-inset-bottom))}}' +
-		'@media (pointer:coarse){button{padding:10px 14px;font-size:14px}}';
+		'@media (pointer:coarse){button{padding:10px 14px;font-size:14px}.brand{font-size:13px;line-height:2.2}.brand a{padding:6px 0}}';
 
 	var CSS = BASE +
 		'.card{position:fixed;z-index:2147483646;width:340px;max-width:calc(100vw - 16px);max-height:calc(100vh - 16px);overflow:auto;background:#fff;color:#0F0F10;border:1px solid #0F0F10;border-radius:12px;' +
@@ -158,14 +158,14 @@
 			var en = d.entries.filter(function (e) { return e.en; });
 			meaning = '<div class="en">' + (en.length
 				? en.map(function (e) { return '<span class="row"><span class="pos">' + u(e.pos) + '</span>' + u(e.en) + '</span>'; }).join('')
-				: '<span class="row" style="color:#8A8584">No dictionary entry. Try "In this sentence".</span>') + '</div>';
+				: '<span class="row" style="color:#8A8584">Not in the dictionary. Try “Meaning here” below.</span>') + '</div>';
 			var ex = (en.filter(function (e) { return e.ex; })[0] || {}).ex;
 			if (ex) meaning += '<div class="ex"><button class="say" data-a="say-ex" title="Listen">' + SPEAK + '</button><i>' + u(ex) + '</i></div>';
 		} else {
 			var ar = d.entries.filter(function (e) { return e.ar; });
 			meaning = '<div class="ar ar-text">' + (ar.length
 				? ar.map(function (e) { return '<span class="row">' + u(e.ar) + '<span class="pos">' + u(posAr(e.pos)) + '</span></span>'; }).join('')
-				: '<span class="row" style="color:#8A8584">Not in the dictionary. Try "In this sentence".</span>') + '</div>' +
+				: '<span class="row" style="color:#8A8584">Not in the dictionary. Try “Meaning here” below.</span>') + '</div>' +
 				(d.alts && d.alts.length ? '<div class="alt">Can also be: ' + d.alts.map(function (a) { return u(a.lemma) + (a.ar ? ' <span class="ar-text">(' + u(a.ar.split('،')[0]) + ')</span>' : ''); }).join(', ') + '</div>' : '');
 		}
 		var pr = '';
@@ -208,7 +208,7 @@
 			(learning || d.mark === 'known' ? '' : '<button data-a="curious" class="cur' + (cur.curious ? ' on' : '') + '" title="You understood it: earn XP for being curious. It isn\'t added to your reviews.">' + (cur.curious ? '💡 ' + (cur.curious.xp ? '+' + cur.curious.xp + ' XP' : 'Curious ✓') : '💡 Curious') + '</button>') +
 			'</div>' +
 			(cur.msg ? '<div class="msg' + (cur.bad ? ' bad' : '') + '">' + u(cur.msg) + '</div>' : '') +
-			'<div class="brand">' + (!cur.pics ? '<a href="#" data-a="pics">🖼 Picture</a> · ' : '') + '<a href="https://youglish.com/pronounce/' + encodeURIComponent((d.lemma || cur.word).toLowerCase()) + '/english" target="_blank" rel="noopener">Hear it in other videos ↗</a> · Language Lens · Sawa English</div>';
+			'<div class="brand">' + (cur.sentence && !cur.ctx ? '<a href="#" data-a="explain" title="What it means in this sentence (AI)">💬 Meaning here</a> · ' : '') + (!cur.pics ? '<a href="#" data-a="pics">🖼 Picture</a> · ' : '') + '<a href="https://youglish.com/pronounce/' + encodeURIComponent((d.lemma || cur.word).toLowerCase()) + '/english" target="_blank" rel="noopener">Hear it in other videos ↗</a> · Language Lens · Sawa English</div>';
 		place(cur.rect);
 	}
 

@@ -70,7 +70,7 @@ async function render() {
 	} catch (e) {
 		/* chrome:// pages etc. */
 	}
-	const isYT = origin === 'https://www.youtube.com';
+	const isYT = origin === 'https://www.youtube.com' || origin === 'https://m.youtube.com';
 	const p = st.progress || {};
 	const todayWords = Math.max(st.local.words || 0, p.todayWords || 0);
 	const todaySent = Math.max(st.local.sentences || 0, p.todaySentences || 0);
@@ -84,6 +84,8 @@ async function render() {
 	// Vocals only: computers only (phones and touch screens don't get it), and not where it was too slow.
 	const vo = await chrome.storage.local.get(['vocalsOnly', 'vocalsSlow', 'songLyrics']);
 	const computer = !matchMedia('(hover: none)').matches && !/Android|iPhone|iPad|Mobile/i.test(navigator.userAgent);
+	const more = (await chrome.storage.local.get('popupMore')).popupMore === true;
+	const point = computer ? 'Hover' : 'Tap';
 	const dy = await send('daily').catch(() => ({ read: 0, heard: 0, curious: 0, learning: 0, used: 0, cap: 30 }));
 	const groups = {};
 	(st.focusList || []).forEach((f) => { (groups[f.group] = groups[f.group] || []).push(f); });
@@ -118,7 +120,7 @@ async function render() {
 			</div>
 			<div class="lcap"><span>★ New Learning words today: <b>${dy.used} / ${dy.cap}</b></span>${dy.level ? `<span class="pill">Card level ${dy.level}</span>` : `<select id="lcap" title="New Learning words a day">${[20, 30, 40].map((x) => `<option ${x === dy.cap ? 'selected' : ''}>${x}</option>`).join('')}</select>`}</div>
 			${dy.catchup ? '<p class="hint"><b>Catch-up time:</b> finish your due review cards, then new words open again.</p>' : dy.full ? `<p class="hint"><b>${dy.waiting} words</b> are waiting to become cards. Review every day to raise your card level.</p>` : ''}
-			<p class="hint">Hover any word you're curious about and tap <b>💡 Curious</b> for XP. It isn't added to your reviews, so you never get overwhelmed.</p>
+			<p class="hint">${point} any word you're curious about, then press <b>💡 Curious</b> for XP. It isn't added to your reviews, so you never get overwhelmed.</p>
 		</div>
 		<div class="sec">
 			<div class="label">Your level</div>
@@ -126,10 +128,10 @@ async function render() {
 			<p class="hint">${esc(LEVEL_HINT[st.level - 1])}: words up to this level count as known unless you mark them.</p>
 		</div>
 		<div class="sec">
-			${isYT ? toggle('pause', 'Pause when I hover a word', 'On YouTube captions.', st.pauseOnHover)
+			${isYT ? toggle('pause', computer ? 'Pause when I hover a word' : 'Pause when I tap a word', 'On YouTube captions.', st.pauseOnHover)
 		: origin ? `<div class="row"><div style="min-width:0"><div class="t">On this site</div><div class="site">${esc(origin.replace(/^https?:\/\//, ''))}</div></div>
 				<label class="switch"><input type="checkbox" id="site" ${enabled ? 'checked' : ''}><span></span></label></div>
-				<p class="hint">${enabled ? 'Hover any word for its meaning. Select words to translate, hear or save them.' : 'Paused on this site. Switch on to use Language Lens here again.'}</p>`
+				<p class="hint">${enabled ? (computer ? 'Hover any word for its meaning. Select words to translate, hear or save them.' : 'Tap any word for its meaning. Press and hold to select words to translate, hear or save them.') : 'Paused on this site. Switch on to use Language Lens here again.'}</p>`
 		: '<p class="muted">Open YouTube or any page with English text.</p>'}
 			<p class="err" id="err" hidden></p>
 		</div>
@@ -139,18 +141,22 @@ async function render() {
 			<div class="label" style="margin-top:12px">Explanations</div>
 			<div class="seg2"><button data-x="en" aria-pressed="${st.explainLang !== 'ar'}">English</button><button data-x="ar" lang="ar" aria-pressed="${st.explainLang === 'ar'}">العربية</button></div>
 			<p class="hint">Notes on words, pronunciation tips, grammar and lyrics. Saved with your account, so the Sawa app uses it too.</p>
-			<div style="margin-top:12px">${toggle('showIPA', 'IPA and "sounds like"', 'Under each word, with sounds Arabic speakers find hard.', st.showIPA !== false)}</div>
 		</div>
 		<div class="sec">
 			<div class="label">YouTube</div>
-			${toggle('sidebar', 'Transcript next to the video', 'Full sentences with timestamps. Click one to play it.', st.sidebar !== false)}
+			${toggle('sidebar', 'Transcript next to the video', computer ? 'Full sentences with timestamps. Click one to play it.' : 'Under the video: full sentences. Tap one to play it.', st.sidebar !== false)}
 			${toggle('lensYT', 'Language Lens on YouTube', 'Also on the player bar: the switch next to Aa.', st.lensYT !== false)}
-			${toggle('showEn', 'English captions (1st line)', 'Tap any word for its meaning.', st.showEn !== false)}
+			${toggle('showEn', 'English captions (1st line)', point + ' any word for its meaning.', st.showEn !== false)}
 			${toggle('showTrans', 'Arabic translation (2nd line)', 'YouTube\'s auto-translation, under the captions.', st.showTrans !== false)}
 			${toggle('showSound', 'How it sounds (3rd line)', 'How fast speech sounds, e.g. “wanna”.', st.showSound !== false)}
-			${toggle('blurCaptions', 'Blur captions until hover', 'Listen first, then check.', !!st.blurCaptions)}
-			${toggle('blurTrans', 'Blur the translation', 'Hover over it, or tap it on a phone, to read it.', !!st.blurTrans)}
-			<p class="hint">Hotkeys: <kbd>A</kbd> previous · <kbd>S</kbd> repeat · <kbd>D</kbd> next · <kbd>Q</kbd> auto-pause. Drag the ⋮⋮ grip to move the captions.</p>
+			${computer ? '<p class="hint">Hotkeys: <kbd>A</kbd> previous · <kbd>S</kbd> repeat · <kbd>D</kbd> next · <kbd>Q</kbd> auto-pause. Drag the ⋮⋮ grip to move the captions.</p>' : ''}
+		</div>
+		<details class="more" id="more" ${more ? 'open' : ''}><summary>More settings</summary>
+		<div class="sec">
+			<div class="label">Practice</div>
+			${toggle('blurCaptions', computer ? 'Blur captions until hover' : 'Blur captions until tap', 'Listen first, then check.', !!st.blurCaptions)}
+			${toggle('blurTrans', 'Blur the translation', computer ? 'Hover over it to read it.' : 'Tap it to read it.', !!st.blurTrans)}
+			${toggle('showIPA', 'IPA and "sounds like"', 'Under each word, with sounds Arabic speakers find hard.', st.showIPA !== false)}
 		</div>
 		<div class="sec">
 			<div class="label">🎵 Music</div>
@@ -162,18 +168,19 @@ async function render() {
 			<div class="label">Focus</div>
 			<select id="focus" class="fsel"><option value="">— none —</option>${Object.keys(groups).map((g) => `<optgroup label="${g}">${groups[g].map((f) => `<option value="${f.key}" ${st.focus === f.key ? 'selected' : ''}>${esc(f.name)}</option>`).join('')}</optgroup>`).join('')}</select>
 			<p class="hint">Highlights a grammar point or a sound everywhere, so you notice it.</p>
-			<div style="margin-top:12px"><div class="label">Show meanings on websites</div><select id="hmode" class="fsel"><option value="hover" ${hmode === 'hover' ? 'selected' : ''}>When I hover over a word</option><option value="alt" ${hmode === 'alt' ? 'selected' : ''}>When I hover and hold Alt</option><option value="select" ${hmode === 'select' ? 'selected' : ''}>Only when I select text</option></select><p class="hint">Select or double-click a word for its meaning; select more words to translate or save them.</p></div>
-			<div style="margin-top:12px">${toggle('proof', 'Check my writing on websites', 'Red wavy line = spelling, blue = grammar. Click it to see the fix.', proofOn)}</div>
+			${computer ? `<div style="margin-top:12px"><div class="label">Show meanings on websites</div><select id="hmode" class="fsel"><option value="hover" ${hmode === 'hover' ? 'selected' : ''}>When I hover over a word</option><option value="alt" ${hmode === 'alt' ? 'selected' : ''}>When I hover and hold Alt</option><option value="select" ${hmode === 'select' ? 'selected' : ''}>Only when I select text</option></select><p class="hint">Select or double-click a word for its meaning; select more words to translate or save them.</p></div>` : ''}
+			<div class="label" style="margin-top:16px">Websites</div><div>${toggle('proof', 'Check my writing on websites', 'Red wavy line = spelling, blue = grammar. ' + (computer ? 'Click' : 'Tap') + ' it to see the fix.', proofOn)}</div>
 			<div style="margin-top:12px">${toggle('hidearyt', 'Hide Arabic videos on YouTube', 'Your Home, Up next and Shorts fill with English; Arabic Shorts are skipped. Search still shows everything.', arS.hideArabicYT === true)}</div>
-			<div style="margin-top:12px">${toggle('arhover', 'Arabic → English', 'Hover an Arabic word for its English. Select Arabic text to read it in English.', arS.arHover !== false)}</div>
+			<div style="margin-top:12px">${toggle('arhover', 'Arabic → English', point + ' an Arabic word for its English. Select Arabic text to read it in English.', arS.arHover !== false)}</div>
 			<div style="margin-top:12px">${toggle('arenglish', 'English under Arabic posts', 'Adds an English line under Arabic posts and comments, so you keep reading English. Uses AI.', arS.arEnglish === true)}</div>
 			<div style="margin-top:12px">${toggle('skipui', 'Skip links, titles and buttons', 'No colours or pop-ups on links, headlines, menus, names and labels like Like · Reply · Share. Select them if you need a meaning.', skipUi)}</div>
 			<div style="margin-top:12px">${toggle('colors', 'Colour words on websites', 'On sites where Language Lens is on.', st.colorPages !== false)}</div>
 			<div class="legend"><span><i class="sw next"></i>Worth checking (your next level)</span><span><i class="sw hard"></i>Above your level, or rare</span><span><i class="sw learning"></i>Learning</span></div>
 		</div>
+		</details>
 		<div class="sec links">
 			<a href="${esc(me.app || 'https://sawaenglish.com/app/')}" target="_blank" rel="noopener">Open the Sawa English app</a>
-				<a href="https://sawaenglish.com/guide/" target="_blank" rel="noopener">Guide</a>
+				<a href="https://sawaenglish.com/lens/" target="_blank" rel="noopener">How to use it</a>
 			<button class="out" id="logout">Sign out</button>
 		</div>`;
 
@@ -217,6 +224,7 @@ async function render() {
 	const vx = $('#vocalsonly'); if (vx) vx.onchange = () => chrome.storage.local.set({ vocalsOnly: vx.checked });
 	const su = $('#skipui'); if (su) su.onchange = () => chrome.storage.local.set({ skipUi: su.checked });
 	const hm = $('#hmode'); if (hm) hm.onchange = (e) => chrome.storage.local.set({ hoverMode: e.target.value });
+	$('#more').ontoggle = () => chrome.storage.local.set({ popupMore: $('#more').open });
 	const test = $('#test');
 	if (test) test.onclick = (e) => { e.preventDefault(); send('openTest').then(() => window.close()); };
 	const site = $('#site');

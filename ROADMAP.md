@@ -48,3 +48,34 @@ Left / ideas:
 - BUILT in 0.5.6: 🎮 Lyrics game (content/game.js): one missing word per line (Learning words first), Choose (4 options) or Type it, the video waits at the end of each line, points + streak, missed words → + Learning. Idea: XP in the Sawa Tracker for finished songs.
 - BUILT in 0.5.7: 🎧 Voice-only playlist (vocals/prepare.html; was "Prepared songs"): a song or a whole playlist is taken out of its music ahead of time with Voc_FT (WebGPU; Spleeter without a graphics chip), the voice is kept on the student's computer (IndexedDB, Opus, deleted after 30 days), the original sound is not kept. Each song's sound comes from a muted background tab playing it at double speed. Vocals only then starts at once. Ideas: a whole album in one click from the popup; a smaller/faster best model; share nothing (keep it that way).
 - Legal: separation is local and personal, nothing stored or shared, but it is a grey area. Decide before a public release.
+
+## Simplify Language Lens: choices for Sherif (review of 2026-10-23, after 0.6.3)
+
+0.6.3 fixed the clear problems (tap words on websites on phones, popup wording for phones, More settings, Meaning here link, phone sign-in next step).
+These need your choice. My pick is marked ✅.
+
+1. **Today box in the popup shows 6 numbers** (words learned, sentences saved, words known, read, heard, curious) plus the daily Learning limit.
+   - ✅ A: keep 3 (words learned today, words heard, 💡 curious) and the limit; the rest stays in the Sawa app.
+   - B: keep all 6.
+2. **Signed-out popup says "For Sawa English members"** and gives a non-member nothing to do.
+   - ✅ A: add "Not a member yet? Join Sawa English" linking to the join page.
+   - B: a free account with the dictionary only (no AI), AI after joining.
+   - C: keep it members only, as now.
+3. **Music tools in the popup** (Lyrics, 🎤 Vocals only, 🎧 Voice-only playlist) are for few students and make the popup long.
+   - ✅ A: only in YouTube's player menu (Aa → 🎵 Music), not in the popup.
+   - B: keep them under More settings (as in 0.6.3).
+4. **Word card has three buttons: I know it · Learning · 💡 Curious.** "Curious" is hard to explain (XP, not a review card).
+   - ✅ A: two buttons; Curious XP is given by itself when a student opens a card and stays on it (once per word, as now).
+   - B: keep three buttons.
+5. **One setting for "Meanings" and one for "Explanations"** (English or Arabic, each).
+   - ✅ A: one switch, "Help in: English / العربية", for both.
+   - B: keep two.
+6. **Default meaning language is English → English.** Beginners may not understand English definitions.
+   - ✅ A: Arabic by default for A1–A2 (from the level test), English from B1.
+   - B: English for everyone (as now).
+7. **YouTube panel on phones has many buttons** (◀ ↻ Repeat ▶ Auto-pause, Save sentence, Aa Display, and Auto-scroll · Colours · — at the top).
+   - ✅ A: move Colours and Auto-scroll into Aa Display; Save sentence becomes the ☆ on each transcript line (it already exists there).
+   - B: keep as is.
+
+Data job (no decision needed, just time): some first meanings are odd for learners, e.g. "now" starts with "in the historical present".
+The English meanings come in WordNet's order; put the everyday sense first in `tools/gloss/` and rebuild the lexicon.

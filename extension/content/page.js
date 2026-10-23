@@ -55,6 +55,12 @@
 		return label;
 	}
 
+	/** Text a site marks as another language (lang="fr" on a paragraph): its Latin-letter words are not English (English inside Arabic text still counts). The page's own <html lang> is often wrong, so only inner marks count. */
+	function foreign(node) {
+		var el = node.nodeType === 1 ? node : node.parentElement, l = el && el.closest('[lang]');
+		return !!(l && l !== document.documentElement && !/^(en|ar|und)?(-|$)/i.test(l.getAttribute('lang') || ''));
+	}
+
 	function wordAt(x, y) {
 		var c = caretAt(x, y);
 		if (!c || !c.node || c.node.nodeType !== 3 || skip(c.node)) return null;
@@ -70,6 +76,7 @@
 		while (b < t.length && CH.test(t[b])) b++;
 		var word = t.slice(a, b).replace(/^['’-]+|['’-]+$/g, '');
 		var ar = CH === ARCH;
+		if (!ar && foreign(c.node)) return null;
 		if (ar ? word.replace(/[\u064B-\u0652\u0640]/g, '').length < 2 : !/[A-Za-z]{2,}/.test(word)) return null;
 		var range = document.createRange();
 		range.setStart(c.node, a);
@@ -118,29 +125,47 @@
 		if (Card.selectOpen()) return;
 		clearTimeout(timer);
 		var x = e.clientX, y = e.clientY;
-		timer = setTimeout(function () {
-			var hit = wordAt(x, y);
-			if (hit && uiText(hit.node)) hit = null; // links, titles, buttons and labels: no pop-up
-			if (!hit) {
-				if (Card.isOpen()) Card.hideSoon(500);
-				lastKey = '';
-				return;
-			}
-			if (hit.ar) {
-				if (!arOn) { if (Card.isOpen()) Card.hideSoon(300); lastKey = ''; return; }
-				var akey = hit.word + '@' + Math.round(hit.rect.left) + ',' + Math.round(hit.rect.top);
-				if (akey === lastKey && Card.isOpen()) return;
-				lastKey = akey;
-				Card.showAr({ word: hit.word, rect: hit.rect, sentence: sentenceAround(hit.node, hit.start), source: { url: location.href, title: document.title } });
-				return;
-			}
-			if (looksLikeName(hit.node, hit.start, hit.word)) { if (Card.isOpen()) Card.hideSoon(300); lastKey = ''; return; } // names are not translated
-			var key = hit.word + '@' + Math.round(hit.rect.left) + ',' + Math.round(hit.rect.top);
-			if (key === lastKey && Card.isOpen()) return;
-			lastKey = key;
-			Card.show({ word: hit.word, grammar: focusLabel(hit.node, hit.start), rect: hit.rect, sentence: sentenceAround(hit.node, hit.start), source: { url: location.href, title: document.title } });
-		}, mode === 'alt' ? 60 : 380);
+		timer = setTimeout(function () { showAt(x, y); }, mode === 'alt' ? 60 : 380);
 	}, { passive: true });
+
+	// Phones have no hover: tap a word in the reading text for its card (links, buttons and labels keep working as usual).
+	var TOUCH = !!(window.matchMedia && matchMedia('(hover: none)').matches);
+	if (TOUCH) {
+		document.addEventListener('click', function (e) {
+			if (PAUSED || mode === 'select' || e.defaultPrevented) return;
+			if (e.composedPath().some(function (n) { return n.tagName && /^SAWA-LENS/.test(n.tagName); })) return;
+			if (e.target.closest && e.target.closest('a,button,label,summary,select,[role=button],[role=link],[role=menuitem],[role=tab],[onclick]')) return;
+			var s = window.getSelection();
+			if (s && !s.isCollapsed) return;
+			clearTimeout(timer);
+			lastKey = '';
+			showAt(e.clientX, e.clientY);
+		});
+	}
+
+	/** The card for the word at (x, y): hovered on a computer, tapped on a phone. */
+	function showAt(x, y) {
+		var hit = wordAt(x, y);
+		if (hit && uiText(hit.node)) hit = null; // links, titles, buttons and labels: no pop-up
+		if (!hit) {
+			if (Card.isOpen()) Card.hideSoon(500);
+			lastKey = '';
+			return;
+		}
+		if (hit.ar) {
+			if (!arOn) { if (Card.isOpen()) Card.hideSoon(300); lastKey = ''; return; }
+			var akey = hit.word + '@' + Math.round(hit.rect.left) + ',' + Math.round(hit.rect.top);
+			if (akey === lastKey && Card.isOpen()) return;
+			lastKey = akey;
+			Card.showAr({ word: hit.word, rect: hit.rect, sentence: sentenceAround(hit.node, hit.start), source: { url: location.href, title: document.title } });
+			return;
+		}
+		if (looksLikeName(hit.node, hit.start, hit.word)) { if (Card.isOpen()) Card.hideSoon(300); lastKey = ''; return; } // names are not translated
+		var key = hit.word + '@' + Math.round(hit.rect.left) + ',' + Math.round(hit.rect.top);
+		if (key === lastKey && Card.isOpen()) return;
+		lastKey = key;
+		Card.show({ word: hit.word, grammar: focusLabel(hit.node, hit.start), rect: hit.rect, sentence: sentenceAround(hit.node, hit.start), source: { url: location.href, title: document.title } });
+	}
 
 	/* ------------------------------------------------------------ select → save */
 	document.addEventListener('mouseup', function (e) {
@@ -239,7 +264,7 @@
 			acceptNode: function (n) {
 				if (!/[A-Za-z]{2,}/.test(n.data)) return NodeFilter.FILTER_REJECT;
 				var p = n.parentElement;
-				if (!p || p.closest(SKIP) || p.closest('[aria-hidden="true"],nav,header,footer') || uiText(n)) return NodeFilter.FILTER_REJECT;
+				if (!p || p.closest(SKIP) || p.closest('[aria-hidden="true"],nav,header,footer') || foreign(p) || uiText(n)) return NodeFilter.FILTER_REJECT;
 				return NodeFilter.FILTER_ACCEPT;
 			}
 		});

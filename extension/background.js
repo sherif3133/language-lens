@@ -228,7 +228,7 @@ async function finishLogin(token) {
 	// First time: start with the vocabulary test.
 	const { vocabTest } = await get('vocabTest');
 	if (!vocabTest) await openLevelTest();
-	return me;
+	return Object.assign({}, me, { testOpened: !vocabTest }); // phones: the connected page says what comes next
 }
 
 async function logout() {

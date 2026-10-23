@@ -807,7 +807,7 @@
 		S.sRoot = S.side.attachShadow({ mode: 'open' });
 		S.sRoot.innerHTML = '<style>' + SIDE_CSS + MUSIC_CSS + '.vprof{margin:6px 10px;font:500 13px/1.4 ' + FONT + '}.vprof summary{cursor:pointer;padding:6px 0}.vprof summary small{color:#8A8584}.vbar{display:flex;height:10px;border-radius:5px;overflow:hidden;margin:6px 0}.vbar i{display:block;height:100%}.vt{width:100%;border-collapse:collapse;font-size:12.5px}.vt td{padding:2px 4px}.vt td:nth-child(n+2){text-align:right;color:#57534E}.vd{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:6px}.vv{margin:8px 0;font-size:13px}.lmh2{font:700 11px/1 ' + FONT + ';letter-spacing:.06em;text-transform:uppercase;color:#8A8584;margin:8px 0 4px}.vtop{display:flex;flex-wrap:wrap;gap:4px}.vtop span{background:#F3F1EE;border-radius:99px;padding:3px 8px;font-size:12.5px}.vtop small{color:#8A8584}</style><div class="side">' +
 			'<div class="head"><div class="ttl">Language Lens <small class="g"></small></div><div class="hb">' +
-			'<button class="ib" data-a="follow" title="Follow the current sentence">Follow</button>' +
+			'<button class="ib" data-a="follow" title="Keep the sentence being spoken in view">Auto-scroll</button>' +
 			'<button class="ib" data-a="colors" title="Colour words">Colours</button>' +
 			'<button class="ib" data-a="min" title="Collapse">—</button></div></div>' +
 			(MOBILE ? '<div class="ctl"><button class="cb" data-a="prev" aria-label="Previous sentence">◀</button><button class="cb" data-a="repeat" aria-label="Repeat sentence">↻ Repeat</button><button class="cb" data-a="next" aria-label="Next sentence">▶</button>' +

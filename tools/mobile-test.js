@@ -145,6 +145,26 @@ async function launch() {
 		await page.screenshot({ path: path.join(out, '4-phone-options.png') });
 		await page.close();
 
+		/* ---------------- phone, a normal website: tap a word in a paragraph */
+		const web = await browser.newPage();
+		await web.emulate(puppeteer.KnownDevices['Pixel 5']);
+		await web.goto('https://example.com/', { waitUntil: 'domcontentloaded' });
+		await wait(2500);
+		const ww = await web.evaluate(() => {
+			const p = document.querySelector('p'), t = p && p.firstChild, i = t ? t.data.indexOf('domain') : -1;
+			if (i < 0) return null;
+			const r = document.createRange();
+			r.setStart(t, i); r.setEnd(t, i + 6);
+			const b = r.getBoundingClientRect();
+			return { x: b.left + b.width / 2, y: b.top + b.height / 2 };
+		});
+		await tap(web, ww);
+		await wait(1500);
+		const wc = await cardOpen(web);
+		check('phone website: tapping a word opens its card', wc && wc.word === 'domain', JSON.stringify(wc));
+		await web.screenshot({ path: path.join(out, '4b-phone-website.png') });
+		await web.close();
+
 		/* ---------------- computer (no regressions) */
 		const desk = await browser.newPage();
 		await desk.setViewport({ width: 1400, height: 900 });
