@@ -86,12 +86,22 @@ async function curious(lemma) {
 	return Object.assign(r, { todayLocal: d.curious });
 }
 
+/** The Review screen of the Sawa English app (phone and computer): saved words become cards there. */
+async function reviewUrl() {
+	const { me, server } = await get(['me', 'server']);
+	return ((me && me.app) || (server || DEFAULT_SERVER) + '/app/').replace(/#.*$/, '') + '#review';
+}
+async function reviewLink() {
+	const { cards } = await get('cards');
+	return { url: await reviewUrl(), ready: cards ? cards.ready || cards.dueReviews || 0 : 0 };
+}
+
 /** Is there room for another new Learning word today? */
 async function learnRoom() {
 	const [d, { learnCap, cards }] = await Promise.all([daily(), get(['learnCap', 'cards'])]);
 	// Signed in: the card level decides (its new cards a day + a little room; none while the waiting line is long).
 	const cap = cards ? cards.learnPerDay : learnCap;
-	return { used: d.learning, cap, left: Math.max(0, cap - d.learning), level: cards ? cards.level : 0, full: !!(cards && cards.full), catchup: !!(cards && cards.catchup), waiting: cards ? cards.waiting : 0 };
+	return { used: d.learning, cap, left: Math.max(0, cap - d.learning), level: cards ? cards.level : 0, full: !!(cards && cards.full), catchup: !!(cards && cards.catchup), waiting: cards ? cards.waiting : 0, ready: cards ? cards.ready || cards.dueReviews || 0 : 0, reviewUrl: await reviewUrl() };
 }
 
 async function bumpLocal(kind, n) {
@@ -916,6 +926,7 @@ const handlers = {
 	grammar: ({ texts, focus }) => focusSpans(texts || [], focus),
 	focusList: () => focusList(),
 	goal: () => goal(),
+	reviewLink: () => reviewLink(),
 	testItems: () => testItems(),
 	saveTest: (d) => saveTest(d),
 	openTest: () => openLevelTest(),

@@ -16,6 +16,7 @@
 		'button:hover{border-color:#0F0F10}button.on{background:#0F0F10;border-color:#0F0F10;color:#fff}button:disabled{opacity:.5;cursor:default}' +
 		'.spin{display:inline-block;width:12px;height:12px;border:2px solid #E6E3DF;border-top-color:#0F0F10;border-radius:50%;animation:s .8s linear infinite;vertical-align:-2px}@keyframes s{to{transform:rotate(360deg)}}' +
 		'.msg{font-size:13px;color:#8A8584;margin-top:8px}.msg.bad{color:#E3262B}' +
+		'a.rvnow{display:inline-flex;align-items:center;min-height:40px;margin-top:8px;padding:0 14px;border-radius:999px;background:#0F0F10;color:#fff;font:600 13px/1 ' + FONT + ';text-decoration:none}' +
 		'.ar-text{direction:rtl;text-align:right;font-family:"IBM Plex Sans Arabic",' + FONT + '}' +
 		'.res{margin-top:10px;padding-top:10px;border-top:1px solid #E6E3DF;font-size:14px}.res b{font-weight:600}.res .muted{color:#4A4847}' +
 		'.sl{font:600 15px/1.4 ' + FONT + ';letter-spacing:.2px}.notes{margin:6px 0 0;padding:0;list-style:none}.notes li{margin-top:6px;font-size:13px;color:#4A4847}.notes li b{color:#0F0F10}';
@@ -149,6 +150,14 @@
 			+ '<div class="pics-f">' + (c.pics.ai ? 'Picture made for this word' : p ? 'Photo: Wikipedia' : '') + (!c.pics.ai && p && c.pics.canAi && !c.pics.aiLoading ? ' · <button class="lk" data-a="aipic">Not right? Draw one</button>' : '') + '</div>';
 	}
 
+	/** After saving: a button to the Review screen of the app, where saved words become cards (phone and computer). */
+	function reviewBtn(c) {
+		return c.review ? '<a class="rvnow" target="_blank" rel="noopener" href="' + U.esc(c.review.url) + '">🃏 ' + (c.review.ready > 0 ? c.review.ready + ' card' + (c.review.ready === 1 ? '' : 's') + ' ready · ' : '') + 'Review now →</a>' : '';
+	}
+	function showReview(c, again) {
+		U.send('reviewLink').then(function (r) { c.review = r; if (cur === c) (again || render)(); }, function () {});
+	}
+
 	function render() {
 		var d = cur.data, u = U.esc;
 		if (cur.fb) return; // the feedback box is open: don't wipe what they are typing
@@ -222,6 +231,7 @@
 			'</div>' +
 			(cur.curious && !learning && d.mark !== 'known' ? '<div class="msg">💡 Looked up only: not in your Review. To save it, press <b>Learning</b>.</div>' : '') +
 			(cur.msg ? '<div class="msg' + (cur.bad ? ' bad' : '') + '">' + u(cur.msg) + '</div>' : '') +
+			reviewBtn(cur) +
 			'<div class="brand">' + (cur.sentence && !cur.ctx ? '<a href="#" data-a="explain" title="What it means in this sentence (AI)">💬 Meaning here</a> · ' : '') + (!cur.pics ? '<a href="#" data-a="pics">🖼 Picture</a> · ' : '') + '<a href="https://youglish.com/pronounce/' + encodeURIComponent((d.lemma || cur.word).toLowerCase()) + '/english" target="_blank" rel="noopener">Hear it in other videos ↗</a> · ' + (window.LensFeedback ? '<a href="#" data-a="fb">💬 Feedback</a> · ' : '') + 'Language Lens · Sawa English</div>';
 		place(cur.rect);
 	}
@@ -272,6 +282,8 @@
 				c.data.status = st;
 				c.data.mark = next;
 				c.msg = next === 'learning' ? '✓ Saved to your Review' : next === 'known' ? '✓ Marked as known' : '';
+				c.review = null;
+				if (next === 'learning') showReview(c);
 				c.curious = null; // saved now: it's not "only looked up" any more
 				if (cur === c) render();
 				if (onState) onState(c.data.lemma, st);
@@ -323,6 +335,7 @@
 				c.saved = true;
 				c.msg = 'You\'ll find it in your review cards.';
 				if (cur === c) render();
+				showReview(c);
 			}, fail(c));
 		}
 	}
@@ -395,7 +408,7 @@
 			+ (!c.en && c.sentence ? '<button class="pri" data-a="ar-sent">Sentence in English</button>' : '')
 			+ (c.en && c.en.english ? '<button data-a="ar-listen">🔊 Listen</button>' + (c.saved ? '<button disabled>✓ Saved</button>' : '<button data-a="ar-save">Save to review</button>') : '')
 			+ '</div>';
-		el.innerHTML = head + rows + sent + btns + (c.msg ? '<div class="msg' + (c.bad ? ' bad' : '') + '">' + u(c.msg) + '</div>' : '')
+		el.innerHTML = head + rows + sent + btns + (c.msg ? '<div class="msg' + (c.bad ? ' bad' : '') + '">' + u(c.msg) + '</div>' : '') + reviewBtn(c)
 			+ '<div class="brand">Arabic → English · Language Lens · Sawa English</div>';
 	}
 	function arClick(b) {
@@ -420,6 +433,7 @@
 			U.send('saveSentence', Object.assign({ text: c.en.english, ar: c.selected ? c.word : c.sentence }, c.source || {})).then(function () {
 				c.saved = true; c.msg = 'You\'ll find it in your review cards.'; c.bad = false;
 				if (cur === c) renderAr();
+				showReview(c, renderAr);
 			}, function (err) { c.msg = U.errText(err); c.bad = true; if (cur === c) renderAr(); });
 		}
 	}

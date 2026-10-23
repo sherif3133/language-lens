@@ -72,3 +72,4 @@ kbd { font: 600 11px/1 'IBM Plex Sans', sans-serif; border: 1px solid #E6E3DF; b
 .more > summary::-webkit-details-marker { display: none; }
 .more > summary::after { content: "\25BE"; color: #8A8584; }
 .more[open] > summary::after { content: "\25B4"; }
+a.btn.rvnow { text-align: center; text-decoration: none; margin: 10px 0 4px; box-sizing: border-box; }
