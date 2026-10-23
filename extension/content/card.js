@@ -217,9 +217,10 @@
 			snd +
 			'<div class="btns">' +
 			'<button data-a="known" class="' + (known ? 'on' : '') + '">' + (known ? '✓ ' : '') + 'I know it</button>' +
-			'<button data-a="learning" class="' + (learning ? 'on' : '') + '">' + (learning ? '✓ ' : '') + 'Learning</button>' +
-			(learning || d.mark === 'known' ? '' : '<button data-a="curious" class="cur' + (cur.curious ? ' on' : '') + '" title="You understood it: earn XP for being curious. It isn\'t added to your reviews.">' + (cur.curious ? '💡 ' + (cur.curious.xp ? '+' + cur.curious.xp + ' XP' : 'Curious ✓') : '💡 Curious') + '</button>') +
+			'<button data-a="learning" class="' + (learning ? 'on' : '') + '" title="Save it to your Review cards">' + (learning ? '✓ Learning' : (cur.curious ? '＋ Save as Learning' : 'Learning')) + '</button>' +
+			(learning || d.mark === 'known' ? '' : '<button data-a="curious" class="cur' + (cur.curious ? ' on' : '') + '" title="Just looked up: earn XP for being curious. It is NOT saved to your Review.">' + (cur.curious ? '💡 ' + (cur.curious.xp ? '+' + cur.curious.xp + ' XP' : 'Looked up ✓') : '💡 Curious') + '</button>') +
 			'</div>' +
+			(cur.curious && !learning && d.mark !== 'known' ? '<div class="msg">💡 Looked up only: not in your Review. To save it, press <b>Learning</b>.</div>' : '') +
 			(cur.msg ? '<div class="msg' + (cur.bad ? ' bad' : '') + '">' + u(cur.msg) + '</div>' : '') +
 			'<div class="brand">' + (cur.sentence && !cur.ctx ? '<a href="#" data-a="explain" title="What it means in this sentence (AI)">💬 Meaning here</a> · ' : '') + (!cur.pics ? '<a href="#" data-a="pics">🖼 Picture</a> · ' : '') + '<a href="https://youglish.com/pronounce/' + encodeURIComponent((d.lemma || cur.word).toLowerCase()) + '/english" target="_blank" rel="noopener">Hear it in other videos ↗</a> · ' + (window.LensFeedback ? '<a href="#" data-a="fb">💬 Feedback</a> · ' : '') + 'Language Lens · Sawa English</div>';
 		place(cur.rect);
@@ -260,7 +261,7 @@
 			render();
 			U.send('curious', { lemma: c.data.lemma || c.word }).then(function (r) {
 				c.curious = r;
-				c.msg = r.new ? '💡 Curious about ' + r.todayLocal + ' word' + (r.todayLocal === 1 ? '' : 's') + ' today' + (r.xp ? ' · +' + r.xp + ' XP' : '') : '💡 You were already curious about this word.';
+				c.msg = r.new ? '💡 Curious about ' + r.todayLocal + ' word' + (r.todayLocal === 1 ? '' : 's') + ' today' + (r.xp ? ' · +' + r.xp + ' XP' : '') : ''; // looked up before: the hint under the buttons says what it means
 				c.bad = false;
 				if (cur === c) render();
 			}, function (err) { c.curious = null; fail(c)(err); });
@@ -270,7 +271,8 @@
 			U.send('mark', { lemma: c.data.lemma, status: next, ctx: c.sentence ? { sentence: c.sentence, url: src0.url || location.href, title: src0.title || document.title, videoId: src0.videoId || '', startMs: src0.startMs || 0 } : null }).then(function (st) {
 				c.data.status = st;
 				c.data.mark = next;
-				c.msg = '';
+				c.msg = next === 'learning' ? '✓ Saved to your Review' : next === 'known' ? '✓ Marked as known' : '';
+				c.curious = null; // saved now: it's not "only looked up" any more
 				if (cur === c) render();
 				if (onState) onState(c.data.lemma, st);
 				// A top-5,000 word: show how close the learner is to the next vocabulary goal.

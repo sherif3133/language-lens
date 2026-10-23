@@ -254,7 +254,7 @@ async function connectManual() {
 	const wiki = await browser.newPage();
 	await wiki.goto('https://en.wikipedia.org/wiki/Creativity', { waitUntil: 'domcontentloaded' });
 	const tabs = await sw.evaluate(() => chrome.tabs.query({ url: 'https://en.wikipedia.org/*' }).then((t) => t.map((x) => x.id)));
-	await sw.evaluate((id) => chrome.scripting.executeScript({ target: { tabId: id }, files: ['content/common.js', 'content/card.js', 'content/page.js'] }), tabs[0]);
+	await sw.evaluate((id) => chrome.scripting.executeScript({ target: { tabId: id }, files: ['content/common.js', 'content/marks.js', 'content/card.js', 'content/page.js'] }), tabs[0]);
 	await wait(2500);
 	const wpt = await wiki.evaluate(() => {
 		const p = [...document.querySelectorAll('#mw-content-text p')].find((x) => x.textContent.length > 200);

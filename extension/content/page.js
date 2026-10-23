@@ -121,17 +121,18 @@
 
 	document.addEventListener('mousemove', function (e) {
 		if (PAUSED || e.buttons) return;
-		if (mode === 'select' || (mode === 'alt' && !e.altKey)) return; // select mode: meanings only when you select text
+		if (mode === 'select' || mode === 'click' || (mode === 'alt' && !e.altKey)) return; // select/click mode: no hover cards
 		if (Card.selectOpen()) return;
 		clearTimeout(timer);
 		var x = e.clientX, y = e.clientY;
 		timer = setTimeout(function () { showAt(x, y); }, mode === 'alt' ? 60 : 380);
 	}, { passive: true });
 
-	// Phones have no hover: tap a word in the reading text for its card (links, buttons and labels keep working as usual).
+	// Phones have no hover, and "click" mode on a computer: tap/click a word in the reading text for its card (links, buttons and labels keep working as usual).
 	var TOUCH = !!(window.matchMedia && matchMedia('(hover: none)').matches);
-	if (TOUCH) {
+	{
 		document.addEventListener('click', function (e) {
+			if (!TOUCH && mode !== 'click') return;
 			if (PAUSED || mode === 'select' || e.defaultPrevented) return;
 			if (e.composedPath().some(function (n) { return n.tagName && /^SAWA-LENS/.test(n.tagName); })) return;
 			if (e.target.closest && e.target.closest('a,button,label,summary,select,[role=button],[role=link],[role=menuitem],[role=tab],[onclick]')) return;
@@ -234,7 +235,7 @@
 		'font:14px/1.55 "IBM Plex Sans Arabic","Segoe UI",Tahoma,sans-serif;text-align:left;padding:14px;display:none}.panel.on{display:block}' +
 		'.panel h3{font:800 17px/1.3 Changa,sans-serif;margin:0 0 4px}.panel .sub{color:#8A8584;font-size:12.5px;margin-bottom:10px}' +
 		'.legend{display:flex;flex-wrap:wrap;gap:8px;font-size:12px;color:#4A4847;margin-bottom:10px}.legend span{display:inline-flex;align-items:center;gap:4px}' +
-		'.sw{display:inline-block;width:16px;height:9px}.sw.next{border-bottom:3px solid #15803D}.sw.hard{border-bottom:3px solid #E3262B}.sw.learning{background:#FDE68A}' +
+		LensMarks.legendCss('light') +
 		'.panel ul{list-style:none;margin:0;padding:0}.panel li{display:flex;justify-content:space-between;gap:8px;align-items:center;padding:7px 0;border-top:1px solid #E6E3DF}' +
 		'.panel .en{font-weight:600}.panel .ar{color:#4A4847;font-size:13px;direction:rtl;text-align:left}' +
 		'.panel .lv{font-size:11px;border:1px solid #E6E3DF;border-radius:5px;padding:1px 5px;margin-inline-start:6px}' +
@@ -255,22 +256,18 @@
 
 	/* ------------------------------------------------------------ colour coding + grade */
 	var BAND = U.BAND;
-	var grade = null, gradeT = null, hidden = false, colors = true, lastGrade = 0;
+	var grade = null, gradeT = null, hidden = false, colors = true, learnOnly = false, lastGrade = 0;
 	var canHighlight = !!(window.CSS && CSS.highlights && window.Highlight);
 	var focus = '', focusInfo = null, focusMap = new WeakMap(), exprMap = new WeakMap();
-	chrome.storage.local.get(['colorPages', 'focus'], function (o) { colors = o.colorPages !== false; focus = o.focus || ''; });
+	chrome.storage.local.get(['colorPages', 'colorLearnOnly', 'focus'], function (o) { colors = o.colorPages !== false; learnOnly = !!o.colorLearnOnly; focus = o.focus || ''; });
 
 	if (canHighlight && !document.getElementById('sawa-lens-hl')) {
 		var st = document.createElement('style');
 		st.id = 'sawa-lens-hl';
 		st.textContent =
-			'::highlight(lens-next){background-color:rgba(34,197,94,.22)}' +
-			'::highlight(lens-hard){background-color:rgba(249,115,22,.26)}' +
-			'::highlight(lens-learning){background-color:#FDE68A;color:#0F0F10}' +
+			LensMarks.highlightCss() +
 			'::highlight(lens-focus){background-color:#EDE9FE;color:#0F0F10}' +
-			// Expressions ("give up", "on the fence"): blue underline, tinted blue unless they're at your level.
-			'::highlight(lens-expr){background-color:rgba(14,165,233,.2);text-decoration:underline 2px #0EA5E9}' +
-			'::highlight(lens-exul){text-decoration:underline 2px #0EA5E9}';
+			'';
 		(document.head || document.documentElement).appendChild(st);
 	}
 
@@ -350,7 +347,7 @@
 		nodes.forEach(function (n, i) {
 			(lines[i] || []).forEach(function (t) {
 				var k = t.ex ? (t.status === 'next' || t.status === 'hard' ? 'expr' : 'exul') : t.status;
-				if (!sets[k] || !n.isConnected) return;
+				if (!sets[k] || !n.isConnected || (learnOnly && (k === 'next' || k === 'hard'))) return;
 				var r = document.createRange();
 				try {
 					r.setStart(n, t.start);
@@ -414,7 +411,7 @@
 		panel.innerHTML = '<h3>New words on this page</h3><div class="sub">You know about ' + g.percent + '% of the words (' + u(U.GRADE_TIP) + '). ' + u(g.from || '') + '</div>' +
 			(focusList ? '<div class="focus"><label>Focus on</label><select class="fsel"><option value="">— none —</option>' + focusList.map(function (f) { return '<option value="' + f.key + '"' + (f.key === focus ? ' selected' : '') + '>' + u(f.name) + '</option>'; }).join('') + '</select></div>' +
 				(focus && focusInfo ? '<div class="fbar"><b>' + u(focusInfo.name) + '</b> · ' + (focusInfo.count ? focusInfo.count + ' examples' : 'none on this page') + '<div' + (focusInfo.ruleLang === 'ar' ? ' dir="rtl" lang="ar"' : '') + '>' + u(focusInfo.rule) + '</div></div>' : '') : '') +
-			'<div class="legend"><span><i class="sw next"></i>Worth checking</span><span><i class="sw hard"></i>Above your level / rare</span><span><i class="sw learning"></i>Learning</span></div><ul>' +
+			'<div class="legend">' + LensMarks.legendHtml(true) + '</div><ul>' +
 			g.top.slice(0, 20).map(function (w) {
 				return '<li><div><span class="en">' + u(w.lemma) + '</span>' + (w.level ? '<span class="lv">' + U.LEVEL_NAMES[w.level - 1] + '</span>' : '') + (w.ar ? '<div class="ar">' + u(w.ar) + '</div>' : '') + '</div><button class="k" data-l="' + u(w.lemma) + '">I know it</button></li>';
 			}).join('') + '</ul>';
@@ -441,11 +438,12 @@
 	});
 
 	chrome.storage.onChanged.addListener(function (ch) {
+		if (ch.colorLearnOnly) learnOnly = !!ch.colorLearnOnly.newValue;
 		if (ch.colorPages) {
 			colors = ch.colorPages.newValue !== false;
 			lastGrade = 0;
 		}
-		if (ch.words || ch.level || ch.colorPages || ch.exprOn || ch.vocabProfile || ch.vocabTest || ch.mature || ch.levelT) {
+		if (ch.words || ch.level || ch.colorPages || ch.colorLearnOnly || ch.exprOn || ch.vocabProfile || ch.vocabTest || ch.mature || ch.levelT) {
 			clearTimeout(gradeT);
 			lastGrade = 0;
 			gradeT = setTimeout(regrade, 600);

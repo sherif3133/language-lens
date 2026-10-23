@@ -733,13 +733,13 @@ async function registerSites() {
 	}
 	if (granted.length) {
 		await chrome.scripting.registerContentScripts([
-			{ id: 'lens-sites', matches: granted, js: ['content/common.js', 'content/card.js', 'content/page.js'], runAt: 'document_idle', allFrames: false }
+			{ id: 'lens-sites', matches: granted, js: ['content/common.js', 'content/marks.js', 'content/card.js', 'content/page.js'], runAt: 'document_idle', allFrames: false }
 		]);
 	}
 }
 
 async function injectInto(tabId) {
-	await chrome.scripting.executeScript({ target: { tabId }, files: ['content/common.js', 'content/card.js', 'content/page.js'] });
+	await chrome.scripting.executeScript({ target: { tabId }, files: ['content/common.js', 'content/marks.js', 'content/card.js', 'content/page.js'] });
 }
 
 chrome.runtime.onInstalled.addListener(() => registerSites().catch(() => {}));

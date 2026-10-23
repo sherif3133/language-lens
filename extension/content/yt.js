@@ -6,7 +6,7 @@
    - Focus: highlight a grammar or pronunciation feature everywhere, and jump between examples.
    - Hotkeys: A previous sentence · S repeat · D next · Q auto-pause after each sentence.
    - Vocabulary goal bar (top 1k / 2k / 3k words) at the top of the sidebar.
-   Colours: known = plain · next level = green · beyond your level or rare = orange · learning = yellow. */
+   Colours (content/marks.js): known = plain · learning = yellow fill · new for you = solid blue underline · hard or rare = dotted orange underline · phrase = double pink underline. */
 (function () {
 	'use strict';
 	if (window.__sawaLensYT) return;
@@ -35,12 +35,7 @@
 		':host(.no-en) .line.en{display:none}:host(.no-tr) .line.tr{display:none}.line.snd{font-size:.7em;color:#FDE68A;letter-spacing:.02em;cursor:help;pointer-events:auto}.line.snd:empty{display:none}.no-snd .line.snd{display:none}.box{position:relative}.sndtip{position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%);width:min(520px,90vw);background:#fff;color:#0F0F10;border-radius:12px;padding:10px 14px;font:500 14px/1.45 ' + FONT + ';text-align:left;display:none;box-shadow:0 8px 24px rgba(0,0,0,.3);pointer-events:auto}.sndtip.on{display:block}.sndtip ul{margin:6px 0 0;padding-left:18px}.lensmenu{position:absolute;right:12px;bottom:60px;width:270px;background:rgba(15,15,16,.94);color:#fff;border-radius:12px;padding:10px;display:none;flex-direction:column;gap:6px;pointer-events:auto;font:500 13px/1.3 ' + FONT + '}.lensmenu.on{display:flex}.lensmenu{max-height:calc(100% - 72px);overflow-y:auto;overscroll-behavior:contain}.lensmenu .lmmusic{display:flex;flex-direction:column;gap:6px}.lensmenu .lmmusic[hidden],.lensmenu a.gen[hidden]{display:none}.lensmenu a.t{text-decoration:none;box-sizing:border-box}.lensmenu .t{display:flex;justify-content:space-between;align-items:center;width:100%;border-radius:8px;text-align:left}.lensmenu .lmh{font:700 11px/1 ' + FONT + ';letter-spacing:.06em;text-transform:uppercase;color:#FDE68A;margin-top:4px}.lensmenu .menu{position:static;display:block;background:transparent;color:#fff;padding:0;min-width:0}.lensmenu .menu label{display:flex;gap:10px;align-items:center;justify-content:space-between;padding:6px 2px;min-height:36px;cursor:pointer}.lensmenu input[type=checkbox]{-webkit-appearance:none;appearance:none;order:2;margin:0 0 0 auto;flex:none;width:36px;height:20px;border-radius:99px;background:#8A8584;position:relative;cursor:pointer;transition:background .15s}.lensmenu input[type=checkbox]::after{content:"";position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:#fff;transition:transform .15s;box-shadow:0 1px 2px rgba(0,0,0,.3)}.lensmenu input[type=checkbox]:checked{background:#22C55E}.lensmenu input[type=checkbox]:checked::after{transform:translateX(16px)}.lensmenu input[type=checkbox]:focus-visible{outline:2px solid #FDE68A;outline-offset:2px}' +
 		'.wd{cursor:pointer;border-radius:4px;padding:0 1px}' +
 		'.wd:hover{background:#fff;color:#0F0F10;text-decoration:none}' +
-		':host(.colors) .wd.next{background:rgba(52,211,153,.32);border-radius:4px;box-shadow:0 0 0 2px rgba(52,211,153,.32)}' +
-		':host(.colors) .wd.hard{background:rgba(251,146,60,.38);border-radius:4px;box-shadow:0 0 0 2px rgba(251,146,60,.38)}' +
-		':host(.colors) .wd.learning{background:#FDE68A;color:#0F0F10;box-shadow:0 0 0 2px #FDE68A}' +
-		// Expressions ("give up", "on the fence"): one blue-underlined unit, tinted blue unless it's at your level.
-		'.wd.ex{text-decoration:underline 3px #38BDF8;text-underline-offset:4px;text-decoration-skip-ink:none}' +
-		':host(.colors) .wd.ex.next,:host(.colors) .wd.ex.hard{background:rgba(56,189,248,.38);box-shadow:0 0 0 2px rgba(56,189,248,.38)}' +
+		LensMarks.css('dark', 3) +
 		'.fx{background:rgba(167,139,250,.55);box-shadow:0 0 0 2px rgba(167,139,250,.55);border-radius:4px}' +
 		'.tools{position:absolute;left:50%;transform:translateX(-50%);top:100%;margin-top:6px;display:flex;justify-content:center;gap:5px;opacity:0;transition:opacity .15s;white-space:nowrap}' +
 		'.bar:hover .tools,.tools:hover{opacity:1}' +
@@ -96,7 +91,7 @@
 		'.legend{display:flex;flex-wrap:wrap;gap:10px;padding:8px 12px;border-bottom:1px solid #E6E3DF;font-size:12px;color:#4A4847}' +
 		'.legend span{display:inline-flex;align-items:center;gap:5px}' +
 		'.sw{display:inline-block;width:18px;height:10px;border-radius:2px}' +
-		'.sw.next{background:rgba(34,197,94,.3);border-radius:3px}.sw.hard{background:rgba(249,115,22,.34);border-radius:3px}.sw.learning{background:#FDE68A;outline:1px solid #B45309}.sw.known{border-bottom:1px solid #E6E3DF}' +
+		LensMarks.legendCss('light') +
 		'.focus{display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid #E6E3DF;font-size:12.5px}' +
 		'.focus label{color:#4A4847;font-weight:600;white-space:nowrap}' +
 		'.fsel{flex:1;min-width:0;font:600 13px/1.2 ' + FONT + ';border:1px solid #E6E3DF;border-radius:8px;padding:6px 8px;background:#fff;color:#0F0F10}' +
@@ -121,11 +116,7 @@
 		'.rep:hover{color:#0F0F10;background:#fff}.rep.on{color:#fff;background:#6250d6}.rep.star{font:16px/16px Arial,sans-serif;min-width:24px;min-height:22px}.rep.star.on{background:transparent;color:#EAB308}.s.looping{box-shadow:inset 3px 0 0 #6250d6}.loopnote{margin-top:6px;font-size:12px;color:#6250d6;font-weight:600}.rep svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}' +
 		'.wd{border-radius:3px;padding:0 1px}' +
 		'.wd:hover{background:#0F0F10;color:#fff;text-decoration:none}' +
-		':host(.colors) .wd.next{background:rgba(34,197,94,.2);border-radius:3px}' +
-		':host(.colors) .wd.hard{background:rgba(249,115,22,.24);border-radius:3px}' +
-		':host(.colors) .wd.learning{background:#FDE68A;box-shadow:0 0 0 1px #B45309}' +
-		'.wd.ex{text-decoration:underline 2px #0284C7;text-underline-offset:3px;text-decoration-skip-ink:none}' +
-		':host(.colors) .wd.ex.next,:host(.colors) .wd.ex.hard{background:rgba(14,165,233,.2)}' +
+		LensMarks.css('light', 2) +
 		'.fx{background:#EDE9FE;box-shadow:0 0 0 1px #A78BFA;border-radius:3px}' +
 		'.empty{padding:16px;color:#8A8584}' +
 		'.foot{padding:8px 12px;border-top:1px solid #E6E3DF;font-size:12px;color:#8A8584}.foot kbd{font:600 11px/1 ' + FONT + ';border:1px solid #E6E3DF;border-bottom-width:2px;border-radius:4px;padding:1px 5px;color:#0F0F10}' +
@@ -143,7 +134,7 @@
 		'<label><input type="checkbox" data-pref="blurCaptions"> Blur captions until ' + HOV + '</label>' +
 		'<label><input type="checkbox" data-pref="blurTrans"> Blur translation until ' + HOV + '</label>' +
 		'<label><input type="checkbox" data-pref="colors"> Colour words</label>' +
-		'<label><input type="checkbox" data-pref="pauseOnHover"> Pause when I ' + HOV + ' a word</label>' +
+		'<label><input type="checkbox" data-pref="pauseOnHover"> Pause when I open a word</label>' +
 		'<label><input type="checkbox" data-pref="wordQuiz"> Quiz me on my Learning words</label>';
 
 	var REPEAT = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17 2l3 3-3 3M4 11V9a4 4 0 0 1 4-4h12M7 22l-3-3 3-3M20 13v2a4 4 0 0 1-4 4H4"/></svg>';
@@ -151,10 +142,12 @@
 
 	var S = { videoId: '', cues: [], lines: null, sents: [], sentToks: null, tcues: [], cueTr: null, sentTr: null, grade: null, idx: -1, sIdx: -1, host: null, root: null, side: null, sRoot: null, video: null, pausedByUs: false, raf: 0, primed: '', stopAt: 0, follow: true, scrolledAt: 0, sounds: {}, loopI: -1, savedRows: {} };
 	var prefs = { lensYT: true, showEn: true, sidebar: true, colors: true, pauseOnHover: true, sideMin: false, focus: '', showTrans: true, showSound: true, blurCaptions: false, blurTrans: false, barPos: 0.12, autoPause: false, maskSwears: false, wordQuiz: true, songLyrics: true, lyricLang: 'en' };
-	var PREF_KEYS = ['lensYT', 'showEn', 'sidebar', 'lensColors', 'pauseOnHover', 'sideMin', 'focus', 'showTrans', 'showSound', 'blurCaptions', 'blurTrans', 'barPos', 'autoPause', 'maskSwears', 'wordQuiz', 'songLyrics', 'explainLang'];
+	var PREF_KEYS = ['lensYT', 'showEn', 'sidebar', 'lensColors', 'colorLearnOnly', 'ytShowOn', 'pauseOnHover', 'sideMin', 'focus', 'showTrans', 'showSound', 'blurCaptions', 'blurTrans', 'barPos', 'autoPause', 'maskSwears', 'wordQuiz', 'songLyrics', 'explainLang'];
 	function readPrefs(o) {
 		prefs.sidebar = o.sidebar !== false;
 		prefs.colors = o.lensColors !== false;
+		prefs.learnOnly = !!o.colorLearnOnly; // "Learning only": no new/hard marks
+		prefs.ytClick = o.ytShowOn !== 'hover'; // computer: meanings on click (default) or hover; phones always tap
 		prefs.pauseOnHover = o.pauseOnHover !== false;
 		prefs.sideMin = !!o.sideMin;
 		prefs.focus = o.focus || '';
@@ -195,7 +188,7 @@
 		if (d.none) {
 			S.adv = null;
 			S.videoId = d.videoId;
-			S.savedRows = {}; S.loopI = -1; clearTimeout(S.loopT); // a new video: no loop, no saved marks
+			S.savedRows = {}; S.loopI = -1; clearTimeout(S.loopT); if (window.LensControls) LensControls.reset(); // a new video: no loop, no saved marks
 			S.cues = [];
 			S.sents = [];
 			mount();
@@ -554,6 +547,7 @@
 		[S.host, S.side].forEach(function (h) {
 			if (!h) return;
 			h.classList.toggle('colors', prefs.colors);
+			h.classList.toggle('cnew', prefs.colors && !prefs.learnOnly);
 			h.classList.toggle('no-en', !prefs.showEn);
 			h.classList.toggle('no-tr', !prefs.showTrans);
 			h.classList.toggle('no-snd', !prefs.showSound);
@@ -670,6 +664,7 @@
 			});
 			S.root.addEventListener('mouseup', function (e) { onSelect(e, S.root, 'bar'); });
 			setupDrag(player);
+			if (window.LensControls) LensControls.attach(S.root, S.host, CTRL_API, TOUCH);
 			useVideo(player.querySelector('video'));
 			loop();
 		}
@@ -833,12 +828,12 @@
 			(MOBILE ? '<div class="ctl"><button class="cb" data-a="prev" aria-label="Previous sentence">◀</button><button class="cb" data-a="repeat" aria-label="Repeat sentence">↻ Repeat</button><button class="cb" data-a="next" aria-label="Next sentence">▶</button>' +
 				'<button class="cb" data-a="autopause">Auto-pause</button><button class="cb" data-a="save">Save sentence</button><button class="cb" data-a="opts">Aa Display ▾</button></div><div class="opts">' + OPTS + '</div>' : '') +
 			'<div class="music" hidden></div><div class="goal"></div><div class="vprof"></div><div class="lq"></div><div class="adv"></div>' +
-			'<div class="legend"><span><i class="sw known"></i>Known</span><span><i class="sw next"></i>Worth checking</span><span><i class="sw hard"></i>Above your level / rare</span><span><i class="sw learning"></i>Learning</span></div>' +
+			'<div class="legend">' + LensMarks.legendHtml() + '</div>' +
 			'<div class="focus"><label for="fsel">Focus on</label><select class="fsel" id="fsel"><option value="">— none —</option></select></div>' +
 			'<div class="fbar"><div class="row"><div><i class="sw2"></i><b class="fname"></b> · <span class="fcount"></span></div><div class="fnav"><button data-a="fprev" title="Previous example">▲</button><button data-a="fnext" title="Next example">▼</button></div></div><div class="rule"></div></div>' +
 			'<div class="list"></div><div class="foot">' + (TOUCH
-				? 'Tap a sentence to play it, ↻ to hear only that sentence. Tap a word for its meaning. Press and hold to select words to translate or save.'
-				: 'Click a sentence to play it. <kbd>A</kbd> previous · <kbd>S</kbd> repeat · <kbd>D</kbd> next · <kbd>Q</kbd> auto-pause. Select words to translate, hear or save them.') + '</div></div>';
+				? 'Tap a sentence to play it, ↻ to hear only that sentence. On the caption: swipe ←/→ for the next or previous sentence, double-tap to repeat. Tap a word for its meaning. Press and hold to select words to translate or save.'
+				: 'Click a sentence to play it. <kbd>A</kbd> previous · <kbd>S</kbd> repeat · <kbd>D</kbd> next · <kbd>R</kbd> loop · <kbd>X</kbd> slower · <kbd>W</kbd> shadow · <kbd>Q</kbd> auto-pause. Select words to translate, hear or save them.') + '</div></div>';
 		var meta = MOBILE && col.querySelector(':scope > ytm-slim-video-metadata-section-renderer');
 		col.insertBefore(S.side, meta ? meta.nextSibling : col.firstChild);
 		S.sRoot.addEventListener('mouseover', function (e) { onOver(e, 'side'); });
@@ -1083,7 +1078,7 @@
 			return;
 		}
 		if (e.target.closest('.focus,.goal,.snd,.adv,.opts,.music')) return;
-		var wd = TOUCH && e.target.closest('.wd');
+		var wd = (TOUCH || prefs.ytClick) && e.target.closest('.wd');
 		if (wd) return openWord(wd, 'side');
 		var row = e.target.closest('.s');
 		if (!row || !S.video) return;
@@ -1141,6 +1136,36 @@
 		row.outerHTML = rowHtml(S.sents[i], i);
 		if (now) S.sRoot.querySelector('.s[data-i="' + i + '"]').classList.add('now');
 	}
+
+	/** Stop at the end of each sentence: auto-pause, or Shadow mode (content/yt-controls.js). */
+	function stopEnd() { return prefs.autoPause || (window.LensControls && LensControls.shadowOn()); }
+	var CTRL_API = {
+		video: function () { return S.video; },
+		sents: function () { return S.sents; },
+		current: currentSentence,
+		go: function (a) { doAction(a); },
+		looping: function () { return S.loopI; },
+		loop: function (j) {
+			if (S.loopI >= 0) return stopLoop();
+			if (!S.sents[j]) return;
+			S.loopI = j;
+			markLoop();
+			play(S.sents[j].start, S.sents[j].end, true);
+			say('🔁 Looping this sentence: say it after the speaker');
+		},
+		playSentence: function (k) {
+			if (S.sents[k]) play(S.sents[k].start, S.sents[k].end);
+			else say('The end of the video');
+		},
+		shadowStart: function () {
+			var j = currentSentence();
+			if (!S.video || !S.sents[j]) return;
+			if (S.video.paused) play(S.sents[j].start, S.sents[j].end);
+			else S.stopAt = S.sents[j].end;
+		},
+		say: function (t) { say(t); },
+		hideCard: function () { if (Card.isOpen()) Card.hide(); }
+	};
 
 	/** Play from startMs; stop at endMs if given (0 = keep playing). */
 	function play(startMs, endMs, keepLoop) {
@@ -1304,7 +1329,7 @@
 		S.stopAt = 0;
 		S.video.pause();
 		var s = S.loopI >= 0 && S.sents[S.loopI];
-		if (!s) return;
+		if (!s) { if (window.LensControls && LensControls.shadowOn() && !S.gaming) LensControls.yourTurn(currentSentence()); return; }
 		clearTimeout(S.loopT);
 		S.loopT = setTimeout(function () { if (S.sents[S.loopI] === s) play(s.start, s.end, true); }, Math.min(6000, Math.max(1500, s.end - s.start + 500)));
 	}
@@ -1337,6 +1362,7 @@
 		}
 		var ms = S.video.currentTime * 1000;
 		if (S.stopAt && ms >= S.stopAt) atStop();
+		if (window.LensControls) LensControls.tick(ms, find(S.sents, ms, null));
 		if (Card.isOpen() && S.pausedByUs) return;
 		var i = find(S.cues, ms, 400);
 		if (i !== S.idx || force) {
@@ -1347,7 +1373,7 @@
 			var j = find(S.sents, ms, null);
 			if (j !== S.sIdx) {
 				// Auto-pause: stop at the end of every sentence.
-				if (prefs.autoPause && !S.gaming && j >= 0 && !S.video.paused && !S.stopAt) S.stopAt = S.sents[j].end;
+				if (stopEnd() && !S.gaming && j >= 0 && !S.video.paused && !S.stopAt) S.stopAt = S.sents[j].end;
 				if (S.sRoot) {
 					var prev = S.sRoot.querySelector('.s.now');
 					if (prev) prev.classList.remove('now');
@@ -1390,12 +1416,14 @@
 			// Within the first second of a sentence go to the previous one, otherwise restart this one.
 			var s = S.sents[j];
 			var target = s && S.video.currentTime * 1000 - s.start > 1200 ? j : Math.max(0, j - 1);
-			play(S.sents[target].start, prefs.autoPause ? S.sents[target].end : 0);
+			play(S.sents[target].start, stopEnd() ? S.sents[target].end : 0);
 		} else if (k === 'd') {
 			var n = Math.min(S.sents.length - 1, j + 1);
-			play(S.sents[n].start, prefs.autoPause ? S.sents[n].end : 0);
+			play(S.sents[n].start, stopEnd() ? S.sents[n].end : 0);
 		} else if (k === 's') {
 			if (j >= 0) play(S.sents[j].start, S.sents[j].end);
+		} else if (window.LensControls && LensControls.key(k)) {
+			/* R loop · X slower · W shadow (content/yt-controls.js) */
 		} else if (k === 'q') {
 			setPref('autoPause', !prefs.autoPause);
 			say(!prefs.autoPause ? 'Auto-pause on: the video stops after each sentence' : 'Auto-pause off');
@@ -1407,7 +1435,7 @@
 	/* ------------------------------------------------------------ hover, select, clicks */
 	var overT = null;
 	function onOver(e, where) {
-		if (TOUCH) return; // phones open the card on tap (onClick / onSideClick)
+		if (TOUCH || prefs.ytClick) return; // phones (and click mode) open the card on tap/click (onClick / onSideClick)
 		var w = e.target.closest && e.target.closest('.wd');
 		if (!w) {
 			if (Card.isOpen()) Card.keepOpen();
@@ -1415,7 +1443,7 @@
 		}
 		if (Card.selectOpen && Card.selectOpen()) return;
 		clearTimeout(overT);
-		overT = setTimeout(function () { openWord(w, where); }, where === 'side' ? 250 : 120);
+		overT = setTimeout(function () { openWord(w, where); }, 350); // a mouse just passing over doesn't open it
 	}
 
 	/** The word card for a caption or transcript word, with its sentence as context. */
@@ -1452,7 +1480,7 @@
 	}
 
 	function onOut(e) {
-		if (TOUCH) return;
+		if (TOUCH || prefs.ytClick) return;
 		var w = e.target.closest && e.target.closest('.wd');
 		if (w) {
 			clearTimeout(overT);
@@ -1508,7 +1536,7 @@
 		// Blurred Arabic translation: a tap shows it (phones have no hover); the next caption is blurred again.
 		var bt = prefs.blurTrans && e.target.closest('.line.tr');
 		if (bt) { bt.classList.toggle('peek'); return; }
-		var wd = TOUCH && e.target.closest('.wd');
+		var wd = (TOUCH || prefs.ytClick) && e.target.closest('.wd');
 		if (wd) {
 			e.stopPropagation();
 			return openWord(wd, 'bar');
@@ -1530,7 +1558,7 @@
 		var j = currentSentence();
 		if (a === 'prev' || a === 'next') {
 			var n = a === 'next' ? Math.min(S.sents.length - 1, j + 1) : Math.max(0, j - 1);
-			if (S.sents[n]) play(S.sents[n].start, prefs.autoPause ? S.sents[n].end : 0);
+			if (S.sents[n]) play(S.sents[n].start, stopEnd() ? S.sents[n].end : 0);
 		} else if (a === 'repeat') {
 			if (S.sents[j]) play(S.sents[j].start, S.sents[j].end);
 		} else if (a === 'autopause') {

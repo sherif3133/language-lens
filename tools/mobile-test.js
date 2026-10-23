@@ -78,6 +78,7 @@ async function launch() {
 	try {
 		/* ---------------- phone */
 		const page = await browser.newPage();
+		page.on('framenavigated', (f) => { if (f === page.mainFrame()) console.log('NAV', f.url()); });
 		await page.emulate(puppeteer.KnownDevices['Pixel 5']);
 		await page.bringToFront();
 		await page.goto('https://m.youtube.com/watch?v=' + vid, { waitUntil: 'domcontentloaded' });
@@ -187,6 +188,31 @@ async function launch() {
 		const opts = await page.evaluate(() => !!document.querySelector('sawa-lens-side').shadowRoot.querySelector('.opts.on'));
 		check('Display options open', opts);
 		await page.screenshot({ path: path.join(out, '4-phone-options.png') });
+
+		// Caption control strip (content/yt-controls.js): a tap shows it; swipe ← = next sentence; double-tap = repeat.
+		const ytState = (pg) => pg.evaluate(() => { const v = document.querySelector('#movie_player video'), h = document.querySelector('sawa-lens-yt'), c = h && h.shadowRoot.querySelector('.ctrl'); const cs = c && getComputedStyle(c); return { t: v.currentTime, paused: v.paused, rate: v.playbackRate, strip: c ? c.querySelectorAll('button').length : 0, shown: !!cs && cs.visibility === 'visible' && +cs.opacity > 0.5, ring: !!(c && c.querySelector('.turn.on')), on: c ? [...c.querySelectorAll('button.on')].map((b) => b.dataset.c) : [] }; });
+		const sentStart = (pg, t) => pg.evaluate((t) => { const rows = [...document.querySelector('sawa-lens-side').shadowRoot.querySelectorAll('.s')]; return rows.length; }, t);
+		await page.evaluate(() => { const v = document.querySelector('#movie_player video'); v.currentTime = 40; v.play(); });
+		await wait(1500);
+		const cap = await centre(page, 'sawa-lens-yt', '.line.en');
+		let s0 = await ytState(page);
+		if (cap) {
+			await page.touchscreen.touchStart(cap.x + 60, cap.y); await page.touchscreen.touchMove(cap.x - 20, cap.y); await page.touchscreen.touchMove(cap.x - 60, cap.y); await page.touchscreen.touchEnd();
+		}
+		await wait(900);
+		let s1 = await ytState(page);
+		check('phone: control strip on the caption (7 buttons), shown after a touch', s1.strip === 7 && s1.shown, JSON.stringify(s1));
+		check('phone: swipe ← on the caption goes to the next sentence', s1.t > s0.t + 0.3 && !(await cardOpen(page)), s0.t.toFixed(1) + ' → ' + s1.t.toFixed(1));
+		await wait(2500);
+		const s2 = await ytState(page);
+		await page.evaluate(() => { window.__seeks = 0; window.__te = []; document.querySelector('#movie_player video').addEventListener('seeking', () => window.__seeks++); document.addEventListener('touchend', (e) => window.__te.push([Date.now(), (e.composedPath()[0] || {}).className || '']), true); });
+		const cap2 = await centre(page, 'sawa-lens-yt', '.line.en');
+		if (cap2) { await page.touchscreen.tap(cap2.x, cap2.y); await wait(120); await page.touchscreen.tap(cap2.x, cap2.y); }
+		await wait(700);
+		const s3 = await ytState(page), seeks = await page.evaluate(() => window.__seeks), te = await page.evaluate(() => window.__te.map((x, i, a) => (i ? x[0] - a[i - 1][0] : 0) + 'ms ' + x[1]).join(' | '));
+		check('phone: double-tap on the caption repeats the sentence', seeks > 0 && !s3.paused, s2.t.toFixed(1) + ' → ' + s3.t.toFixed(1) + ', seeks ' + seeks + ', touchends: ' + te);
+		await page.screenshot({ path: path.join(out, '4b-phone-strip.png') });
+		if (await cardOpen(page)) await page.keyboard.press('Escape');
 		await page.close();
 
 		/* ---------------- phone, a normal website: tap a word in a paragraph */
@@ -238,10 +264,10 @@ async function launch() {
 		const dk = await desk.evaluate(() => ({ btn: !!document.querySelector('.sawa-lens-ytbtn'), side: !!document.querySelector('#secondary sawa-lens-side'), mob: !!document.querySelector('sawa-lens-yt.mob'), hover: matchMedia('(hover: none)').matches }));
 		check('computer: player button + right-column transcript, no phone layout', dk.btn && dk.side && !dk.mob && !dk.hover, JSON.stringify(dk));
 		const dw = await centre(desk, 'sawa-lens-yt', '.line.en .wd', 0);
-		if (dw) await desk.mouse.move(dw.x, dw.y);
+		if (dw) await desk.mouse.click(dw.x, dw.y); // default on YouTube: meanings on click
 		await wait(1500);
 		const dc = await cardOpen(desk);
-		check('computer: hovering a word opens its card', dc && dc.word, JSON.stringify(dc));
+		check('computer: clicking a caption word opens its card (click is the default)', dc && dc.word, JSON.stringify(dc));
 		const dt = await trIsSentence(desk);
 		check('computer: the Arabic under the caption is the whole sentence (same as the transcript row)', dt.ok, dt.info);
 		await desk.mouse.move(5, 5);
@@ -256,11 +282,40 @@ async function launch() {
 			under = await desk.evaluate((x, y) => { let e = document.elementFromPoint(x, y); while (e && e.shadowRoot && e.shadowRoot.elementFromPoint(x, y) && e.shadowRoot.elementFromPoint(x, y) !== e) e = e.shadowRoot.elementFromPoint(x, y); return e ? e.tagName + '.' + e.className + ' ' + (e.textContent || '').slice(0, 20) : 'nothing'; }, p2.x, p2.y);
 			await desk.mouse.move(p2.x - 3, p2.y);
 			await desk.mouse.move(p2.x, p2.y, { steps: 3 });
+			await desk.mouse.click(p2.x, p2.y);
 		}
 		await wait(1500);
 		const dxc = await cardOpen(desk);
-		check('computer: hovering an expression opens one card for the whole phrase', dxc && dxc.exk && / /.test(dxc.word), dx && dx.text + ' → ' + JSON.stringify(dxc) + ' · under the mouse: ' + under);
+		check('computer: clicking an expression opens one card for the whole phrase', dxc && dxc.exk && / /.test(dxc.word), dx && dx.text + ' → ' + JSON.stringify(dxc) + ' · under the mouse: ' + under);
 		await desk.screenshot({ path: path.join(out, '5-computer.png') });
+
+		// Word marks differ by shape: learning = fill, new = solid, hard = dotted, phrase = double underline.
+		const mk = await desk.evaluate(() => { const r = document.querySelector('sawa-lens-side').shadowRoot; const st = (sel) => { const e = r.querySelector(sel); return e ? getComputedStyle(e).textDecorationStyle : 'none-found'; }; return { next: st('.wd.next:not(.ex)'), hard: st('.wd.hard:not(.ex)'), ex: st('.wd.ex') }; });
+		check('computer: word marks differ by line style (solid / dotted / double)', (mk.next === 'solid' || mk.next === 'none-found') && (mk.hard === 'dotted' || mk.hard === 'none-found') && (mk.ex === 'double' || mk.ex === 'none-found') && Object.values(mk).some((v) => v !== 'none-found'), JSON.stringify(mk));
+		// The strip shows on hover; X = 0.75×, R = loop, W = shadow (your-turn ring after the sentence, then it goes on).
+		await desk.evaluate(() => { const v = document.querySelector('#movie_player video'); v.currentTime = 30; v.play(); });
+		await wait(800);
+		const dcap = await centre(desk, 'sawa-lens-yt', '.line.en');
+		if (dcap) await desk.mouse.move(dcap.x, dcap.y);
+		await wait(500);
+		const h1 = await ytState(desk);
+		check('computer: hovering the caption shows the control strip', h1.strip === 7 && h1.shown, JSON.stringify(h1));
+		await desk.mouse.move(5, 5);
+		await desk.keyboard.press('x'); await wait(400);
+		const h2 = await ytState(desk);
+		await desk.keyboard.press('x'); await desk.keyboard.press('r'); await wait(400);
+		const h3 = await ytState(desk);
+		await desk.keyboard.press('r'); await wait(300);
+		check('computer: X = 0.75× speed, again = normal; R = loop on/off', h2.rate === 0.75 && h3.rate === 1 && h3.on.includes('loop') && !(await ytState(desk)).on.includes('loop'), JSON.stringify([h2.rate, h3.rate, h3.on]));
+		await desk.keyboard.press('w');
+		let h4 = null;
+		for (let i = 0; i < 20 && !(h4 && h4.ring); i++) { await wait(700); h4 = await ytState(desk); }
+		check('computer: W = Shadow mode: the video pauses after the sentence with a your-turn ring', h4 && h4.ring && h4.paused, JSON.stringify(h4));
+		await desk.screenshot({ path: path.join(out, '6-computer-shadow.png') });
+		let h5 = null;
+		for (let i = 0; i < 16 && !(h5 && !h5.ring && !h5.paused); i++) { await wait(700); h5 = await ytState(desk); }
+		check('computer: after the ring the next sentence plays by itself', h5 && !h5.ring && !h5.paused && h5.t > h4.t, JSON.stringify(h5));
+		await desk.keyboard.press('w');
 	} finally {
 		await browser.close();
 	}
