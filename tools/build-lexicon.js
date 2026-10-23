@@ -25,7 +25,13 @@ for (const f of fs.readdirSync(here('gloss')).filter((f) => /^out-.*\.tsv$/.test
 	}
 }
 
-// English definitions and one example from WordNet (first two senses, most common first).
+// English definitions and one example from WordNet: senses 1 and 2 (WordNet's order), or the everyday
+// senses first where gloss/en-order.tsv says so (WordNet puts "now: in the historical present" first).
+const ORDER = {};
+for (const line of fs.readFileSync(here('gloss/en-order.tsv'), 'utf8').split(/\r?\n/)) {
+	const c = line.split('\t');
+	if (line[0] !== '#' && c.length >= 3) ORDER[c[0] + '|' + c[1]] = c[2].split(',').map(Number);
+}
 const WN = path.join(__dirname, 'node_modules/wordnet-db/dict');
 const WNPOS = { noun: 'noun', verb: 'verb', adjective: 'adj', adverb: 'adv' };
 const wnIndex = {}, wnData = {};
@@ -39,14 +45,15 @@ for (const p of Object.values(WNPOS)) {
 	}
 	wnData[p] = fs.readFileSync(path.join(WN, 'data.' + p));
 }
-function wordnet(head, pos) {
+function wordnet(head, pos, order) {
 	const p = WNPOS[pos];
 	if (!p) return ['', ''];
 	const offs = wnIndex[p][head.toLowerCase().replace(/ /g, '_')];
 	if (!offs) return ['', ''];
 	const defs = [];
 	let ex = '';
-	for (const o of offs.slice(0, 2)) {
+	const picked = order ? order.map((n) => offs[n - 1]).filter(Boolean) : offs.slice(0, 2);
+	for (const o of picked) {
 		const start = +o;
 		const end = wnData[p].indexOf(10, start);
 		const line = wnData[p].slice(start, end).toString('utf8');
@@ -70,7 +77,8 @@ for (const r of rows) {
 	if (seen.has(key)) continue;
 	seen.add(key);
 	const idx = entries.length;
-	const wn = wordnet(r.head.split('/')[0], r.pos);
+	const wn = wordnet(r.head.split('/')[0], r.pos, ORDER[key]);
+	if (ORDER[key]) ORDER[key].used = true;
 	entries.push([r.head, r.pos, r.level, gloss[key] || '', wn[0], wn[1]]);
 	// "a.m./A.M./am/AM" -> each spelling is a lemma key
 	for (const v of r.head.split('/')) {
@@ -120,6 +128,9 @@ for (const lemma of Object.keys(lemmas)) {
 // Past participles the conjugator doesn't give.
 const PARTICIPLES = { born: 'bear', borne: 'bear', been: 'be', done: 'do', gone: 'go', seen: 'see', taken: 'take', given: 'give', written: 'write', eaten: 'eat', fallen: 'fall', forgotten: 'forget', gotten: 'get', hidden: 'hide', known: 'know', ridden: 'ride', risen: 'rise', shaken: 'shake', spoken: 'speak', stolen: 'steal', sworn: 'swear', torn: 'tear', thrown: 'throw', woken: 'wake', worn: 'wear', chosen: 'choose', frozen: 'freeze', broken: 'break', driven: 'drive', beaten: 'beat', bitten: 'bite', flown: 'fly', grown: 'grow', drawn: 'draw', shown: 'show', sung: 'sing', swum: 'swim', begun: 'begin', drunk: 'drink', rung: 'ring', sunk: 'sink', mistaken: 'mistake', forgiven: 'forgive', undertaken: 'undertake', overtaken: 'overtake', withdrawn: 'withdraw', arisen: 'arise', proven: 'prove', sewn: 'sew', shrunk: 'shrink', stunk: 'stink', blown: 'blow', thrived: 'thrive', laid: 'lay', lain: 'lie', slain: 'slay', spun: 'spin', struck: 'strike', stricken: 'strike', strewn: 'strew', woven: 'weave', wound: 'wind' };
 for (const f of Object.keys(PARTICIPLES)) if (lemmas[PARTICIPLES[f]]) addForm(f, PARTICIPLES[f]);
+
+const unused = Object.keys(ORDER).filter((k) => !ORDER[k].used);
+if (unused.length) console.log('en-order.tsv lines that match no entry:', unused.join(', '));
 
 const out = { v: 1, levels: LEVELS, entries, lemmas, forms };
 const dest = here('../extension/data/lexicon.json');

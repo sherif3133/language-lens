@@ -77,5 +77,4 @@ These need your choice. My pick is marked ✅.
    - ✅ A: move Colours and Auto-scroll into Aa Display; Save sentence becomes the ☆ on each transcript line (it already exists there).
    - B: keep as is.
 
-Data job (no decision needed, just time): some first meanings are odd for learners, e.g. "now" starts with "in the historical present".
-The English meanings come in WordNet's order; put the everyday sense first in `tools/gloss/` and rebuild the lexicon.
+DONE in 0.6.5 (2026-10-23): everyday meaning first for the 3,000 most-used words (371 entries reordered by hand, e.g. "now: at the present moment", "even: level, equal"). The order is in tools/gloss/en-order.tsv; tools/gloss/en-senses.js lists the senses for the next words (3,000+).
