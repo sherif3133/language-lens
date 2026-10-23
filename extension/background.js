@@ -26,6 +26,7 @@ const DEFAULTS = {
 	glossLang: 'en', // 'en' English definitions (default), 'ar' Arabic meanings
 	explainLang: 'en', // "Explanations: English / العربية": notes, pronunciation tips, grammar and lyrics (saved with the account)
 	colorPages: true, // colour words on websites
+	exprOn: true, // join and highlight phrasal verbs, idioms and compounds ("give up", "on the fence")
 	sidebar: true, // full transcript next to YouTube videos
 	focus: '', // grammar or pronunciation focus key, '' for none
 	showIPA: true, // IPA + sounds-like under words
@@ -156,8 +157,8 @@ async function arLookup(word) {
 }
 
 async function userState() {
-	const { level, words } = await get(['level', 'words']);
-	return { level, words };
+	const { level, words, exprOn } = await get(['level', 'words', 'exprOn']);
+	return { level, words, noExpr: exprOn === false };
 }
 
 /* ------------------------------------------------------------ server */
@@ -719,7 +720,7 @@ const handlers = {
 	soundLines: ({ texts }) => soundLines((texts || []).slice(0, 2000)),
 	proof: ({ text, grammar }) => proofText(String(text || '').slice(0, 2000), !!grammar),
 	state: async () => {
-		const s = await get(['token', 'me', 'level', 'progress', 'local', 'sites', 'pauseOnHover', 'glossLang', 'explainLang', 'colorPages', 'sidebar', 'focus', 'showIPA', 'showTrans', 'showEn', 'showSound', 'lensYT', 'blurCaptions', 'blurTrans', 'maskSwears', 'wordQuiz']);
+		const s = await get(['token', 'me', 'level', 'progress', 'local', 'sites', 'pauseOnHover', 'glossLang', 'explainLang', 'colorPages', 'sidebar', 'focus', 'showIPA', 'showTrans', 'showEn', 'showSound', 'lensYT', 'blurCaptions', 'blurTrans', 'maskSwears', 'wordQuiz', 'exprOn']);
 		if (s.token && !s.me) {
 			try {
 				s.me = await api('/me');
@@ -730,7 +731,7 @@ const handlers = {
 			}
 		}
 		const local = s.local.day === today() ? s.local : { words: 0, sentences: 0 };
-		return { signedIn: !!s.token, me: s.me, level: s.level, progress: s.progress, local, sites: s.sites, pauseOnHover: s.pauseOnHover, glossLang: s.glossLang, explainLang: s.explainLang, colorPages: s.colorPages, sidebar: s.sidebar, focus: s.focus, focusList: focusList(), showIPA: s.showIPA, showTrans: s.showTrans, showEn: s.showEn, showSound: s.showSound, lensYT: s.lensYT, blurCaptions: s.blurCaptions, blurTrans: s.blurTrans, maskSwears: s.maskSwears, wordQuiz: s.wordQuiz !== false };
+		return { signedIn: !!s.token, me: s.me, level: s.level, progress: s.progress, local, sites: s.sites, pauseOnHover: s.pauseOnHover, glossLang: s.glossLang, explainLang: s.explainLang, colorPages: s.colorPages, sidebar: s.sidebar, focus: s.focus, focusList: focusList(), showIPA: s.showIPA, showTrans: s.showTrans, showEn: s.showEn, showSound: s.showSound, lensYT: s.lensYT, blurCaptions: s.blurCaptions, blurTrans: s.blurTrans, maskSwears: s.maskSwears, wordQuiz: s.wordQuiz !== false, exprOn: s.exprOn !== false };
 	},
 	login: () => login(),
 	loginTab: (d) => loginTab(d),
@@ -750,7 +751,7 @@ const handlers = {
 			scheduleSync(500); // saved with the account, so /app shows the same
 			return null;
 		}
-		if (['colorPages', 'sidebar', 'showIPA', 'showTrans', 'showEn', 'showSound', 'lensYT', 'blurCaptions', 'blurTrans', 'pauseOnHover', 'maskSwears', 'wordQuiz'].includes(key)) return set({ [key]: !!value });
+		if (['colorPages', 'sidebar', 'showIPA', 'showTrans', 'showEn', 'showSound', 'lensYT', 'blurCaptions', 'blurTrans', 'pauseOnHover', 'maskSwears', 'wordQuiz', 'exprOn'].includes(key)) return set({ [key]: !!value });
 		if (key === 'focus') return set({ focus: self.LensGrammar.FOCUS[value] || self.LensPron.FOCUS[value] ? value : '' });
 		return null;
 	},

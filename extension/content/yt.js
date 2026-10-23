@@ -38,6 +38,9 @@
 		':host(.colors) .wd.next{background:rgba(52,211,153,.32);border-radius:4px;box-shadow:0 0 0 2px rgba(52,211,153,.32)}' +
 		':host(.colors) .wd.hard{background:rgba(251,146,60,.38);border-radius:4px;box-shadow:0 0 0 2px rgba(251,146,60,.38)}' +
 		':host(.colors) .wd.learning{background:#FDE68A;color:#0F0F10;box-shadow:0 0 0 2px #FDE68A}' +
+		// Expressions ("give up", "on the fence"): one blue-underlined unit, tinted blue unless it's at your level.
+		'.wd.ex{text-decoration:underline 3px #38BDF8;text-underline-offset:4px;text-decoration-skip-ink:none}' +
+		':host(.colors) .wd.ex.next,:host(.colors) .wd.ex.hard{background:rgba(56,189,248,.38);box-shadow:0 0 0 2px rgba(56,189,248,.38)}' +
 		'.fx{background:rgba(167,139,250,.55);box-shadow:0 0 0 2px rgba(167,139,250,.55);border-radius:4px}' +
 		'.tools{position:absolute;left:50%;transform:translateX(-50%);top:100%;margin-top:6px;display:flex;justify-content:center;gap:5px;opacity:0;transition:opacity .15s;white-space:nowrap}' +
 		'.bar:hover .tools,.tools:hover{opacity:1}' +
@@ -121,6 +124,8 @@
 		':host(.colors) .wd.next{background:rgba(34,197,94,.2);border-radius:3px}' +
 		':host(.colors) .wd.hard{background:rgba(249,115,22,.24);border-radius:3px}' +
 		':host(.colors) .wd.learning{background:#FDE68A;box-shadow:0 0 0 1px #B45309}' +
+		'.wd.ex{text-decoration:underline 2px #0284C7;text-underline-offset:3px;text-decoration-skip-ink:none}' +
+		':host(.colors) .wd.ex.next,:host(.colors) .wd.ex.hard{background:rgba(14,165,233,.2)}' +
 		'.fx{background:#EDE9FE;box-shadow:0 0 0 1px #A78BFA;border-radius:3px}' +
 		'.empty{padding:16px;color:#8A8584}' +
 		'.foot{padding:8px 12px;border-top:1px solid #E6E3DF;font-size:12px;color:#8A8584}.foot kbd{font:600 11px/1 ' + FONT + ';border:1px solid #E6E3DF;border-bottom-width:2px;border-radius:4px;padding:1px 5px;color:#0F0F10}' +
@@ -509,7 +514,7 @@
 
 	var reT = null;
 	chrome.storage.onChanged.addListener(function (ch) {
-		if ((ch.words || ch.level) && S.cues.length) {
+		if ((ch.words || ch.level || ch.exprOn) && S.cues.length) {
 			clearTimeout(reT);
 			reT = setTimeout(analyse, 300);
 		}
@@ -1413,7 +1418,8 @@
 			}
 		}
 		Card.show({
-			word: w.textContent,
+			word: w.dataset.e || w.textContent,
+			surface: w.textContent,
 			grammar: w.closest('.fx') ? w.closest('.fx').dataset.l : '',
 			rect: w.getBoundingClientRect(),
 			sentence: src.text,

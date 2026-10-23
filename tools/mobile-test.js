@@ -36,7 +36,7 @@ const cardOpen = (page) => page.evaluate(() => {
 	const h = document.querySelector('sawa-lens-card'), c = h && h.shadowRoot.querySelector('.card.on');
 	if (!c) return null;
 	const r = c.getBoundingClientRect();
-	return { word: (c.querySelector('.w') || {}).textContent, top: Math.round(r.top), bottom: Math.round(r.bottom), width: Math.round(r.width) };
+	return { word: (c.querySelector('.w') || {}).textContent, exk: (c.querySelector('.exk span') || {}).textContent || '', top: Math.round(r.top), bottom: Math.round(r.bottom), width: Math.round(r.width) };
 });
 
 /** YouTube sends empty captions to automated browsers: start Chrome ourselves (no automation flags), then attach.
@@ -124,6 +124,16 @@ async function launch() {
 		const c2 = await cardOpen(page);
 		check('tap a transcript word opens its card', c2 && c2.word, tw && tw.text + ' → ' + JSON.stringify(c2));
 		await page.screenshot({ path: path.join(out, '3-phone-transcript-card.png') });
+
+		// Expressions ("you know", "a lot of"…) are one blue-underlined unit; a tap opens one card for the whole phrase.
+		const xs = await page.evaluate(() => { const h = document.querySelector('sawa-lens-side'); return h ? [...h.shadowRoot.querySelectorAll('.s .wd.ex')].slice(0, 5).map((e) => e.textContent + '=' + e.dataset.e) : []; });
+		check('transcript marks expressions', xs.length, xs.join(', '));
+		await page.evaluate(() => { const b = document.querySelector('sawa-lens-card'); const x = b && b.shadowRoot.querySelector('.card.on .x'); if (x) x.click(); });
+		const tx = await centre(page, 'sawa-lens-side', '.s .wd.ex', 0);
+		if (tx) { await tap(page, tx); await wait(1500); }
+		const c3 = await cardOpen(page);
+		check('tap an expression opens one card for the whole phrase', c3 && c3.exk && / /.test(c3.word), tx && tx.text + ' → ' + JSON.stringify(c3));
+		await page.screenshot({ path: path.join(out, '3b-phone-expression-card.png') });
 		await page.keyboard.press('Escape');
 		await wait(500);
 
@@ -163,6 +173,20 @@ async function launch() {
 		const wc = await cardOpen(web);
 		check('phone website: tapping a word opens its card', wc && wc.word === 'domain', JSON.stringify(wc));
 		await web.screenshot({ path: path.join(out, '4b-phone-website.png') });
+
+		// A website paragraph with idioms and a split phrasal verb: tap "fence" → the card for "on the fence".
+		await web.setRequestInterception(true);
+		web.on('request', (r) => r.url() === 'https://example.com/lens-expr' ? r.respond({ status: 200, contentType: 'text/html', body: '<!doctype html><meta name=viewport content="width=device-width"><article><p id=p>' + 'My friend is still on the fence about the new job. She gave it up last year, but she is looking forward to a fresh start, and customer service called her twice. '.repeat(3) + '</p></article>' }) : r.continue());
+		await web.goto('https://example.com/lens-expr', { waitUntil: 'domcontentloaded' });
+		await wait(3500);
+		const hl = await web.evaluate(() => { const h = CSS.highlights && CSS.highlights.get('lens-expr'), u = CSS.highlights && CSS.highlights.get('lens-exul'); return [...(h || []), ...(u || [])].map((r) => r.toString()); });
+		check('website: expressions highlighted', hl.some((t) => t === 'on the fence') && hl.some((t) => t === 'gave it up'), JSON.stringify([...new Set(hl)]));
+		const fw = await web.evaluate(() => { const t = document.getElementById('p').firstChild, i = t.data.indexOf('fence'), r = document.createRange(); r.setStart(t, i); r.setEnd(t, i + 5); const b = r.getBoundingClientRect(); return { x: b.left + b.width / 2, y: b.top + b.height / 2 }; });
+		await tap(web, fw);
+		await wait(1500);
+		const fc = await cardOpen(web);
+		check('website: tapping "fence" opens the card for "on the fence"', fc && fc.word === 'on the fence' && fc.exk === 'Idiom', JSON.stringify(fc));
+		await web.screenshot({ path: path.join(out, '4c-phone-website-expression.png') });
 		await web.close();
 
 		/* ---------------- computer (no regressions) */
@@ -172,7 +196,7 @@ async function launch() {
 		await desk.setUserAgent({ userAgent: ua, userAgentMetadata: { brands: [{ brand: 'Google Chrome', version: major }, { brand: 'Chromium', version: major }, { brand: 'Not.A/Brand', version: '99' }], platform: 'Windows', platformVersion: '10.0.0', architecture: 'x86', model: '', mobile: false } });
 		await desk.goto('https://www.youtube.com/watch?v=' + vid, { waitUntil: 'domcontentloaded' });
 		let dl = null;
-		for (let i = 0; i < 30 && !dl; i++) {
+		for (let i = 0; i < 90 && !dl; i++) { // ads can run first
 			await wait(1000);
 			dl = await desk.evaluate(() => { const h = document.querySelector('sawa-lens-yt'); const l = h && h.shadowRoot.querySelector('.line.en'); return l && l.querySelector('.wd') ? l.textContent : null; });
 		}
@@ -184,6 +208,22 @@ async function launch() {
 		await wait(1500);
 		const dc = await cardOpen(desk);
 		check('computer: hovering a word opens its card', dc && dc.word, JSON.stringify(dc));
+		await desk.mouse.move(5, 5);
+		await desk.evaluate(() => { const v = document.querySelector('#movie_player video'); if (v) v.pause(); }); // the transcript stops scrolling
+		await wait(1200);
+		const dx = await desk.evaluate(() => { const e = document.querySelector('sawa-lens-side').shadowRoot.querySelector('.s .wd.ex'); return e ? { x: 0, y: 0, text: e.textContent } : null; });
+		let under = '';
+		if (dx) {
+			await wait(600);
+			// An expression already on screen (the transcript scrolls itself back to the current sentence).
+			const p2 = await desk.evaluate(() => { const h = document.querySelector('sawa-lens-side'); for (const e of h.shadowRoot.querySelectorAll('.s .wd.ex')) { const r = e.getBoundingClientRect(), x = r.left + r.width / 2, y = r.top + r.height / 2; let t = document.elementFromPoint(x, y); while (t && t.shadowRoot && t.shadowRoot.elementFromPoint(x, y) && t.shadowRoot.elementFromPoint(x, y) !== t) t = t.shadowRoot.elementFromPoint(x, y); if (t && t.closest && t.closest('.wd.ex') === e) return { x, y, text: e.textContent }; } return null; }) || dx;
+			under = await desk.evaluate((x, y) => { let e = document.elementFromPoint(x, y); while (e && e.shadowRoot && e.shadowRoot.elementFromPoint(x, y) && e.shadowRoot.elementFromPoint(x, y) !== e) e = e.shadowRoot.elementFromPoint(x, y); return e ? e.tagName + '.' + e.className + ' ' + (e.textContent || '').slice(0, 20) : 'nothing'; }, p2.x, p2.y);
+			await desk.mouse.move(p2.x - 3, p2.y);
+			await desk.mouse.move(p2.x, p2.y, { steps: 3 });
+		}
+		await wait(1500);
+		const dxc = await cardOpen(desk);
+		check('computer: hovering an expression opens one card for the whole phrase', dxc && dxc.exk && / /.test(dxc.word), dx && dx.text + ' → ' + JSON.stringify(dxc) + ' · under the mouse: ' + under);
 		await desk.screenshot({ path: path.join(out, '5-computer.png') });
 	} finally {
 		await browser.close();

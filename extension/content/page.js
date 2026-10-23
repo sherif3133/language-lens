@@ -143,6 +143,14 @@
 		});
 	}
 
+	/** The highlighted expression ("gave it up") that covers this spot of a text node, if any. */
+	function exprAt(node, start) {
+		var list = exprMap.get(node);
+		if (!list) return null;
+		for (var i = 0; i < list.length; i++) if (list[i].start <= start && start < list[i].end && list[i].text === node.data.slice(list[i].start, list[i].end)) return list[i];
+		return null;
+	}
+
 	/** The card for the word at (x, y): hovered on a computer, tapped on a phone. */
 	function showAt(x, y) {
 		var hit = wordAt(x, y);
@@ -158,6 +166,16 @@
 			if (akey === lastKey && Card.isOpen()) return;
 			lastKey = akey;
 			Card.showAr({ word: hit.word, rect: hit.rect, sentence: sentenceAround(hit.node, hit.start), source: { url: location.href, title: document.title } });
+			return;
+		}
+		var ex = exprAt(hit.node, hit.start);
+		if (ex) {
+			var er = document.createRange();
+			try { er.setStart(hit.node, ex.start); er.setEnd(hit.node, ex.end); } catch (e) { er = null; }
+			var ekey = ex.lemma + '@' + ex.start + '@' + Math.round(hit.rect.top);
+			if (ekey === lastKey && Card.isOpen()) return;
+			lastKey = ekey;
+			Card.show({ word: ex.lemma, surface: ex.text, grammar: focusLabel(hit.node, hit.start), rect: er ? er.getBoundingClientRect() : hit.rect, sentence: sentenceAround(hit.node, hit.start), source: { url: location.href, title: document.title } });
 			return;
 		}
 		if (looksLikeName(hit.node, hit.start, hit.word)) { if (Card.isOpen()) Card.hideSoon(300); lastKey = ''; return; } // names are not translated
@@ -239,7 +257,7 @@
 	var BAND = { easy: 'Easy', good: 'Good level', hard: 'Hard', 'too-hard': 'Too hard' };
 	var grade = null, gradeT = null, hidden = false, colors = true, lastGrade = 0;
 	var canHighlight = !!(window.CSS && CSS.highlights && window.Highlight);
-	var focus = '', focusInfo = null, focusMap = new WeakMap();
+	var focus = '', focusInfo = null, focusMap = new WeakMap(), exprMap = new WeakMap();
 	chrome.storage.local.get(['colorPages', 'focus'], function (o) { colors = o.colorPages !== false; focus = o.focus || ''; });
 
 	if (canHighlight && !document.getElementById('sawa-lens-hl')) {
@@ -249,7 +267,10 @@
 			'::highlight(lens-next){background-color:rgba(34,197,94,.22)}' +
 			'::highlight(lens-hard){background-color:rgba(249,115,22,.26)}' +
 			'::highlight(lens-learning){background-color:#FDE68A;color:#0F0F10}' +
-			'::highlight(lens-focus){background-color:#EDE9FE;color:#0F0F10}';
+			'::highlight(lens-focus){background-color:#EDE9FE;color:#0F0F10}' +
+			// Expressions ("give up", "on the fence"): blue underline, tinted blue unless they're at your level.
+			'::highlight(lens-expr){background-color:rgba(14,165,233,.2);text-decoration:underline 2px #0EA5E9}' +
+			'::highlight(lens-exul){text-decoration:underline 2px #0EA5E9}';
 		(document.head || document.documentElement).appendChild(st);
 	}
 
@@ -311,22 +332,29 @@
 
 	function clearHighlights() {
 		if (!canHighlight) return;
-		['lens-next', 'lens-hard', 'lens-learning', 'lens-focus'].forEach(function (k) { CSS.highlights.delete(k); });
+		['lens-next', 'lens-hard', 'lens-learning', 'lens-focus', 'lens-expr', 'lens-exul'].forEach(function (k) { CSS.highlights.delete(k); });
 	}
 
 	function paintHighlights(nodes, lines) {
+		// Where the expressions are, for their hover/tap card (also with colours off).
+		nodes.forEach(function (n, i) {
+			var exs = (lines[i] || []).filter(function (t) { return t.ex; });
+			if (exs.length) exprMap.set(n, exs); else exprMap.delete(n);
+		});
 		if (!canHighlight) return;
 		clearHighlights();
 		if (!colors) return;
-		var sets = { next: [], hard: [], learning: [] };
+		var sets = { next: [], hard: [], learning: [], expr: [], exul: [] };
 		nodes.forEach(function (n, i) {
 			(lines[i] || []).forEach(function (t) {
-				if (!sets[t.status] || !n.isConnected) return;
+				var k = t.ex ? (t.status === 'next' || t.status === 'hard' ? 'expr' : 'exul') : t.status;
+				if (!sets[k] || !n.isConnected) return;
 				var r = document.createRange();
 				try {
 					r.setStart(n, t.start);
 					r.setEnd(n, t.end);
-					sets[t.status].push(r);
+					sets[k].push(r);
+					if (t.ex && t.status === 'learning') sets.learning.push(r);
 				} catch (e) {
 					/* the text changed meanwhile */
 				}
@@ -415,7 +443,7 @@
 			colors = ch.colorPages.newValue !== false;
 			lastGrade = 0;
 		}
-		if (ch.words || ch.level || ch.colorPages) {
+		if (ch.words || ch.level || ch.colorPages || ch.exprOn) {
 			clearTimeout(gradeT);
 			lastGrade = 0;
 			gradeT = setTimeout(regrade, 600);

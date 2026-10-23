@@ -40,6 +40,7 @@
 		'.chips{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}.chip{font-size:11.5px;font-weight:600;border:1px solid #E6E3DF;border-radius:999px;padding:2px 8px;cursor:help;background:#FFFBEB;border-color:#FCD34D}' +
 		'.tip{font-size:12.5px;color:#4A4847;margin-top:4px}' +
 		'.base{color:#8A8584;font-size:13px;margin-top:2px}' +
+		'.exk{color:#4A4847;font-size:13px;margin-top:4px}.exk span{display:inline-block;font-weight:600;color:#075985;background:#E0F2FE;border-bottom:2px solid #0284C7;border-radius:4px;padding:0 6px}' +
 		'.ar{font-size:17px;margin-top:8px}.en{font-size:14.5px;margin-top:8px}' +
 		'.pos{color:#8A8584;font-size:12px;margin-inline:0 6px}.ar .pos{margin-inline:6px 0}.row{display:block;margin-top:2px}' +
 		'.ex{margin-top:8px;font-size:13.5px;color:#4A4847;display:flex;gap:6px;align-items:flex-start}.ex i{font-style:italic}' +
@@ -129,7 +130,7 @@
 	}
 
 	function posAr(p) {
-		return { noun: 'اسم', verb: 'فعل', adjective: 'صفة', adverb: 'ظرف', preposition: 'حرف جر', pronoun: 'ضمير', determiner: 'أداة', conjunction: 'أداة ربط', interjection: 'تعجب', number: 'عدد' }[p] || '';
+		return { noun: 'اسم', verb: 'فعل', adjective: 'صفة', adverb: 'ظرف', preposition: 'حرف جر', pronoun: 'ضمير', determiner: 'أداة', conjunction: 'أداة ربط', interjection: 'تعجب', number: 'عدد', 'phrasal verb': 'فعل مركّب', idiom: 'تعبير اصطلاحي', 'compound noun': 'اسم مركّب', phrase: 'عبارة' }[p] || '';
 	}
 
 	/** Pictures for the word: real photos first, an AI picture on request for abstract words. */
@@ -190,6 +191,8 @@
 		else if (cur.snd && cur.snd.error) snd = '<div class="res"><div class="msg bad">' + u(cur.snd.error) + '</div></div>';
 		else if (cur.snd) snd = '<div class="res">' + soundHtml(cur.snd) + '</div>';
 		var known = d.status === 'known', learning = d.status === 'learning';
+		// A phrasal verb, idiom or compound: one card (and one review item) for the whole expression.
+		var exPos = (d.entries[0] || {}).pos, exKind = String(d.lemma || '').indexOf(' ') > 0 ? ({ 'phrasal verb': 'Phrasal verb', idiom: 'Idiom', 'compound noun': 'Compound noun', phrase: 'Phrase' }[exPos] || (exPos ? 'Expression' : '')) : '';
 		var canReplay = !!(cur.onReplay && cur.source && cur.source.videoId);
 		el.innerHTML =
 			'<div class="top"><div class="wrow"><button class="say" data-a="say-word" title="Listen">' + SPEAK + '</button><div class="w">' + u(cur.word) + '</div></div>' +
@@ -197,6 +200,7 @@
 			'<span class="lang" title="Meaning in"><button data-a="lang-ar" class="' + (lang === 'ar' ? 'on' : '') + '">AR</button><button data-a="lang-en" class="' + (lang === 'en' ? 'on' : '') + '">EN</button></span><button class="x" data-a="close" title="Close (Esc)" aria-label="Close">×</button></div></div>' +
 			pr +
 			(d.lemma && d.lemma !== String(cur.word).toLowerCase() ? '<div class="base">from ' + u(d.lemma) + '</div>' : '') +
+			(exKind ? '<div class="exk"><span>' + u(exKind) + '</span>' + (cur.surface && cur.surface.toLowerCase() !== String(cur.word).toLowerCase() ? ' here: “' + u(cur.surface) + '”' : '') + ' · the meaning of the whole phrase</div>' : '') +
 			(cur.grammar ? '<div class="gram">' + u(cur.grammar) + '</div>' : '') +
 			(d.verb ? '<div class="vf"><div class="forms"><span>' + u(d.verb.base) + '</span><i>›</i><span>' + u(d.verb.past) + '</span><i>›</i><span>' + u(d.verb.pp) + '</span></div>' +
 				'<div class="vmeta"><em class="' + (d.verb.irregular ? 'irr' : '') + '">' + (d.verb.irregular ? 'irregular' : 'regular') + '</em> · ' + u(d.verb.ing) + ' · he/she ' + u(d.verb.s) + '</div></div>' : '') +

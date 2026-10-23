@@ -122,6 +122,89 @@
 		return this._phrases;
 	};
 
+	var EXPR_POS = { 'phrasal verb': 'phrasal', idiom: 'idiom', 'compound noun': 'compound', phrase: 'phrase' };
+	var POSS = { my: 1, your: 1, his: 1, her: 1, its: 1, our: 1, their: 1, "one's": 1 };
+	var REFL = { myself: 1, yourself: 1, himself: 1, herself: 1, itself: 1, ourselves: 1, yourselves: 1, themselves: 1, oneself: 1 };
+	var SLOT = { someone: 1, something: 1, somebody: 1, "someone's": 1, "somebody's": 1 };
+	// "give it up", "turn the TV off": only these particles split from their verb (not on/in: "put it on the table").
+	var SEP = { up: 1, down: 1, out: 1, off: 1, away: 1, back: 1, over: 1, around: 1, round: 1, aside: 1, together: 1, apart: 1 };
+	var OBJ = { it: 1, them: 1, him: 1, her: 1, me: 1, us: 1, you: 1, this: 1, that: 1, these: 1, those: 1, everything: 1, something: 1, things: 1 };
+	var DET = { the: 1, a: 1, an: 1, my: 1, your: 1, his: 1, her: 1, its: 1, our: 1, their: 1, this: 1, that: 1, some: 1 };
+
+	/** 'phrasal' | 'idiom' | 'compound' | 'phrase' for a multi-word dictionary lemma. */
+	Lens.prototype._exType = function (key) {
+		var lex = this.lex, type = '';
+		(lex.lemmas[key] || []).forEach(function (i) { var pos = lex.entries[i][1]; type = type || EXPR_POS[pos] || (pos === 'noun' ? 'compound' : ''); });
+		return type || 'phrase';
+	};
+
+	/** Multi-word lemmas indexed by their first word, longest first: { give: [{w:['give','up'], key, type, sep}] }. */
+	Lens.prototype._exprIndex = function () {
+		if (this._ex) return this._ex;
+		var lex = this.lex, idx = {}, self = this;
+		Object.keys(lex.lemmas).forEach(function (key) {
+			if (key.indexOf(' ') < 0 || /[^a-z' ]/.test(key)) return;
+			var w = key.split(' ');
+			if (SLOT[w[0]] || SLOT[w[w.length - 1]]) return;
+			var type = self._exType(key);
+			(idx[w[0]] = idx[w[0]] || []).push({ w: w, key: key, type: type || 'phrase', sep: type === 'phrasal' && w.length === 2 && !!SEP[w[1]] });
+		});
+		Object.keys(idx).forEach(function (k) { idx[k].sort(function (a, b) { return b.w.length - a.w.length; }); });
+		return (this._ex = idx);
+	};
+
+	/**
+	 * The longest dictionary expression starting at token i, or null: { end (last token index), key, type }.
+	 * Later words may be inflected ("customer services"), "one's"/"oneself"/"someone" are slots,
+	 * and phrasal verbs with up/out/off… can take a short object in the middle ("gave it up", "turn the lights off").
+	 */
+	Lens.prototype._expr = function (text, toks, i, lemAt) {
+		var idx = this._exprIndex();
+		var low = function (j) { return toks[j].text.toLowerCase().replace(/’/g, "'"); };
+		// Only plain spaces between the words: "up. Give" is not "give up".
+		var joined = function (j) { return /^ +$/.test(text.slice(toks[j - 1].end, toks[j].start)); };
+		var is = function (j, w) {
+			if (j >= toks.length || !joined(j)) return false;
+			var t = low(j);
+			if (t === w) return true;
+			if (w === "one's") return !!POSS[t] || /'s$/.test(t);
+			if (w === 'oneself') return !!REFL[t];
+			return lemAt(j).indexOf(w) >= 0;
+		};
+		// Match pattern words from k on, starting at token j; returns the last token index or -1.
+		var rest = function (p, k, j) {
+			if (k === p.w.length) return j - 1;
+			var w = p.w[k];
+			if (SLOT[w]) {
+				for (var g = 1; g <= 3; g++) {
+					if (j + g - 1 >= toks.length || !joined(j + g - 1)) break;
+					var r = rest(p, k + 1, j + g);
+					if (r >= 0) return r;
+				}
+				return -1;
+			}
+			if (is(j, w)) return rest(p, k + 1, j + 1);
+			if (p.sep && k === 1) {
+				if (j < toks.length && joined(j) && OBJ[low(j)] && is(j + 1, w)) return j + 1;
+				if (j + 1 < toks.length && joined(j) && DET[low(j)] && joined(j + 1) && is(j + 2, w)) return j + 2;
+			}
+			return -1;
+		};
+		var heads = [low(i)].concat(lemAt(i)), best = null, seen = {};
+		for (var h = 0; h < heads.length; h++) {
+			var list = idx[heads[h]];
+			if (!list || seen[heads[h]]) continue;
+			seen[heads[h]] = 1;
+			for (var q = 0; q < list.length; q++) {
+				var p = list[q];
+				if (best && p.w.length < best.len) break;
+				var end = rest(p, 1, i + 1);
+				if (end >= 0 && (!best || end > best.end)) best = { end: end, key: p.key, type: p.type, len: p.w.length };
+			}
+		}
+		return best;
+	};
+
 	/**
 	 * Analyse a text: every word with its lemma, level and status.
 	 * Phrases are joined: the learner's saved expressions first, then list phrases ("according to").
@@ -133,10 +216,12 @@
 		var capsN = toks.filter(function (t) { return /^[A-Z][a-z]/.test(t.text); }).length, titleCase = toks.length >= 3 && capsN / toks.length > 0.6;
 		var up = this._userPhrases(user), self = this;
 		var lem1 = function (s) { return self.lemmas(s)[0] || s.toLowerCase(); };
+		var lcache = [];
+		var lemAt = function (j) { return lcache[j] || (lcache[j] = self.lemmas(toks[j].text)); };
 		while (i < toks.length) {
 			var t = toks[i], hit = null;
 			// Longest phrase first, only if the words are separated by plain spaces.
-			for (var n = Math.max(3, up.max); n >= 2 && !hit; n--) {
+			for (var n = up.max; n >= 2 && !hit; n--) {
 				if (i + n > toks.length) continue;
 				var ok = true, parts = [], lparts = [];
 				for (var k = 0; k < n; k++) {
@@ -153,17 +238,24 @@
 						if (up.map[lparts.join(' ')]) hit = { n: n, lemma: lparts.join(' ') };
 					}
 				}
-				if (!hit && n <= 3) {
-					var cands = [phrase].concat(this.lex.forms[phrase] || []).filter(this.has, this);
-					if (cands.length) hit = { n: n, lemma: cands[0] };
-				}
 			}
 			if (hit) {
-				out.push(this._tok(text, toks[i].start, toks[i + hit.n - 1].end, hit.lemma, user, false));
+				var ht = this._tok(text, toks[i].start, toks[i + hit.n - 1].end, hit.lemma, user, false);
+				if (this.has(hit.lemma) && !user.noExpr) ht.ex = this._exType(hit.lemma); // a saved dictionary expression keeps its underline
+				out.push(ht);
 				i += hit.n;
 				continue;
 			}
-			var lem = this.lemmas(t.text)[0] || '';
+			// Dictionary expressions: phrasal verbs, idioms, compounds ("gave it up", "on the fence").
+			var ex = user.noExpr ? null : this._expr(text, toks, i, lemAt);
+			if (ex) {
+				var et = this._tok(text, toks[i].start, toks[ex.end].end, ex.key, user, false);
+				et.ex = ex.type;
+				out.push(et);
+				i = ex.end + 1;
+				continue;
+			}
+			var lem = lemAt(i)[0] || '';
 			var prev = text.slice(Math.max(0, t.start - 3), t.start);
 			var sentenceStart = i === 0 || /[.!?:"“]\s*$/.test(prev);
 			// Names are not translated: a capitalised word in the middle of a sentence (Rose, Mark, Will, Turkey…).

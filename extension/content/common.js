@@ -89,7 +89,7 @@
 				curS = sIn;
 			}
 			if (tIn !== -1 && curT === -1) {
-				html += '<span class="wd ' + toks[tIn].status + '" data-k="' + tIn + '">';
+				html += '<span class="wd ' + toks[tIn].status + (toks[tIn].ex ? ' ex' : '') + '" data-k="' + tIn + '"' + (toks[tIn].ex ? ' data-e="' + esc(toks[tIn].lemma) + '"' : '') + '>';
 				curT = tIn;
 			}
 			html += esc(text.slice(a, b));

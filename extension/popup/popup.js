@@ -141,6 +141,7 @@ async function render() {
 			<div class="label" style="margin-top:12px">Explanations</div>
 			<div class="seg2"><button data-x="en" aria-pressed="${st.explainLang !== 'ar'}">English</button><button data-x="ar" lang="ar" aria-pressed="${st.explainLang === 'ar'}">العربية</button></div>
 			<p class="hint">Notes on words, pronunciation tips, grammar and lyrics. Saved with your account, so the Sawa app uses it too.</p>
+			<div style="margin-top:12px">${toggle('expr', 'Highlight phrases & idioms', 'Blue underline = an expression like “give up” or “on the fence”. ' + point + ' it for the meaning of the whole phrase.', st.exprOn !== false)}</div>
 		</div>
 		<div class="sec">
 			<div class="label">YouTube</div>
@@ -212,6 +213,7 @@ async function render() {
 	pref('blurCaptions', 'blurCaptions');
 	pref('blurTrans', 'blurTrans');
 	pref('colors', 'colorPages');
+	pref('expr', 'exprOn');
 	pref('pause', 'pauseOnHover');
 	$('#focus').onchange = (e) => send('setPref', { key: 'focus', value: e.target.value });
 	const pf = $('#proof'); if (pf) pf.onchange = () => chrome.storage.local.set({ proofOn: pf.checked });

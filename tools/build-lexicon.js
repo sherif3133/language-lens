@@ -88,6 +88,24 @@ for (const r of rows) {
 	}
 }
 
+// Expressions (phrasal verbs, idioms, compounds, fixed phrases): phrases/out-*.tsv, see phrases/SOURCES.md.
+// expression \t type \t level \t english \t arabic \t example. A word-list entry with the same spelling wins.
+const EXPR_POS = { phrasal: 'phrasal verb', idiom: 'idiom', compound: 'compound noun', phrase: 'phrase' };
+let exprN = 0;
+for (const f of fs.readdirSync(here('phrases')).filter((f) => /^out-.*\.tsv$/.test(f)).sort()) {
+	for (const line of fs.readFileSync(here('phrases/' + f), 'utf8').split(/\r?\n/)) {
+		const c = line.split('\t').map((x) => x.trim());
+		if (c.length < 5) continue;
+		const head = c[0].toLowerCase().replace(/’/g, "'").replace(/\s+/g, ' ');
+		const pos = EXPR_POS[c[1].toLowerCase()], level = LEVELS.indexOf(c[2].toUpperCase()) + 1;
+		if (!pos || !level || !/^[a-z']+( [a-z']+)+$/.test(head) || lemmas[head] || !c[3] || !c[4]) continue;
+		lemmas[head] = [entries.length];
+		entries.push([head, pos, level, c[4], c[3].replace(/\.$/, ''), c[5] || '']);
+		exprN++;
+	}
+}
+console.log('expressions', exprN);
+
 const forms = {};
 function addForm(form, lemma) {
 	form = String(form || '').toLowerCase().trim();
