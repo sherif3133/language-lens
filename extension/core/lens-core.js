@@ -154,6 +154,29 @@
 	};
 
 	/**
+	 * Rules from the server (data/rules.json, refreshed from sawa-lens /rules): plain verb + preposition pairs that are
+	 * not underlined ("think about", "look at": each word means what it says), and context rules
+	 * ("put it on the table" is not the idiom, "a kind of fruit" is not "kind of" = a little).
+	 */
+	Lens.prototype.setRules = function (r) {
+		r = r || {};
+		var no = {};
+		(r.noExpr || []).forEach(function (k) { no[k] = 1; });
+		this.rules = { no: no, ctx: r.exprCtx || {}, sentences: r.sentences || null, v: r.v || 0 };
+	};
+
+	Lens.prototype._exOk = function (key, toks, i, low) {
+		var R = this.rules;
+		if (!R) return true;
+		if (R.no[key]) return false;
+		var c = R.ctx[key];
+		if (c && c.notIfBefore) {
+			for (var j = i - 1; j >= Math.max(0, i - 3); j--) if (c.notIfBefore.indexOf(low(j)) >= 0) return false;
+		}
+		return true;
+	};
+
+	/**
 	 * The longest dictionary expression starting at token i, or null: { end (last token index), key, type }.
 	 * Later words may be inflected ("customer services"), "one's"/"oneself"/"someone" are slots,
 	 * and phrasal verbs with up/out/off… can take a short object in the middle ("gave it up", "turn the lights off").
@@ -198,6 +221,7 @@
 			for (var q = 0; q < list.length; q++) {
 				var p = list[q];
 				if (best && p.w.length < best.len) break;
+				if (!this._exOk(p.key, toks, i, low)) continue;
 				var end = rest(p, 1, i + 1);
 				if (end >= 0 && (!best || end > best.end)) best = { end: end, key: p.key, type: p.type, len: p.w.length };
 			}

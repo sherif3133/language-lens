@@ -228,7 +228,9 @@
 		S.heardSeen = {};
 		S.kind = kind;
 		// lyrics: one line of the song = one row
-		S.sents = kind === 'lyrics' ? cues.map(function (c) { return { start: c.start, end: c.end, text: c.text }; }) : sentences(cues, kind === 'asr');
+		S.sents = kind === 'lyrics' ? cues.map(function (c, ci) { return { start: c.start, end: c.end, text: c.text, parts: [{ ci: ci, co: 0, so: 0, n: c.text.length }] }; }) : sentences(cues, kind === 'asr');
+		S.cueParts = window.LensCaptions.cueParts(cues.length, S.sents);
+		S.sentAi = []; S.trAsked = {}; S.aiTrOff = false;
 		S.sounds = {};
 		S.lyrExp = {};
 		S.adv = window.LensExplicit ? window.LensExplicit.scan(S.sents.map(function (x) { return x.text; })) : null;
@@ -420,50 +422,61 @@
 		return out;
 	}
 
+	/* Full sentences from the caption pieces, and a map back from each piece: core/captions.js (LensCaptions).
+	   The sentence rules (pauses, word counts, words a sentence doesn't end on) come from the server (sawa-lens /rules). */
+	var SR = null;
+	U.send('rules').then(function (r) { SR = (r && r.sentences) || null; }, function () {});
+	function sentences(cues, asr) { return window.LensCaptions.sentences(cues, asr, SR); }
+	function cueToks(i, fb) { return (S.cues[i] && window.LensCaptions.cueToks(S.cueParts && S.cueParts[i], S.sentToks, S.cues[i].text)) || fb; }
+	/** Which sentence is being heard now on caption line i. */
+	function sentNow(i) { return window.LensCaptions.sentenceAt(S.cueParts && S.cueParts[i], S.sents, S.video ? S.video.currentTime * 1000 : 0); }
+
 	/**
-	 * Full sentences with timings, built from caption lines.
-	 * Hand-made captions: split on . ! ? (not "Mr." etc.). Auto captions often lack punctuation:
-	 * then split on pauses, keeping ideas together (about 6–28 words).
+	 * The Arabic for sentence j: the AI translation of the whole sentence (asked for in batches around the playback
+	 * point, cached per sentence on the server); until it arrives, or when signed out, YouTube's own translation of
+	 * the pieces joined into the whole sentence. Never one piece's translation on its own.
 	 */
-	var ABBR = /^(mr|mrs|ms|dr|st|vs|etc|e\.g|i\.e|jr|sr|prof|no)\.$/i;
-	function sentences(cues, asr) {
-		var words = [];
-		cues.forEach(function (c) {
-			if (c.words) {
-				c.words.forEach(function (w) { words.push({ t: w.t, text: w.text, cueEnd: c.end, gapAfter: 0 }); });
-			} else {
-				var parts = c.text.split(' '), len = c.text.length, pos = 0;
-				parts.forEach(function (p) {
-					words.push({ t: c.start + Math.round((pos / Math.max(1, len)) * (c.end - c.start)), text: p, cueEnd: c.end });
-					pos += p.length + 1;
-				});
-			}
+	function trFor(j) {
+		if (j < 0) return '';
+		if (S.sentAi && S.sentAi[j]) return S.sentAi[j];
+		return S.sentTr ? S.sentTr[j] || '' : '';
+	}
+	function wantTr(j) {
+		if (S.kind === 'lyrics' || S.aiTrOff || !prefs.showTrans || j < 0 || !S.sents.length) return;
+		S.sentAi = S.sentAi || [];
+		S.trAsked = S.trAsked || {};
+		var ask = [];
+		for (var k = Math.max(0, j - 1); k < Math.min(S.sents.length, j + 12) && ask.length < 12; k++) if (!S.trAsked[k]) ask.push(k);
+		if (!ask.length) return;
+		// Ask in batches: when the current sentence is missing, or when the next few are.
+		if (ask[0] > j && ask.length < 6 && ask[ask.length - 1] !== S.sents.length - 1) return;
+		var vid = S.videoId, sents = S.sents;
+		ask.forEach(function (k) { S.trAsked[k] = 1; });
+		U.send('sentTr', { texts: ask.map(function (k) { return sents[k].text; }) }).then(function (res) {
+			if (vid !== S.videoId || sents !== S.sents) return;
+			ask.forEach(function (k, n) { if (res && res[n]) { S.sentAi[k] = res[n]; paintRowTr(k); } });
+			paintTr();
+		}, function (err) {
+			var m = String((err && err.message) || err);
+			if (/signed_out|locked|limit|paused|not switched on|not active/i.test(m)) S.aiTrOff = true; // YouTube's translation stays
+			else ask.forEach(function (k) { delete S.trAsked[k]; }); // try again later
 		});
-		words = words.filter(function (w) { return w.text && !/^[\[(][^\])]*[\])]$/.test(w.text); }); // drop (Laughter), [Music]
-		for (var i = 0; i < words.length; i++) words[i].gapAfter = i + 1 < words.length ? words[i + 1].t - words[i].t : 0;
-		var punct = words.filter(function (w) { return /[.!?]["')\]]*$/.test(w.text); }).length;
-		var usePunct = punct >= words.length / 40;
-		var out = [], cur = [];
-		function flush(endT) {
-			if (!cur.length) return;
-			var text = cur.map(function (w) { return w.text; }).join(' ').replace(/\s+([,.!?;:])/g, '$1').trim();
-			if (/[A-Za-z]/.test(text)) out.push({ start: cur[0].t, end: endT, text: text });
-			cur = [];
-		}
-		for (var k = 0; k < words.length; k++) {
-			var w = words[k], next = words[k + 1];
-			cur.push(w);
-			var endT = next ? next.t : w.cueEnd;
-			var ends = false;
-			if (usePunct) {
-				ends = /[.!?]["')\]]*$/.test(w.text) && !ABBR.test(w.text) && cur.length >= 3 && (!next || /^["'(\[]?[A-Z0-9]/.test(next.text));
-				if (!ends && cur.length >= 45 && /[,;:]$/.test(w.text)) ends = true; // very long: break at a comma
-			} else {
-				ends = (cur.length >= 6 && w.gapAfter > 700) || (cur.length >= 14 && w.gapAfter > 350) || cur.length >= 28;
-			}
-			if (ends || !next) flush(endT);
-		}
-		return out;
+	}
+	function paintTr() {
+		if (!S.root || S.kind === 'lyrics' || S.shown == null || S.shown < 0) return;
+		var tr = S.root.querySelector('.line.tr');
+		var j = sentNow(S.shown);
+		var t = j >= 0 ? trFor(j) : (S.cueTr ? S.cueTr[S.shown] || '' : '');
+		if (tr.textContent !== t) tr.textContent = t;
+	}
+	function paintRowTr(k) {
+		if (!S.sRoot) return;
+		var body = S.sRoot.querySelector('.s[data-i="' + k + '"] .body');
+		var t = trFor(k);
+		if (!body || !t) return;
+		var el = body.querySelector('.trs');
+		if (!el) { el = document.createElement('div'); el.className = 'trs'; body.querySelector('.tx').after(el); }
+		el.textContent = t;
 	}
 
 	/** Match YouTube's translated lines to our caption lines and sentences by time. */
@@ -498,8 +511,8 @@
 			U.send('analyze', { texts: S.sents.map(function (s) { return s.text; }) })
 		]).then(function (r) {
 			if (vid !== S.videoId) return;
-			S.lines = r[0].lines;
 			S.sentToks = r[1].lines;
+			S.lines = r[0].lines.map(function (l, i) { return cueToks(i, l); }); // phrases found on the whole sentence
 			S.grade = r[1].grade;
 			S.level = r[1].level;
 			paintChip();
@@ -789,11 +802,12 @@
 			return;
 		}
 		en.innerHTML = U.markup(mask(S.cues[i].text), S.lines ? S.lines[i] : null, S.fxCues ? S.fxCues[i] : null);
-		tr.textContent = S.cueTr ? S.cueTr[i] || '' : '';
+		S.shown = i;
+		if (S.kind === 'lyrics') tr.textContent = S.cueTr ? S.cueTr[i] || '' : '';
+		else { wantTr(sentNow(i)); paintTr(); } // the whole sentence's meaning, not this piece's
 		var slg = S.root.querySelector('.line.slg');
 		if (slg) { var ns = slangOf(i); slg.innerHTML = ns ? slangHtml(ns) : ''; slg.dir = prefs.lyricLang === 'ar' ? 'rtl' : 'ltr'; }
 		tr.classList.remove('peek');
-		S.shown = i;
 		heard(i);
 		var snd = S.root.querySelector('.line.snd'); if (snd) snd.textContent = S.cueSnd ? S.cueSnd[i] || '' : '';
 		var tip = S.root.querySelector('.sndtip'); if (tip) tip.classList.remove('on');
@@ -975,7 +989,7 @@
 	}
 
 	function rowHtml(s, i) {
-		var tr = S.sentTr && S.sentTr[i] ? '<div class="trs">' + U.esc(S.sentTr[i]) + '</div>' : '';
+		var tr = trFor(i) ? '<div class="trs">' + U.esc(trFor(i)) + '</div>' : '';
 		var sl = slangOf(i);
 		if (sl) tr += '<div class="slgs"' + (prefs.lyricLang === 'ar' ? ' dir="rtl"' : '') + '>' + slangHtml(sl) + '</div>';
 		return '<div class="s" data-i="' + i + '"><button class="tm" data-a="seek">' + fmt(s.start) + '</button><div class="body"><div class="tx">' +
@@ -1345,6 +1359,8 @@
 					}
 				}
 				S.sIdx = j;
+				wantTr(j);
+				paintTr();
 			}
 		}
 	}

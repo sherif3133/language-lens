@@ -41,6 +41,22 @@ const cardOpen = (page) => page.evaluate(() => {
 
 /** YouTube sends empty captions to automated browsers: start Chrome ourselves (no automation flags), then attach.
     Headless, so a window hidden behind others can't slow the video down. */
+/** The Arabic under the caption is the whole sentence's translation (the same as the transcript's current row), not one piece's. */
+async function trIsSentence(page) {
+	let last = null;
+	for (let i = 0; i < 6; i++) {
+		last = await page.evaluate(() => {
+			const h = document.querySelector('sawa-lens-yt'), sd = document.querySelector('sawa-lens-side');
+			const bar = h && h.shadowRoot.querySelector('.line.tr'), now = sd && sd.shadowRoot.querySelector('.s.now .trs');
+			return { bar: bar ? bar.textContent : '', row: now ? now.textContent : '', en: h ? h.shadowRoot.querySelector('.line.en').textContent : '' };
+		});
+		if (last.bar && last.bar === last.row) return { ok: true, info: last.en + ' → ' + last.bar.slice(0, 60) };
+		if (!last.bar && !last.row) return { ok: true, info: 'no translation on this video (skipped)' };
+		await wait(500);
+	}
+	return { ok: false, info: JSON.stringify(last) };
+}
+
 async function launch() {
 	const { spawn } = require('child_process');
 	const prof = path.join(require('os').tmpdir(), 'lens-mprof-' + Date.now());
@@ -56,6 +72,8 @@ async function launch() {
 }
 
 (async () => {
+	// Captions → full sentences, phrases on the whole sentence, phrase rules (no browser needed).
+	require('./captions-test.js')((mark, name, info) => check('captions: ' + name, mark === '✓', info));
 	const browser = await launch();
 	try {
 		/* ---------------- phone */
@@ -108,6 +126,8 @@ async function launch() {
 		const paused = await page.evaluate(() => document.querySelector('#movie_player video').paused);
 		check('tap a caption word opens its card', c1 && c1.word, w ? JSON.stringify(c1) : 'no caption word: ' + JSON.stringify(await page.evaluate(() => { const v = document.querySelector('#movie_player video'), h = document.querySelector('sawa-lens-yt'); return { t: v && v.currentTime, paused: v && v.paused, host: !!h, inPlayer: h && h.parentElement && h.parentElement.id, line: h && h.shadowRoot.querySelector('.line.en').innerHTML.slice(0, 80), card: !!document.querySelector('sawa-lens-card .card.on') }; })));
 		check('the video pauses while the card is open', paused);
+		const pt = await trIsSentence(page);
+		check('phone: the Arabic under the caption is the whole sentence (same as the transcript row)', pt.ok, pt.info);
 		check('card is a bottom sheet (full width, at the bottom)', c1 && c1.width >= 380 && c1.bottom >= 840, c1 && c1.width + 'px wide, bottom ' + c1.bottom);
 		await page.screenshot({ path: path.join(out, '2-phone-card.png') });
 
@@ -222,6 +242,8 @@ async function launch() {
 		await wait(1500);
 		const dc = await cardOpen(desk);
 		check('computer: hovering a word opens its card', dc && dc.word, JSON.stringify(dc));
+		const dt = await trIsSentence(desk);
+		check('computer: the Arabic under the caption is the whole sentence (same as the transcript row)', dt.ok, dt.info);
 		await desk.mouse.move(5, 5);
 		await desk.evaluate(() => { const v = document.querySelector('#movie_player video'); if (v) v.pause(); }); // the transcript stops scrolling
 		await wait(1200);

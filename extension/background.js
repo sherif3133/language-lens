@@ -107,11 +107,51 @@ async function bumpLocal(kind, n) {
 function loadLens() {
 	if (lens) return Promise.resolve(lens);
 	if (!lensLoading) {
-		lensLoading = fetch(chrome.runtime.getURL('data/lexicon.json'))
-			.then((r) => r.json())
-			.then((lex) => (lens = new self.Lens(lex)));
+		lensLoading = Promise.all([fetch(chrome.runtime.getURL('data/lexicon.json')).then((r) => r.json()), loadRules()])
+			.then(([lex, rules]) => {
+				lens = new self.Lens(lex);
+				lens.setRules(rules);
+				return lens;
+			});
 	}
 	return lensLoading;
+}
+
+/* ------------------------------------------------------------ rules as data (sawa-lens /rules) */
+// Phrases not to underline, context rules and how captions become sentences. The copy in data/rules.json works
+// offline; the server's copy (refreshed every 12 hours) wins when newer, so testers get fixes without a new zip.
+let rulesNow = null;
+async function loadRules() {
+	if (rulesNow) return rulesNow;
+	const local = await fetch(chrome.runtime.getURL('data/rules.json')).then((r) => r.json()).catch(() => ({ v: 0 }));
+	const { lensRules, lensRulesAt } = await get(['lensRules', 'lensRulesAt']);
+	rulesNow = lensRules && lensRules.v >= local.v ? lensRules : local;
+	if (!lensRulesAt || Date.now() - lensRulesAt > 12 * 3600e3) refreshRules().catch(() => {});
+	return rulesNow;
+}
+async function refreshRules() {
+	const { server } = await get('server');
+	await set({ lensRulesAt: Date.now() });
+	const res = await fetch((server || DEFAULT_SERVER) + '/wp-json/sawa-lens/v1/rules');
+	const j = await res.json();
+	if (!res.ok || !j || !j.v || (rulesNow && j.v < rulesNow.v)) return;
+	await set({ lensRules: j });
+	rulesNow = j;
+	if (lens) lens.setRules(j);
+}
+
+/* Caption sentences → Arabic (one AI call per 12 sentences, cached on the server per sentence for everyone). */
+const sentTrCache = new Map();
+async function sentTr(texts) {
+	texts = (texts || []).slice(0, 12).map(String);
+	const out = texts.map((t) => sentTrCache.get(t) || '');
+	const miss = texts.filter((t, i) => !out[i]);
+	if (miss.length) {
+		const r = await api('/lines-tr', { lines: miss });
+		(r.lines || []).forEach((ar, k) => { if (ar) sentTrCache.set(miss[k], ar); });
+		if (sentTrCache.size > 3000) sentTrCache.clear();
+	}
+	return texts.map((t) => sentTrCache.get(t) || '');
 }
 
 /* ------------------------------------------------------------ Arabic → English */
@@ -297,7 +337,10 @@ async function sync() {
 
 chrome.alarms.create('lens-sync', { periodInMinutes: 10 });
 chrome.alarms.onAlarm.addListener((a) => {
-	if (a.name === 'lens-sync') sync().catch(() => {});
+	if (a.name === 'lens-sync') {
+		sync().catch(() => {});
+		get('lensRulesAt').then(({ lensRulesAt }) => { if (!lensRulesAt || Date.now() - lensRulesAt > 12 * 3600e3) refreshRules().catch(() => {}); });
+	}
 });
 
 /* ------------------------------------------------------------ actions */
@@ -788,6 +831,8 @@ const handlers = {
 	saveExpression: (d) => saveExpression(d),
 	lookup: ({ word }) => lookup(word),
 	analyze: ({ texts }) => analyze(texts),
+	rules: () => loadRules(),
+	sentTr: ({ texts }) => sentTr(texts),
 	grammar: ({ texts, focus }) => focusSpans(texts || [], focus),
 	focusList: () => focusList(),
 	goal: () => goal(),
