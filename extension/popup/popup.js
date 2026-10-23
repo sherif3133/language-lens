@@ -82,7 +82,7 @@ async function render() {
 	const skipUi = (await chrome.storage.local.get('skipUi')).skipUi !== false;
 	const arS = await chrome.storage.local.get(['arHover', 'arEnglish', 'hideArabicYT']);
 	// Vocals only: computers only (phones and touch screens don't get it), and not where it was too slow.
-	const vo = await chrome.storage.local.get(['vocalsOnly', 'vocalsSlow', 'songLyrics']);
+	const vo = await chrome.storage.local.get(['vocalsSlow', 'songLyrics']);
 	const computer = !matchMedia('(hover: none)').matches && !/Android|iPhone|iPad|Mobile/i.test(navigator.userAgent);
 	const more = (await chrome.storage.local.get('popupMore')).popupMore === true;
 	const point = computer ? 'Hover' : 'Tap';
@@ -161,7 +161,7 @@ async function render() {
 		<div class="sec">
 			<div class="label">🎵 Music</div>
 			${toggle('songlyrics', 'Lyrics for songs', 'On YouTube songs, the transcript shows the lyrics (from the video, or LRCLIB) with a link to Genius. Click 💡 on a line to have it explained.', vo.songLyrics !== false)}
-			${computer ? (vo.vocalsSlow ? '<p class="hint">🎤 Vocals only is off: this computer was too slow for it.</p>' : toggle('vocalsonly', '🎤 Vocals only (test)', 'On songs: hear only the singer’s voice. The music is removed on your computer by an AI model (39 MB download, once).', vo.vocalsOnly === true)) : ''}
+			${computer ? (vo.vocalsSlow ? '<p class="hint">🎤 Vocals only is off: this computer was too slow for it.</p>' : '<p class="hint">🎤 Vocals only (test): on a song, open Aa in the player → 🎤 Vocals only. It works on that video only, at normal speed (1×).</p>') : ''}
 			${computer && !vo.vocalsSlow ? '<div class="row"><div><div class="t">🎧 Voice-only playlist</div><div class="d">Add songs or YouTube playlists: the music is taken out in the background with the best voice model, and they play with the voice only, at once.</div></div><button class="btn sm ghost" id="prepared">Open</button></div>' : ''}
 		</div>
 		<div class="sec">
@@ -221,7 +221,6 @@ async function render() {
 	const ae = $('#arenglish'); if (ae) ae.onchange = () => chrome.storage.local.set({ arEnglish: ae.checked });
 	const sl = $('#songlyrics'); if (sl) sl.onchange = () => chrome.storage.local.set({ songLyrics: sl.checked });
 	const pr = $('#prepared'); if (pr) pr.onclick = () => chrome.tabs.create({ url: chrome.runtime.getURL('vocals/prepare.html') });
-	const vx = $('#vocalsonly'); if (vx) vx.onchange = () => chrome.storage.local.set({ vocalsOnly: vx.checked });
 	const su = $('#skipui'); if (su) su.onchange = () => chrome.storage.local.set({ skipUi: su.checked });
 	const hm = $('#hmode'); if (hm) hm.onchange = (e) => chrome.storage.local.set({ hoverMode: e.target.value });
 	$('#more').ontoggle = () => chrome.storage.local.set({ popupMore: $('#more').open });

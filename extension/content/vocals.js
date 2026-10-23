@@ -6,7 +6,9 @@
    - vocals/vocals.html (Language Lens's own page, hidden in this tab) separates the voice, ahead of time;
    - here, the <video>'s own sound goes through Web Audio and is switched off, and the voice is played
      in step with the video. If the voice isn't ready yet, the video waits ("Preparing vocals… 3s").
-   yt.js adds the "🎤 Vocals only" button to the Language Lens menu; the choice is kept in storage (vocalsOnly). */
+   yt.js adds the "🎤 Vocals only" button to the Language Lens menu. It is switched on by hand, for one video at a time:
+   it never starts by itself, goes off on the next video, and goes off when the speed isn't 1× (the voice would
+   change pitch). Only "▶ Play with Vocals only" in the Voice-only playlist turns it on, for that playlist. */
 (function () {
 	'use strict';
 	if (window.LensVocals) return;
@@ -39,6 +41,7 @@
 			v.__sawaGraph = g;
 			v.addEventListener('volumechange', function () { level(v); });
 			['pause', 'seeking', 'ratechange', 'emptied'].forEach(function (ev) { v.addEventListener(ev, function () { if (V.video === v) stopAll(); }); });
+			v.addEventListener('ratechange', function () { if (V.video === v && V.on && !CAPTURE && v.playbackRate !== 1) offForSpeed(); });
 			['play', 'playing', 'seeked', 'timeupdate'].forEach(function (ev) { v.addEventListener(ev, function () { if (V.video === v) tick(); }); });
 		}
 		return v.__sawaGraph;
@@ -225,8 +228,14 @@
 	setInterval(tick, 200);
 
 	/* ------------------------------------------------------------ switching on and off */
+	/** Faster or slower than 1×, the voice changes pitch: switch off and say why. */
+	function offForSpeed() {
+		set(false);
+		show('error', 'Off: works at normal speed (1×) only');
+	}
 	function set(on) {
 		on = !!on && CAN && !V.slow;
+		if (on && !CAPTURE) { var cv = document.querySelector('#movie_player video'); if (cv && cv.playbackRate !== 1) return offForSpeed(); }
 		if (on === V.on) return paint();
 		V.on = on;
 		if (on) {
@@ -250,10 +259,14 @@
 		}
 	}
 	function toggle() {
-		var on = !V.on;
-		set(on);
-		try { chrome.storage.local.set({ vocalsOnly: V.on }); } catch (e) { /* ignore */ }
+		V.list = '';
+		set(!V.on);
 	}
+	function listId() { var m = /[?&]list=([^&]+)/.exec(location.search); return m ? m[1] : ''; }
+	// A new video: off again, unless it's the next song of the playlist started with "Play with Vocals only".
+	document.addEventListener('yt-navigate-finish', function () {
+		if (V.on && !CAPTURE && !(V.list && listId() === V.list)) set(false);
+	});
 	// Any click or key on the page lets the sound start (browsers need one before playing audio).
 	['pointerdown', 'keydown'].forEach(function (ev) {
 		document.addEventListener(ev, function () { if (V.on && V.ctx && V.ctx.state !== 'running') V.ctx.resume().then(tick); }, true);
@@ -293,13 +306,14 @@
 	}
 
 	try {
-		chrome.storage.local.get(['vocalsOnly', 'vocalsSlow'], function (o) {
+		chrome.storage.local.get(['vocalsPlay', 'vocalsSlow'], function (o) {
 			V.slow = !!o.vocalsSlow;
-			if (o.vocalsOnly && CAN && !V.slow && !CAPTURE) setTimeout(function () { set(true); }, 1500);
+			// only right after "▶ Play with Vocals only" (Voice-only playlist), and only for that playlist
+			var fresh = o.vocalsPlay && Date.now() - o.vocalsPlay < 120000;
+			if (fresh) chrome.storage.local.remove('vocalsPlay');
+			if (fresh && CAN && !V.slow && !CAPTURE) setTimeout(function () { V.list = listId(); set(true); }, 1500);
 		});
-		chrome.storage.onChanged.addListener(function (ch) {
-			if (ch.vocalsOnly && !!ch.vocalsOnly.newValue !== V.on) set(ch.vocalsOnly.newValue);
-		});
+		chrome.storage.local.remove('vocalsOnly'); // the old always-on setting
 	} catch (e) { /* ignore */ }
 
 	/* ------------------------------------------------------------ preparing songs ahead (vocals/prepare.html) */

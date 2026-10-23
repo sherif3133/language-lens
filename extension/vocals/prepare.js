@@ -44,7 +44,7 @@ function render() {
 			(ready.length ? '<button class="btn sm" id="playAll">▶ Play on YouTube with 🎤 Vocals only</button>' : '') : '';
 		const pa = $('#playAll');
 		// YouTube makes a playlist from up to 50 song ids; Vocals only is switched on for it
-		if (pa) pa.onclick = () => chrome.storage.local.set({ vocalsOnly: true }, () => window.open('https://www.youtube.com/watch_videos?video_ids=' + ready.slice(0, 50).join(','), '_blank'));
+		if (pa) pa.onclick = () => chrome.storage.local.set({ vocalsPlay: Date.now() }, () => window.open('https://www.youtube.com/watch_videos?video_ids=' + ready.slice(0, 50).join(','), '_blank'));
 		const bytes = Object.values(done).reduce((s, d) => s + d.bytes, 0);
 		$('#foot').textContent = Object.keys(done).length + ' prepared · ' + (bytes / 1e6).toFixed(1) + ' MB on this computer' +
 			(modelName ? ' · voice model: ' + modelName : '') + ' · nothing is uploaded or shared.';
