@@ -111,7 +111,7 @@ function loadLens() {
 			.then(([lex, rules]) => {
 				lens = new self.Lens(lex);
 				lens.setRules(rules);
-				return lens;
+				return loadFreq().then((F) => { lens.setFreq(F.rank); return lens; }, () => lens);
 			});
 	}
 	return lensLoading;
@@ -197,8 +197,32 @@ async function arLookup(word) {
 }
 
 async function userState() {
-	const { level, words, exprOn } = await get(['level', 'words', 'exprOn']);
-	return { level, words, noExpr: exprOn === false };
+	const s = await get(['level', 'levelT', 'words', 'exprOn', 'vocabProfile', 'vocabTest', 'mature']);
+	const mature = {};
+	(s.mature || []).forEach((l) => { mature[l] = true; });
+	return { level: s.level, words: s.words, noExpr: s.exprOn === false, profile: vocabProfile(s), mature };
+}
+
+/**
+ * Which vocabulary profile "You know about N% of the words" uses (education/placement-test-spec.md, Part 3):
+ * the account's test result (a full placement test always wins over the quick ones), else this device's level check,
+ * unless a level was picked by hand after it. null = the usual profile of the learner's level (lens-core).
+ */
+function vocabProfile(s) {
+	const vp = s.vocabProfile, vt = s.vocabTest, lt = s.levelT || 0;
+	const full = !!(vp && vp.source === 'test' && vp.test === 'placement');
+	if (vp && vp.source === 'test' && (vp.t || 0) >= lt && (full || !vt || (vt.t || 0) <= (vp.t || 0))) return vp;
+	if (!full && vt && vt.bands && vt.bands.some((b) => b > 0) && (vt.t || 0) >= lt) return { bands: smoothBands(vt.bands), source: 'test', test: 'lens', t: vt.t, date: vt.date };
+	return null;
+}
+
+/** Six band shares, never rising with rank; missing bands fall off from the last one (same as Sawa_Lens_Store::smooth_bands). */
+function smoothBands(bands) {
+	const out = [];
+	let prev = 1;
+	for (const b of bands.slice(0, 6)) out.push(Math.round((prev = Math.min(prev, Math.max(0, Math.min(1, +b || 0)))) * 1000) / 1000);
+	while (out.length && out.length < 6) out.push(Math.round(out[out.length - 1] * 0.6 * 1000) / 1000);
+	return out;
 }
 
 /* ------------------------------------------------------------ server */
@@ -285,7 +309,7 @@ async function logout() {
 	} catch (e) {
 		/* already gone */
 	}
-	await set({ token: '', me: null, progress: null });
+	await set({ token: '', me: null, progress: null, vocabProfile: null, mature: [] }); // the account's vocabulary profile stays with the account
 }
 
 /* ------------------------------------------------------------ sync */
@@ -296,13 +320,13 @@ function scheduleSync(ms) {
 }
 
 async function sync() {
-	const s = await get(['token', 'pending', 'cursor', 'level', 'words', 'wordTs', 'sentences']);
+	const s = await get(['token', 'pending', 'cursor', 'level', 'levelT', 'words', 'wordTs', 'sentences']);
 	if (!s.token) return null;
 	const pushWords = Object.keys(s.pending.words).map((lemma) => Object.assign({ lemma }, s.pending.words[lemma]));
 	const pushSent = Object.values(s.pending.sentences);
 	const { vocabTest, levelDirty, explainLang, explainDirty } = await get(['vocabTest', 'levelDirty', 'explainLang', 'explainDirty']);
 	// Send the level only when the learner changed it here, so the level test's result isn't overwritten.
-	const res = await api('/sync', { since: s.cursor, level: levelDirty ? s.level : 0, words: pushWords, sentences: pushSent, vocab: vocabTest || null, explainLang: explainDirty ? explainLang : '' });
+	const res = await api('/sync', { since: s.cursor, level: levelDirty ? s.level : 0, levelT: levelDirty ? s.levelT || Date.now() : 0, words: pushWords, sentences: pushSent, vocab: vocabTest || null, explainLang: explainDirty ? explainLang : '' });
 	if (levelDirty) await set({ levelDirty: false });
 	if (res.explainLang) {
 		// The account's value wins, unless the learner changed it here meanwhile (then it's sent next time).
@@ -311,6 +335,14 @@ async function sync() {
 		else if (explainDirty && now.explainLang === explainLang) await set({ explainDirty: false });
 	}
 	if (res.vocab && (!vocabTest || res.vocab.t > vocabTest.t)) await set({ vocabTest: res.vocab });
+	// Lens 0.9: the % of words you know comes from the account's vocabulary profile (servers before Sawa Lens 0.28 don't send it).
+	if (res.vocabProfile) {
+		const upd = { vocabProfile: res.vocabProfile, mature: res.mature || [] };
+		const { levelT } = await get('levelT');
+		// The account's level was set elsewhere (the app, a placement test): it is newer than this device's level pick.
+		if (res.vocabProfile.source === 'level' && (res.vocabProfile.t || 0) > (levelT || 0) && !levelDirty) upd.levelT = res.vocabProfile.t;
+		await set(upd);
+	}
 	if (res.plan) { const { me } = await get('me'); if (me) await set({ me: Object.assign({}, me, { plan: res.plan }) }); } // Sherif ticked "Member (paid)": opens here at the next sync
 	// Apply the server's changes unless this device has an even newer local change.
 	const fresh = await get(['pending', 'words', 'wordTs', 'sentences']);
@@ -619,7 +651,8 @@ async function analyze(texts) {
 	const L = await loadLens();
 	const st = await userState();
 	const lines = texts.map((t) => L.analyze(t, st));
-	return { lines, grade: L.grade([].concat(...lines)), level: st.level };
+	const pr = st.profile;
+	return { lines, grade: L.grade([].concat(...lines)), level: st.level, profile: pr ? { source: 'test', test: pr.test || '', date: pr.date || '' } : { source: 'level' } };
 }
 
 async function enableSite(origin, tabId) {
@@ -810,9 +843,11 @@ const handlers = {
 	loginTab: (d) => loginTab(d),
 	logout: () => logout(),
 	sync: () => sync(),
-	setLevel: async ({ level }) => {
+	setLevel: async ({ level, fromTest }) => {
 		level = Math.max(1, Math.min(6, level | 0));
-		await set({ level, levelDirty: true });
+		// A level picked by hand replaces the vocabulary profile; one taken from the level check keeps the check's profile.
+		const { vocabTest } = await get('vocabTest');
+		await set({ level, levelDirty: true, levelT: fromTest && vocabTest ? vocabTest.t : Date.now() });
 		scheduleSync(500);
 		return level;
 	},

@@ -254,7 +254,7 @@
 	}
 
 	/* ------------------------------------------------------------ colour coding + grade */
-	var BAND = { easy: 'Easy', good: 'Good level', hard: 'Hard', 'too-hard': 'Too hard' };
+	var BAND = U.BAND;
 	var grade = null, gradeT = null, hidden = false, colors = true, lastGrade = 0;
 	var canHighlight = !!(window.CSS && CSS.highlights && window.Highlight);
 	var focus = '', focusInfo = null, focusMap = new WeakMap(), exprMap = new WeakMap();
@@ -318,9 +318,11 @@
 		U.send('analyze', { texts: nodes.map(function (n) { return n.data; }) }).then(function (r) {
 			grade = r.grade;
 			grade.level = r.level;
+			grade.from = U.gradeSource(r);
 			if (!hidden && text.length >= 500) {
 				chip.className = 'chip on ' + grade.band;
-				chip.innerHTML = '<span class="dot"></span>You know <b>' + grade.percent + '%</b> · ' + BAND[grade.band] + '<span class="x" data-x="1">✕</span>';
+				chip.innerHTML = '<span class="dot"></span>You know about <b>' + grade.percent + '%</b> of the words · ' + BAND[grade.band] + '<span class="x" data-x="1">✕</span>';
+				chip.title = U.GRADE_TIP;
 			}
 			if (panel.classList.contains('on')) paint();
 			paintHighlights(nodes, r.lines);
@@ -409,7 +411,7 @@
 
 	function paint() {
 		var u = U.esc, g = grade;
-		panel.innerHTML = '<h3>New words on this page</h3><div class="sub">You know ' + g.percent + '% of the words (your level: ' + U.LEVEL_NAMES[(g.level || 2) - 1] + ').</div>' +
+		panel.innerHTML = '<h3>New words on this page</h3><div class="sub">You know about ' + g.percent + '% of the words (' + u(U.GRADE_TIP) + '). ' + u(g.from || '') + '</div>' +
 			(focusList ? '<div class="focus"><label>Focus on</label><select class="fsel"><option value="">— none —</option>' + focusList.map(function (f) { return '<option value="' + f.key + '"' + (f.key === focus ? ' selected' : '') + '>' + u(f.name) + '</option>'; }).join('') + '</select></div>' +
 				(focus && focusInfo ? '<div class="fbar"><b>' + u(focusInfo.name) + '</b> · ' + (focusInfo.count ? focusInfo.count + ' examples' : 'none on this page') + '<div' + (focusInfo.ruleLang === 'ar' ? ' dir="rtl" lang="ar"' : '') + '>' + u(focusInfo.rule) + '</div></div>' : '') : '') +
 			'<div class="legend"><span><i class="sw next"></i>Worth checking</span><span><i class="sw hard"></i>Above your level / rare</span><span><i class="sw learning"></i>Learning</span></div><ul>' +
@@ -443,7 +445,7 @@
 			colors = ch.colorPages.newValue !== false;
 			lastGrade = 0;
 		}
-		if (ch.words || ch.level || ch.colorPages || ch.exprOn) {
+		if (ch.words || ch.level || ch.colorPages || ch.exprOn || ch.vocabProfile || ch.vocabTest || ch.mature || ch.levelT) {
 			clearTimeout(gradeT);
 			lastGrade = 0;
 			gradeT = setTimeout(regrade, 600);

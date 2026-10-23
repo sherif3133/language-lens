@@ -99,5 +99,15 @@
 		return html;
 	}
 
-	window.LensUI = { send: send, esc: esc, fonts: fonts, sentenceAt: sentenceAt, errText: errText, markup: markup, LEVEL_NAMES: LEVEL_NAMES };
+	/* "You know about N% of the words": the band words and what the numbers mean (education/placement-test-spec.md, Part 3). Never "understand". */
+	var BAND = { easy: 'Easy', good: 'Good practice', hard: 'Hard (use subtitles)', 'too-hard': 'Very hard (use subtitles)' };
+	var GRADE_TIP = '98% = easy to follow · 95% = good practice · under 90% = hard';
+	/** Where the number comes from, for the panel (r = the analyze reply: level, profile). */
+	function gradeSource(r) {
+		var p = (r && r.profile) || {}, lv = LEVEL_NAMES[((r && r.level) || 2) - 1];
+		if (p.source === 'test') return p.test === 'placement' ? 'From your placement test.' : p.test === 'quick' ? 'From your quick level check.' : 'From your level check in Language Lens.';
+		return 'A guess from your level (' + lv + '). Take the level check for your real number: sawaenglish.com/placement';
+	}
+
+	window.LensUI = { send: send, esc: esc, fonts: fonts, sentenceAt: sentenceAt, errText: errText, markup: markup, LEVEL_NAMES: LEVEL_NAMES, BAND: BAND, GRADE_TIP: GRADE_TIP, gradeSource: gradeSource };
 })();

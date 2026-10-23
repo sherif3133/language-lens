@@ -90,7 +90,7 @@ async function finish() {
 		<p class="muted" id="done" style="margin-top:16px"></p>
 	</div>`;
 	$('#use').onclick = async () => {
-		await send('setLevel', { level: lv });
+		await send('setLevel', { level: lv, fromTest: true });
 		$('#use').textContent = 'Level set ✓';
 		$('#use').disabled = true;
 	};

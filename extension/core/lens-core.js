@@ -107,6 +107,50 @@
 		return 'hard';
 	};
 
+	/**
+	 * The usual vocabulary profile of a level, before any test: share of each 1,000-word frequency band known
+	 * (top 1k … 6k; the last one counts for every rarer word). Same numbers as the server (Sawa_Lens_Store::LEVEL_PROFILES).
+	 */
+	var LEVEL_PROFILES = {
+		1: [0.85, 0.35, 0.15, 0.05, 0.02, 0.01],
+		2: [0.95, 0.6, 0.3, 0.12, 0.05, 0.02],
+		3: [0.98, 0.85, 0.55, 0.3, 0.15, 0.07],
+		4: [0.99, 0.95, 0.8, 0.55, 0.35, 0.2],
+		5: [0.99, 0.97, 0.9, 0.75, 0.55, 0.4],
+		6: [1, 0.99, 0.95, 0.88, 0.75, 0.6]
+	};
+
+	/** Frequency ranks (lemma -> 1, 2, 3 …), from data/freq.json. Without them, words are placed by their CEFR-J level. */
+	Lens.prototype.setFreq = function (rank) {
+		this.rank = rank || null;
+	};
+
+	/** The learner's profile: user.profile (from the server or the level check) or their level's usual one. */
+	Lens.prototype.profile = function (user) {
+		var p = user.profile && user.profile.bands;
+		return p && p.length ? p : LEVEL_PROFILES[user.level || 2] || LEVEL_PROFILES[2];
+	};
+
+	/**
+	 * How likely the learner knows a word, 0–1. Marked known, or a review card at 21+ days: 1. Marked learning: 0.
+	 * Otherwise the profile's share for the word's frequency band (by CEFR-J level when it has no rank; rare words get the last band).
+	 */
+	Lens.prototype.chance = function (lemma, user) {
+		var mark = user.words && user.words[lemma];
+		if (mark === 'known') return 1;
+		if (mark === 'learning') return user.mature && user.mature[lemma] ? 1 : 0;
+		var bands = this.profile(user), last = bands.length - 1, r = this.rank && this.rank[lemma];
+		if (!r) {
+			var lv = this.level(lemma);
+			return bands[lv ? Math.min(lv - 1, last) : last] || 0;
+		}
+		// Smooth inside the bands: each band's share sits at its middle (rank 500, 1500 …), and the very top words ("the", "be") are known.
+		var x = (r - 1) / 1000 - 0.5, i = Math.floor(x);
+		if (x >= last) return bands[last] || 0;
+		var a = i < 0 ? 1 : bands[i], b = bands[i + 1];
+		return a + (b - a) * (i < 0 ? x + 0.5 : x - i) / (i < 0 ? 0.5 : 1);
+	};
+
 	/** The learner's own saved expressions ("give up on", "break the ice"), longest first. */
 	Lens.prototype._userPhrases = function (user) {
 		var w = user.words || {}, key = Object.keys(w).filter(function (k) { return k.indexOf(' ') > 0; }).sort().join('|');
@@ -294,18 +338,22 @@
 	Lens.prototype._tok = function (text, start, end, lemma, user, isName) {
 		var surface = text.slice(start, end);
 		var lv = lemma ? this.level(lemma) : 0;
-		var st;
+		var st, p;
 		if (isName) st = 'name';
-		else if (lemma) st = this.status(lemma, user);
-		else {
+		else if (lemma) {
+			st = this.status(lemma, user);
+			p = this.chance(lemma, user);
+		} else {
 			var m = user.words && user.words[surface.toLowerCase()];
 			st = m === 'known' || m === 'learning' ? m : surface.length <= 2 ? 'known' : 'hard';
+			p = st === 'known' ? 1 : st === 'learning' ? 0 : this.chance(surface.toLowerCase(), user);
 		}
-		return { text: surface, start: start, end: end, lemma: lemma || surface.toLowerCase(), level: lv, status: st, listed: !!lemma };
+		return { text: surface, start: start, end: end, lemma: lemma || surface.toLowerCase(), level: lv, status: st, p: p, listed: !!lemma };
 	};
 
 	/**
-	 * Difficulty for a learner: share of running words they know (names excluded).
+	 * Difficulty for a learner: expected share of running words they know (names excluded) = Σ chance ÷ running words,
+	 * so a test result or new marks move it right away (education/placement-test-spec.md, Part 3).
 	 * 98%+ comfortable, 95%+ good stretch, 90%+ hard, below that too hard (Hu & Nation 2000; Nation 2006).
 	 */
 	Lens.prototype.grade = function (tokens) {
@@ -314,8 +362,8 @@
 			var t = tokens[i];
 			if (t.status === 'name') continue;
 			counted++;
-			if (t.status === 'known') known++;
-			else unknown[t.lemma] = (unknown[t.lemma] || 0) + 1;
+			known += typeof t.p === 'number' ? t.p : t.status === 'known' ? 1 : 0;
+			if (t.status !== 'known') unknown[t.lemma] = (unknown[t.lemma] || 0) + 1;
 		}
 		var cov = counted ? known / counted : 1;
 		var band = cov >= 0.98 ? 'easy' : cov >= 0.95 ? 'good' : cov >= 0.9 ? 'hard' : 'too-hard';
@@ -326,9 +374,10 @@
 			var e = self.entries(l);
 			return { lemma: l, count: unknown[l], level: self.level(l), ar: e.length ? e.map(function (x) { return x.ar; }).filter(Boolean)[0] || '' : '' };
 		});
-		return { coverage: cov, percent: Math.floor(cov * 100), words: counted, unknownLemmas: Object.keys(unknown).length, band: band, top: top };
+		return { coverage: cov, percent: Math.min(cov < 1 ? 99 : 100, Math.round(cov * 100)), words: counted, unknownLemmas: Object.keys(unknown).length, band: band, top: top };
 	};
 
 	Lens.LEVELS = LEVELS;
+	Lens.LEVEL_PROFILES = LEVEL_PROFILES;
 	g.Lens = Lens;
 })(typeof globalThis !== 'undefined' ? globalThis : self);

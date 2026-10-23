@@ -515,8 +515,10 @@
 			S.lines = r[0].lines.map(function (l, i) { return cueToks(i, l); }); // phrases found on the whole sentence
 			S.grade = r[1].grade;
 			S.level = r[1].level;
+			S.gradeFrom = U.gradeSource(r[1]);
 			paintChip();
 			paintSide();
+			paintProfile();
 			S.idx = -1;
 			S.sIdx = -1;
 			tick(true);
@@ -527,7 +529,7 @@
 
 	var reT = null;
 	chrome.storage.onChanged.addListener(function (ch) {
-		if ((ch.words || ch.level || ch.exprOn) && S.cues.length) {
+		if ((ch.words || ch.level || ch.exprOn || ch.vocabProfile || ch.vocabTest || ch.mature || ch.levelT) && S.cues.length) {
 			clearTimeout(reT);
 			reT = setTimeout(analyse, 300);
 		}
@@ -768,14 +770,14 @@
 		S.sayT = setTimeout(function () { m.remove(); }, 2600);
 	}
 
-	var BAND = { easy: 'Easy', good: 'Good level', hard: 'Hard', 'too-hard': 'Too hard' };
+	var BAND = U.BAND;
 	function paintChip() {
 		var c = S.root && S.root.querySelector('.chip');
 		if (!c || !S.grade) return;
 		c.hidden = false;
 		c.className = 'chip ' + S.grade.band;
-		c.innerHTML = '<span class="dot"></span>You know<b>' + S.grade.percent + '%</b>· ' + BAND[S.grade.band];
-		c.title = 'Language Lens: share of the words in this video you know';
+		c.innerHTML = '<span class="dot"></span>You know about<b>' + S.grade.percent + '%</b>of the words · ' + BAND[S.grade.band];
+		c.title = 'Language Lens: share of the words in this video you probably know. ' + U.GRADE_TIP;
 		if (S.root.querySelector('.panel').classList.contains('on')) paintPanel();
 		paintAdvisory();
 	}
@@ -783,9 +785,8 @@
 	function paintPanel() {
 		var p = S.root.querySelector('.panel'), g = S.grade, u = U.esc;
 		if (!g) return;
-		var lv = U.LEVEL_NAMES[(S.level || 2) - 1];
 		p.innerHTML = '<h3>New words in this video</h3>' +
-			'<div class="sub">You know ' + g.percent + '% of the words (your level: ' + lv + '). ' + (g.unknownLemmas ? 'Learn these first:' : 'No new words.') + '</div><ul>' +
+			'<div class="sub">You know about ' + g.percent + '% of the words (' + u(U.GRADE_TIP) + '). ' + u(S.gradeFrom || '') + ' ' + (g.unknownLemmas ? 'Learn these first:' : 'No new words.') + '</div><ul>' +
 			g.top.map(function (w) {
 				return '<li><div><span class="en">' + u(w.lemma) + '</span>' + (w.level ? '<span class="lv">' + U.LEVEL_NAMES[w.level - 1] + '</span>' : '') +
 					(w.ar ? '<div class="ar">' + u(w.ar) + '</div>' : '') + '</div><button class="k" data-a="know" data-l="' + u(w.lemma) + '">I know it</button></li>';
@@ -927,7 +928,8 @@
 		if (!box || !v || !v.total) return;
 		var names = ['Top 1,000', '1,000–2,000', '2,000–3,000', '3,000–6,000', 'Rarer'], cols = ['#15803D', '#65A30D', '#CA8A04', '#EA580C', '#E3262B'];
 		var pct = function (n) { return Math.round(100 * n / v.total); };
-		var verdict = v.cover >= 95 ? '✅ Good for your level: you probably know ' + v.cover + '% of these words.' : v.cover >= 90 ? '🟡 A good challenge: about ' + v.cover + '% of the words are at your level. Use the captions and save new words.' : '🔴 Hard for your level: only ' + v.cover + '% of the words are at your level. Try it with the translation on, or pick an easier video.';
+		var cov = S.grade ? S.grade.percent : v.cover; // the same number as the chip: from the learner's vocabulary profile
+		var verdict = cov >= 95 ? '✅ Good for you: you know about ' + cov + '% of these words.' : cov >= 90 ? '🟡 A good challenge: you know about ' + cov + '% of the words. Use the captions and save new words.' : '🔴 Hard for you: you know about ' + cov + '% of the words. Use subtitles and the translation, or pick an easier video.';
 		box.innerHTML = '<details' + (S.vprofOpen ? ' open' : '') + '><summary><b>Words in this video</b> <small>' + v.total + ' words</small></summary>'
 			+ '<div class="vbar">' + v.bands.map(function (b, i) { return b.n ? '<i style="width:' + (100 * b.n / v.total) + '%;background:' + cols[i] + '" title="' + names[i] + ': ' + b.n + ' words"></i>' : ''; }).join('') + '</div>'
 			+ '<table class="vt">' + v.bands.map(function (b, i) { return '<tr><td><span class="vd" style="background:' + cols[i] + '"></span>' + names[i] + '</td><td>' + b.n + ' words</td><td>' + pct(b.n) + '%</td><td>' + b.uniq + ' different</td></tr>'; }).join('') + '</table>'
@@ -1002,7 +1004,8 @@
 	function paintSide() {
 		if (!S.sRoot) return;
 		var list = S.sRoot.querySelector('.list'), g = S.sRoot.querySelector('.g');
-		g.textContent = S.grade ? 'you know ' + S.grade.percent + '%' : '';
+		g.textContent = S.grade ? 'you know about ' + S.grade.percent + '% of the words' : '';
+		g.title = S.grade ? BAND[S.grade.band] + '. ' + U.GRADE_TIP + '. ' + (S.gradeFrom || '') : '';
 		S.sRoot.querySelector('[data-a=follow]').classList.toggle('on', S.follow);
 		paintFocusBar();
 		paintAdvisory();
