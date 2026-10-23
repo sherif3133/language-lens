@@ -111,6 +111,20 @@ async function launch() {
 		check('card is a bottom sheet (full width, at the bottom)', c1 && c1.width >= 380 && c1.bottom >= 840, c1 && c1.width + 'px wide, bottom ' + c1.bottom);
 		await page.screenshot({ path: path.join(out, '2-phone-card.png') });
 
+		// The 💬 Feedback link in the card opens the feedback box (four types, big tap targets), and Cancel brings the card back.
+		const fbl = await page.evaluate(() => { const a = document.querySelector('sawa-lens-card').shadowRoot.querySelector('.card.on a[data-a=fb]'); if (!a) return null; a.scrollIntoView({ block: 'center' }); const r = a.getClientRects()[0]; return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; }); // the link can wrap onto two lines: aim at its first line
+		check('card has a 💬 Feedback link', !!fbl);
+		if (fbl) {
+			await tap(page, fbl);
+			await wait(1200);
+			const fb = await page.evaluate(() => { const r = document.querySelector('sawa-lens-card').shadowRoot; const f = r.querySelector('.card.on .fb'); return f ? { types: f.querySelectorAll('.ty button').length, ta: !!f.querySelector('textarea'), minH: Math.min(...[...f.querySelectorAll('.ty button,.send,.cancel')].map((b) => b.getBoundingClientRect().height)), bottom: Math.round(r.querySelector('.card.on').getBoundingClientRect().bottom) } : null; });
+			check('feedback box opens in the card (4 types, text box, 44px+ buttons)', fb && fb.types === 4 && fb.ta && fb.minH >= 44, JSON.stringify(fb));
+			await tap(page, await centre(page, 'sawa-lens-card', '.card.on .cancel'));
+			await wait(800);
+			const back = await cardOpen(page);
+			check('Cancel returns to the word card', back && back.word, JSON.stringify(back));
+		}
+
 		// Close it with ×.
 		const x = await page.evaluate(() => { const b = document.querySelector('sawa-lens-card').shadowRoot.querySelector('.card.on .x'); const r = b.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; });
 		await tap(page, x);

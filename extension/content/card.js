@@ -150,6 +150,7 @@
 
 	function render() {
 		var d = cur.data, u = U.esc;
+		if (cur.fb) return; // the feedback box is open: don't wipe what they are typing
 		if (!d) {
 			el.innerHTML = '<div class="top"><div class="w">' + u(cur.word) + '</div><button class="x" data-a="close" title="Close (Esc)" aria-label="Close">×</button></div><div class="msg"><span class="spin"></span></div>';
 			return;
@@ -213,7 +214,7 @@
 			(learning || d.mark === 'known' ? '' : '<button data-a="curious" class="cur' + (cur.curious ? ' on' : '') + '" title="You understood it: earn XP for being curious. It isn\'t added to your reviews.">' + (cur.curious ? '💡 ' + (cur.curious.xp ? '+' + cur.curious.xp + ' XP' : 'Curious ✓') : '💡 Curious') + '</button>') +
 			'</div>' +
 			(cur.msg ? '<div class="msg' + (cur.bad ? ' bad' : '') + '">' + u(cur.msg) + '</div>' : '') +
-			'<div class="brand">' + (cur.sentence && !cur.ctx ? '<a href="#" data-a="explain" title="What it means in this sentence (AI)">💬 Meaning here</a> · ' : '') + (!cur.pics ? '<a href="#" data-a="pics">🖼 Picture</a> · ' : '') + '<a href="https://youglish.com/pronounce/' + encodeURIComponent((d.lemma || cur.word).toLowerCase()) + '/english" target="_blank" rel="noopener">Hear it in other videos ↗</a> · Language Lens · Sawa English</div>';
+			'<div class="brand">' + (cur.sentence && !cur.ctx ? '<a href="#" data-a="explain" title="What it means in this sentence (AI)">💬 Meaning here</a> · ' : '') + (!cur.pics ? '<a href="#" data-a="pics">🖼 Picture</a> · ' : '') + '<a href="https://youglish.com/pronounce/' + encodeURIComponent((d.lemma || cur.word).toLowerCase()) + '/english" target="_blank" rel="noopener">Hear it in other videos ↗</a> · ' + (window.LensFeedback ? '<a href="#" data-a="fb">💬 Feedback</a> · ' : '') + 'Language Lens · Sawa English</div>';
 		place(cur.rect);
 	}
 
@@ -224,7 +225,14 @@
 		if (!b || !cur || !cur.data) return;
 		if (b.tagName === 'A' && b.dataset.a) e.preventDefault();
 		var a = b.dataset.a, c = cur;
-		if (a === 'tip') {
+		if (a === 'fb') {
+			c.fb = true;
+			el.innerHTML = '<div class="fbm"></div>';
+			U.send('uiLang').catch(function () { return 'en'; }).then(function (lg) {
+				if (cur !== c) return;
+				LensFeedback.mount(el.querySelector('.fbm'), { from: 'card', page: location.href, signedIn: true, lang: lg, send: U.send, onClose: function () { c.fb = false; if (cur === c) render(); } });
+			});
+		} else if (a === 'tip') {
 			c.tip = c.tip === +b.dataset.i ? null : +b.dataset.i;
 			render();
 		} else if (a === 'say-word') speak(c.data.lemma && c.data.lemma.indexOf(' ') > 0 ? c.data.lemma : c.word, true);
@@ -407,6 +415,7 @@
 	}
 
 	function hideSoon(ms) {
+		if (cur && cur.fb) return;
 		clearTimeout(hideT);
 		hideT = setTimeout(hide, ms == null ? 350 : ms);
 	}

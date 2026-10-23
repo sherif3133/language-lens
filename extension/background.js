@@ -708,8 +708,38 @@ async function videoProfile(texts, level) {
 	return { total, bands: counts.map((n, i) => ({ n, uniq: uniq[i].size })), top, cover: total ? Math.round(1000 * within / total) / 10 : 0 };
 }
 
+/** "Send feedback": works signed in or out. The server adds the user when the token is good; the rest is added here. */
+async function sendFeedback(f) {
+	const { server, token } = await get(['server', 'token']);
+	const ua = navigator.userAgent;
+	const browser = /Firefox\//.test(ua) ? 'Firefox' : /Edg\//.test(ua) ? 'Edge' : /OPR\//.test(ua) ? 'Opera' : /Chrome\//.test(ua) ? 'Chrome' : /Safari\//.test(ua) ? 'Safari' : 'other';
+	const headers = { 'Content-Type': 'application/json' };
+	if (token) { headers.Authorization = 'Bearer ' + token; headers['X-Sawa-Token'] = token; }
+	const res = await fetch(server + '/wp-json/sawa-lens/v1/feedback', {
+		method: 'POST',
+		headers,
+		body: JSON.stringify({
+			type: String(f.kind || ''), text: String(f.text || '').slice(0, 2000), page: String(f.page || '').slice(0, 300), email: String(f.email || '').slice(0, 120),
+			from: String(f.from || '').slice(0, 20), lang: f.lang === 'ar' ? 'ar' : 'en',
+			version: chrome.runtime.getManifest().version, browser: browser + ' ' + ((ua.match(/(?:Firefox|Edg|OPR|Chrome|Version)\/(\d+)/) || [])[1] || ''),
+			device: /Android|iPhone|iPad|Mobile/i.test(ua) ? 'phone' : 'computer'
+		})
+	});
+	const j = await res.json().catch(() => ({}));
+	if (!res.ok) throw new Error(j.message || 'Could not send. Try again.');
+	return { ok: true };
+}
+
+/** Is the learner's language Arabic? The popup and the word card show the feedback box in it. */
+async function uiLang() {
+	const s = await get(['glossLang', 'explainLang']);
+	return s.glossLang === 'ar' || s.explainLang === 'ar' ? 'ar' : 'en';
+}
+
 const handlers = {
-	curious: ({ lemma }) => curious(String(lemma || '').slice(0, 60)),
+	feedback: (f) => sendFeedback(f || {}),
+	uiLang: () => uiLang(),
+	curious:({ lemma }) => curious(String(lemma || '').slice(0, 60)),
 	addDaily: (x) => addDaily(x || {}),
 	daily: async () => Object.assign(await daily(), await learnRoom()),
 	setLearnCap: ({ n }) => set({ learnCap: [20, 30, 40].includes(+n) ? +n : 30 }),

@@ -47,7 +47,9 @@ p { margin: 0; }
 .switch input:checked + span::after { left: 21px; }
 .site { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .err { color: #E3262B; font-size: 13px; margin-top: 8px; }
-.links { display: flex; justify-content: space-between; font-size: 13px; }
+.links { display: flex; flex-wrap: wrap; gap: 8px 14px; justify-content: space-between; font-size: 13px; }
+.fbl { margin-top: 14px; font-size: 13px; }
+.fbl a { color: #0F0F10; display: inline-block; padding: 8px 0; }
 .links a, .links button { color: #0F0F10; background: none; border: 0; padding: 0; font: inherit; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
 .links .out { color: #8A8584; }
 .seg2 { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }

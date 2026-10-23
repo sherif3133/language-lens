@@ -20,6 +20,14 @@ async function currentTab() {
 	return tab;
 }
 
+/** The "Send feedback" box replaces the popup page; Cancel or OK goes back. */
+async function openFeedback(signedIn) {
+	const tab = await currentTab().catch(() => null);
+	const lang = await send('uiLang').catch(() => 'en');
+	$('#app').innerHTML = '<div class="pad" id="fbbox"></div>';
+	LensFeedback.mount($('#fbbox'), { from: 'popup', page: tab && tab.url, signedIn, lang, send, onClose: render });
+}
+
 function signedOut(err) {
 	$('#app').innerHTML = `
 		<div class="pad">
@@ -28,8 +36,10 @@ function signedOut(err) {
 		</div>
 		<div class="sec">
 			<button class="btn" id="login">Sign in with Sawa English</button>
+				<p class="fbl"><a href="#" id="fb">💬 Send feedback</a></p>
 			${err ? `<p class="err">${esc(err)}</p>` : ''}
 		</div>`;
+	$('#fb').onclick = (e) => { e.preventDefault(); openFeedback(false); };
 	$('#login').onclick = async () => {
 		$('#login').disabled = true;
 		$('#login').textContent = 'Signing in…';
@@ -182,6 +192,7 @@ async function render() {
 		<div class="sec links">
 			<a href="${esc(me.app || 'https://sawaenglish.com/app/')}" target="_blank" rel="noopener">Open the Sawa English app</a>
 				<a href="https://sawaenglish.com/lens/" target="_blank" rel="noopener">How to use it</a>
+			<a href="#" id="fb">💬 Send feedback</a>
 			<button class="out" id="logout">Sign out</button>
 		</div>`;
 
@@ -242,6 +253,7 @@ async function render() {
 			}
 		};
 	}
+	$('#fb').onclick = (e) => { e.preventDefault(); openFeedback(true); };
 	$('#logout').onclick = async () => {
 		await send('logout');
 		render();
