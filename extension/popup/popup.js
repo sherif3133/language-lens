@@ -105,7 +105,7 @@ async function render() {
 	$('#app').innerHTML = `
 		<div class="sec who" style="border-top:0">
 			${me.avatar ? `<img src="${esc(me.avatar)}" alt="">` : ''}
-			<div><b>Hi ${esc(me.firstName || me.name || '')}</b><div class="muted" style="font-size:12.5px">Your progress shows in the Sawa English app</div></div>
+			<div><b>Hi ${esc(me.firstName || me.name || '')}</b><div class="muted" style="font-size:12.5px">${me.plan && me.plan.tier === 'free' ? `Free account: Review only. <a href="${esc(me.plan.join || 'https://sawaenglish.com/join/')}" target="_blank" rel="noopener">🔒 Join Sawa English</a> for everything.` : 'Your progress shows in the Sawa English app'}</div></div>
 		</div>
 		${goalHtml}
 		<div class="sec">

@@ -53,7 +53,8 @@
 
 	var ERR = {
 		signed_out: 'Sign in with your Sawa English account from the Language Lens icon.',
-		reload: 'Language Lens was updated. Refresh this page (F5).'
+		reload: 'Language Lens was updated. Refresh this page (F5).',
+		locked: '🔒 Members only — join Sawa English to use this (sawaenglish.com/join).'
 	};
 	function errText(e) {
 		var m = e && e.message;

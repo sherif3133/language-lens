@@ -168,6 +168,7 @@
 				: '<span class="row" style="color:#8A8584">Not in the dictionary. Try “Meaning here” below.</span>') + '</div>' +
 				(d.alts && d.alts.length ? '<div class="alt">Can also be: ' + d.alts.map(function (a) { return u(a.lemma) + (a.ar ? ' <span class="ar-text">(' + u(a.ar.split('،')[0]) + ')</span>' : ''); }).join(', ') + '</div>' : '');
 		}
+		if (d.locked) meaning = '<div class="msg">🔒 Word meanings are for Sawa English members. You can still save this word to Review. <a href="' + u(d.join) + '" target="_blank" rel="noopener">Join Sawa English</a></div>';
 		var pr = '';
 		if (d.pron && showIPA) {
 			pr = '<div class="pr"><span class="ipa">' + u(d.pron.ipa) + '</span><span class="slk">sounds like <b>' + u(d.pron.soundsLike) + '</b></span></div>';

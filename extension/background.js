@@ -175,8 +175,15 @@ async function api(path, body, method) {
 		await set({ token: '', me: null });
 		throw new Error('signed_out');
 	}
+	if (res.status === 403 && j.code === 'locked') throw new Error('locked'); // not in a free account's plan (Sawa Lens 0.25.0+)
 	if (!res.ok) throw new Error(j.message || 'Connection problem. Try again.');
 	return j;
+}
+
+/** Free or member: what this account may use. Old servers send no plan, so everything stays open. */
+async function canUse(feature) {
+	const { me } = await get('me');
+	return !(me && me.plan && Array.isArray(me.plan.features)) || me.plan.features.includes(feature);
 }
 
 /** The Sawa English level test (CEFR level + vocabulary size); the result comes back with the next sync. */
@@ -263,6 +270,7 @@ async function sync() {
 		else if (explainDirty && now.explainLang === explainLang) await set({ explainDirty: false });
 	}
 	if (res.vocab && (!vocabTest || res.vocab.t > vocabTest.t)) await set({ vocabTest: res.vocab });
+	if (res.plan) { const { me } = await get('me'); if (me) await set({ me: Object.assign({}, me, { plan: res.plan }) }); } // Sherif ticked "Member (paid)": opens here at the next sync
 	// Apply the server's changes unless this device has an even newer local change.
 	const fresh = await get(['pending', 'words', 'wordTs', 'sentences']);
 	for (const w of res.words) {
@@ -540,7 +548,9 @@ async function lookup(word) {
 		entries: L.entries(lemma),
 		verb: L.entries(lemma).some((e) => e.pos === 'verb') ? self.LensGrammar.verbForms(lemma) : null,
 		status: L.status(lemma, st),
-		mark: st.words[lemma] || ''
+		mark: st.words[lemma] || '',
+		locked: !(await canUse('lens_meanings')), // free account: the card says "Members only"; saving to Review still works
+		join: ((await get('me')).me?.plan?.join) || 'https://sawaenglish.com/join/'
 	};
 }
 
