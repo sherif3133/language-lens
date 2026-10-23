@@ -662,6 +662,18 @@ async function lookup(word) {
 	};
 }
 
+/** A word our dictionary doesn't have: the site looks it up (shared cache → Wiktionary → AI; Sawa Lens 0.29+). Kept for this session. */
+const defined = new Map();
+async function define(word) {
+	const w = String(word || '').toLowerCase().trim().slice(0, 40);
+	if (!w) throw new Error('No word.');
+	if (defined.has(w)) return defined.get(w);
+	const r = await api('/define', { word: w });
+	if (defined.size > 300) defined.clear();
+	defined.set(w, r);
+	return r;
+}
+
 /** Words of the same level and part of speech, for "which word did you hear?" quizzes. */
 async function distractors(lemma, n) {
 	const L = await loadLens();
@@ -897,6 +909,7 @@ const handlers = {
 	},
 	saveExpression: (d) => saveExpression(d),
 	lookup: ({ word }) => lookup(word),
+	define: ({ word }) => define(word),
 	analyze: ({ texts }) => analyze(texts),
 	rules: () => loadRules(),
 	sentTr: ({ texts }) => sentTr(texts),

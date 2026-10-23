@@ -49,6 +49,7 @@
 		'.note{color:#4A4847;font-size:13px;margin-top:4px}' +
 		'.btns{display:flex;gap:6px;flex-wrap:wrap;margin-top:12px}' +
 		'.pics{margin-top:10px;border-radius:10px;overflow:hidden;background:#F3F1EE;min-height:60px;display:flex;align-items:center;justify-content:center}.pics a{display:block;width:100%}.pics img{width:100%;height:230px;object-fit:contain;display:block;background:#F3F1EE}.pics .muted{padding:14px;text-align:center;font-size:13px}' +
+		'.dsrc{font-size:11px;color:#8A8584;margin-top:4px}.dsrc a{color:inherit}.dlk{display:inline-block;margin-top:6px;border:1px solid #E6E3DF;background:#fff;border-radius:999px;padding:6px 12px;font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;color:#0F0F10}' +
 		'.pics-f{font-size:11px;color:#8A8584;margin-top:4px}.pics-f .lk{border:0;background:none;padding:0;font:inherit;font-size:12px;font-weight:600;text-decoration:underline;cursor:pointer;color:#0F0F10}.brand a{color:inherit}' +
 		'.wide{width:100%;margin-top:8px;border-radius:10px;padding:10px}' +
 		'.brand{margin-top:10px;font-size:11px;color:#8A8584}' +
@@ -156,18 +157,24 @@
 			return;
 		}
 		var meaning;
+		// A word missing from the extension's own dictionary is looked up on the site (define()): show it, or say why not, with a button.
+		var missing = cur.def === 'loading' ? '<span class="row" style="color:#8A8584"><span class="spin"></span> Looking it up…</span>'
+			: cur.def && cur.def.error ? '<span class="row" style="color:#8A8584">' + u(cur.def.error) + '</span><button class="dlk" data-a="define">🔎 Look it up</button>'
+			: '<span class="row" style="color:#8A8584">We couldn’t find this word.' + (cur.sentence ? ' Try “💬 Meaning here” at the bottom of this card.' : '') + '</span>';
+		var src = d.src === 'wiktionary' ? '<div class="dsrc">From <a href="' + u(d.srcUrl || 'https://en.wiktionary.org/') + '" target="_blank" rel="noopener">Wiktionary</a> (CC BY-SA) · Arabic by AI</div>'
+			: d.src === 'ai' ? '<div class="dsrc">Explained by AI (not in the dictionary)</div>' : '';
 		if (lang === 'en') {
 			var en = d.entries.filter(function (e) { return e.en; });
 			meaning = '<div class="en">' + (en.length
 				? en.map(function (e) { return '<span class="row"><span class="pos">' + u(e.pos) + '</span>' + u(e.en) + '</span>'; }).join('')
-				: '<span class="row" style="color:#8A8584">Not in the dictionary. Try “Meaning here” below.</span>') + '</div>';
+				: missing) + '</div>' + (en.length ? src : '');
 			var ex = (en.filter(function (e) { return e.ex; })[0] || {}).ex;
 			if (ex) meaning += '<div class="ex"><button class="say" data-a="say-ex" title="Listen">' + SPEAK + '</button><i>' + u(ex) + '</i></div>';
 		} else {
-			var ar = d.entries.filter(function (e) { return e.ar; });
-			meaning = '<div class="ar ar-text">' + (ar.length
+			var ar = d.entries.filter(function (e) { return e.ar; }), enOnly = ar.length ? [] : d.entries.filter(function (e) { return e.en; });
+			meaning = (enOnly.length ? '<div class="en">' + enOnly.map(function (e) { return '<span class="row"><span class="pos">' + u(e.pos) + '</span>' + u(e.en) + '</span>'; }).join('') + '</div>' : '<div class="ar ar-text">' + (ar.length
 				? ar.map(function (e) { return '<span class="row">' + u(e.ar) + '<span class="pos">' + u(posAr(e.pos)) + '</span></span>'; }).join('')
-				: '<span class="row" style="color:#8A8584">Not in the dictionary. Try “Meaning here” below.</span>') + '</div>' +
+				: missing) + '</div>') + (ar.length || enOnly.length ? src : '') +
 				(d.alts && d.alts.length ? '<div class="alt">Can also be: ' + d.alts.map(function (a) { return u(a.lemma) + (a.ar ? ' <span class="ar-text">(' + u(a.ar.split('،')[0]) + ')</span>' : ''); }).join(', ') + '</div>' : '');
 		}
 		if (d.locked) meaning = '<div class="msg">🔒 Word meanings are for Sawa English members. You can still save this word to Review. <a href="' + u(d.join) + '" target="_blank" rel="noopener">Join Sawa English</a></div>';
@@ -286,7 +293,8 @@
 				// No photo fits (verbs, adjectives, ideas): draw one straight away.
 				if (!r.ai && !r.images.length && r.canAi && cur === c) aiPic(c);
 			}, function (err) { c.pics = { error: U.errText(err) }; if (cur === c) render(); });
-		} else if (a === 'aipic') aiPic(c); else if (a === 'explain') {
+		} else if (a === 'define') define(c);
+		else if (a === 'aipic') aiPic(c); else if (a === 'explain') {
 			c.ctx = 'loading';
 			render();
 			U.send('explain', { word: c.word, sentence: c.sentence, lang: lang }).then(function (r) {
@@ -443,11 +451,32 @@
 		place(o.rect);
 		U.send('lookup', { word: o.word }).then(function (d) {
 			c.data = d;
+			if (!d.locked && !d.entries.some(function (e) { return e.en || e.ar; })) define(c); // not in our dictionary: look it up right away
 			if (cur === c) render();
 		}, function (err) {
 			c.data = { entries: [], status: 'hard', lemma: o.word };
 			c.msg = U.errText(err);
 			c.bad = true;
+			if (cur === c) render();
+		});
+	}
+
+	/** Looks up a word the extension's dictionary doesn't have (the site: shared cache → Wiktionary → AI). */
+	function define(c) {
+		c.def = 'loading';
+		if (cur === c) render();
+		U.send('define', { word: c.word }).then(function (r) {
+			c.def = r;
+			if (r.entries && r.entries.length) {
+				c.data.entries = r.entries;
+				c.data.src = r.src;
+				c.data.srcUrl = r.url;
+				if (r.lemma && r.lemma !== String(c.word).toLowerCase()) c.data.lemma = r.lemma;
+			}
+			if (cur === c) render();
+		}, function (err) {
+			var m = err && err.message;
+			c.def = { error: m === 'signed_out' ? 'Sign in to Language Lens to look up rare words.' : /fetch|network|connection/i.test(m || '') ? 'No connection. Try again when you are online.' : U.errText(err) };
 			if (cur === c) render();
 		});
 	}
