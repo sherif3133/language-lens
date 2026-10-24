@@ -340,10 +340,8 @@ async function finishLogin(token) {
 	if (me.explainLang) patch.explainLang = me.explainLang; // the account's setting (old servers: keep this device's)
 	await set(patch);
 	await sync();
-	// First time: start with the vocabulary test.
-	const { vocabTest } = await get('vocabTest');
-	if (!vocabTest) await openLevelTest();
-	return Object.assign({}, me, { testOpened: !vocabTest }); // phones: the connected page says what comes next
+	// The level test is optional (0.9.6): it no longer opens by itself after sign-in. The popup and the app offer it later.
+	return Object.assign({}, me, { testOpened: false }); // phones: the connected page says what comes next
 }
 
 async function logout() {
