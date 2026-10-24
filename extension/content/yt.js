@@ -32,7 +32,7 @@
 		'.tr{font:500 clamp(14px,1.8vw,21px)/1.5 ' + AR + ';direction:rtl;color:#E6E3DF}' +
 		':host(.blur-en) .line.en{filter:blur(7px)}:host(.blur-en) .line.en:hover{filter:none}' +
 		':host(.blur-tr) .line.tr{filter:blur(6px);pointer-events:auto;cursor:pointer}:host(.blur-tr) .line.tr:hover,:host(.blur-tr) .line.tr.peek{filter:none}' +
-		':host(.no-en) .line.en{display:none}:host(.no-tr) .line.tr{display:none}.line.snd{font-size:.7em;color:#FDE68A;letter-spacing:.02em;cursor:help;pointer-events:auto}.line.snd:empty{display:none}.no-snd .line.snd{display:none}.box{position:relative}.sndtip{position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%);width:min(520px,90vw);background:#fff;color:#0F0F10;border-radius:12px;padding:10px 14px;font:500 14px/1.45 ' + FONT + ';text-align:left;display:none;box-shadow:0 8px 24px rgba(0,0,0,.3);pointer-events:auto}.sndtip.on{display:block}.sndtip ul{margin:6px 0 0;padding-left:18px}.lensmenu{position:absolute;right:12px;bottom:60px;width:270px;background:rgba(15,15,16,.94);color:#fff;border-radius:12px;padding:10px;display:none;flex-direction:column;gap:6px;pointer-events:auto;font:500 13px/1.3 ' + FONT + '}.lensmenu.on{display:flex}.lensmenu{max-height:calc(100% - 72px);overflow-y:auto;overscroll-behavior:contain}.lensmenu .lmmusic{display:flex;flex-direction:column;gap:6px}.lensmenu .lmmusic[hidden],.lensmenu a.gen[hidden]{display:none}.lensmenu a.t{text-decoration:none;box-sizing:border-box}.lensmenu .t{display:flex;justify-content:space-between;align-items:center;width:100%;border-radius:8px;text-align:left}.lensmenu .lmh{font:700 11px/1 ' + FONT + ';letter-spacing:.06em;text-transform:uppercase;color:#FDE68A;margin-top:4px}.lensmenu .menu{position:static;display:block;background:transparent;color:#fff;padding:0;min-width:0}.lensmenu .menu label{display:flex;gap:10px;align-items:center;justify-content:space-between;padding:6px 2px;min-height:36px;cursor:pointer}.lensmenu input[type=checkbox]{-webkit-appearance:none;appearance:none;order:2;margin:0 0 0 auto;flex:none;width:36px;height:20px;border-radius:99px;background:#8A8584;position:relative;cursor:pointer;transition:background .15s}.lensmenu input[type=checkbox]::after{content:"";position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:#fff;transition:transform .15s;box-shadow:0 1px 2px rgba(0,0,0,.3)}.lensmenu input[type=checkbox]:checked{background:#22C55E}.lensmenu input[type=checkbox]:checked::after{transform:translateX(16px)}.lensmenu input[type=checkbox]:focus-visible{outline:2px solid #FDE68A;outline-offset:2px}' +
+		':host(.no-en) .line.en{display:none}:host(.no-tr) .line.tr{display:none}.line.snd{font-size:.7em;color:#FDE68A;letter-spacing:.02em;cursor:help;pointer-events:auto}.line.snd:empty{display:none}.no-snd .line.snd{display:none}.box{position:relative}.sndtip{position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%);width:min(520px,90vw);background:#fff;color:#0F0F10;border-radius:12px;padding:10px 14px;font:500 14px/1.45 ' + FONT + ';text-align:left;display:none;box-shadow:0 8px 24px rgba(0,0,0,.3);pointer-events:auto}.sndtip.on{display:block}.sndtip ul{margin:6px 0 0;padding-left:18px}.lensmenu{position:absolute;right:12px;bottom:60px;width:270px;background:rgba(15,15,16,.94);color:#fff;border-radius:12px;padding:10px;display:none;flex-direction:column;gap:6px;pointer-events:auto;font:500 13px/1.3 ' + FONT + '}.lensmenu.on{display:flex}.lensmenu .lmpage{display:flex;flex-direction:column;gap:6px}.lensmenu .lmpage[hidden]{display:none}.lensmenu .menu label[data-tip]{padding-right:0}.lensmenu .more span{opacity:.6}.lensmenu .go{background:#22C55E;color:#04210F;border-radius:8px;padding:5px 10px;font-weight:700}.lensmenu .menu label>.tipi{order:3}.lensmenu{max-height:calc(100% - 72px);overflow-y:auto;overscroll-behavior:contain}.lensmenu .lmmusic{display:flex;flex-direction:column;gap:6px}.lensmenu .lmmusic[hidden],.lensmenu a.gen[hidden]{display:none}.lensmenu a.t{text-decoration:none;box-sizing:border-box}.lensmenu .t{display:flex;justify-content:space-between;align-items:center;width:100%;border-radius:8px;text-align:left}.lensmenu .lmh{font:700 11px/1 ' + FONT + ';letter-spacing:.06em;text-transform:uppercase;color:#FDE68A;margin-top:4px}.lensmenu .menu{position:static;display:block;background:transparent;color:#fff;padding:0;min-width:0}.lensmenu .menu label{display:flex;gap:10px;align-items:center;justify-content:space-between;padding:6px 2px;min-height:36px;cursor:pointer}.lensmenu input[type=checkbox]{-webkit-appearance:none;appearance:none;order:2;margin:0 0 0 auto;flex:none;width:36px;height:20px;border-radius:99px;background:#8A8584;position:relative;cursor:pointer;transition:background .15s}.lensmenu input[type=checkbox]::after{content:"";position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:#fff;transition:transform .15s;box-shadow:0 1px 2px rgba(0,0,0,.3)}.lensmenu input[type=checkbox]:checked{background:#22C55E}.lensmenu input[type=checkbox]:checked::after{transform:translateX(16px)}.lensmenu input[type=checkbox]:focus-visible{outline:2px solid #FDE68A;outline-offset:2px}' +
 		'.wd{cursor:pointer;border-radius:4px;padding:0 1px}' +
 		'.wd:hover{background:#fff;color:#0F0F10;text-decoration:none}' +
 		LensMarks.css('dark', 3) +
@@ -128,23 +128,21 @@
 		'.opts{display:none;padding:4px 12px 8px;border-bottom:1px solid #E6E3DF;font-size:14px}.opts.on{display:block}.opts label{display:flex;gap:10px;align-items:center;padding:7px 0}.opts input{width:18px;height:18px}';
 
 	var HOV = TOUCH ? 'tap' : 'hover';
-	var OPTS = '<label><input type="checkbox" data-pref="showEn"> English captions (1st line)</label>' +
-		'<label><input type="checkbox" data-pref="showTrans"> Arabic translation (2nd line)</label>' +
-		'<label><input type="checkbox" data-pref="showSound"> How it sounds (3rd line)</label>' +
-		'<label><input type="checkbox" data-pref="blurCaptions"> Blur captions until ' + HOV + '</label>' +
-		'<label><input type="checkbox" data-pref="blurTrans"> Blur translation until ' + HOV + '</label>' +
-		'<label><input type="checkbox" data-pref="colors"> Colour words</label>' +
-		'<label><input type="checkbox" data-pref="pauseOnHover"> Pause when I open a word</label>' +
-		'<label><input type="checkbox" data-pref="wordQuiz"> Quiz me on my Learning words</label>';
+	function trow(pref, label, tip) { return '<label data-tip="' + tip + '"><input type="checkbox" data-pref="' + pref + '"> ' + label + '</label>'; }
+	var TIPSW = '<label><input type="checkbox" data-tipsw> Show tips (the <b>i</b> buttons)</label><button class="t" data-a="tipreset">Bring back hidden tips</button>';
+	var OPTS = trow('ctlShow', 'Show controls', 'ctl') + trow('showEn', 'English captions', 'en') + trow('showTrans', 'Arabic translation', 'tr') + trow('showSound', 'How it sounds', 'snd') +
+		trow('blurCaptions', 'Blur English until ' + HOV, 'blurEn') + trow('blurTrans', 'Blur Arabic until ' + HOV, 'blurTr') + trow('colors', 'Colour words', 'colors') + trow('pauseOnHover', 'Pause when I open a word', 'pauseOpen') + trow('wordQuiz', 'Quiz me on the words I learn', 'quiz') + TIPSW;
 
 	var REPEAT = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17 2l3 3-3 3M4 11V9a4 4 0 0 1 4-4h12M7 22l-3-3 3-3M20 13v2a4 4 0 0 1-4 4H4"/></svg>';
 	var WAVE = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h2M7 8v8M11 5v14M15 8v8M19 11v2"/></svg>';
 
 	var S = { videoId: '', cues: [], lines: null, sents: [], sentToks: null, tcues: [], cueTr: null, sentTr: null, grade: null, idx: -1, sIdx: -1, host: null, root: null, side: null, sRoot: null, video: null, pausedByUs: false, raf: 0, primed: '', stopAt: 0, follow: true, scrolledAt: 0, sounds: {}, loopI: -1, savedRows: {} };
-	var prefs = { lensYT: true, showEn: true, sidebar: true, colors: true, pauseOnHover: true, sideMin: false, focus: '', showTrans: true, showSound: true, blurCaptions: false, blurTrans: false, barPos: 0.12, autoPause: false, maskSwears: false, wordQuiz: true, songLyrics: true, lyricLang: 'en' };
-	var PREF_KEYS = ['lensYT', 'showEn', 'sidebar', 'lensColors', 'colorLearnOnly', 'ytShowOn', 'pauseOnHover', 'sideMin', 'focus', 'showTrans', 'showSound', 'blurCaptions', 'blurTrans', 'barPos', 'autoPause', 'maskSwears', 'wordQuiz', 'songLyrics', 'explainLang'];
+	var prefs = { lensYT: true, showEn: true, sidebar: true, colors: true, pauseOnHover: true, sideMin: false, focus: '', showTrans: true, showSound: true, blurCaptions: false, blurTrans: false, barPos: 0.12, ctlShow: false, autoPause: false, maskSwears: false, wordQuiz: true, songLyrics: true, lyricLang: 'en' };
+	var PREF_KEYS = ['lensYT', 'showEn', 'sidebar', 'lensColors', 'colorLearnOnly', 'ytShowOn', 'pauseOnHover', 'sideMin', 'focus', 'showTrans', 'showSound', 'blurCaptions', 'blurTrans', 'barPos', 'ctlShow', 'tipsOff', 'autoPause', 'maskSwears', 'wordQuiz', 'songLyrics', 'explainLang'];
 	function readPrefs(o) {
 		prefs.sidebar = o.sidebar !== false;
+		prefs.ctlShow = !!o.ctlShow; // the ◀ ⟲ ▶ ⏸ buttons next to the caption: off until the student turns them on
+		prefs.tipsOff = !!o.tipsOff;
 		prefs.colors = o.lensColors !== false;
 		prefs.learnOnly = !!o.colorLearnOnly; // "Learning only": no new/hard marks
 		prefs.ytClick = o.ytShowOn !== 'hover'; // computer: meanings on click (default) or hover; phones always tap
@@ -562,6 +560,8 @@
 			var bar = S.root.querySelector('.bar');
 			bar.style.setProperty('--pos', Math.round(prefs.barPos * 1000) / 10 + '%');
 			S.root.querySelectorAll('[data-pref]').forEach(function (i) { i.checked = !!prefs[i.dataset.pref]; });
+			S.root.querySelectorAll('[data-tipsw]').forEach(function (i) { i.checked = !prefs.tipsOff; });
+			S.host.classList.toggle('ctl-on', prefs.ctlShow);
 			var ap = S.root.querySelector('[data-a=autopause]');
 			if (ap) ap.classList.toggle('on', prefs.autoPause);
 		}
@@ -571,6 +571,7 @@
 			var cb = S.sRoot.querySelector('[data-a=colors]');
 			if (cb) cb.classList.toggle('on', prefs.colors);
 			S.sRoot.querySelectorAll('[data-pref]').forEach(function (i) { i.checked = !!prefs[i.dataset.pref]; });
+			S.sRoot.querySelectorAll('[data-tipsw]').forEach(function (i) { i.checked = !prefs.tipsOff; });
 			var sap = S.sRoot.querySelector('.ctl [data-a=autopause]');
 			if (sap) sap.classList.toggle('on', prefs.autoPause);
 		}
@@ -633,23 +634,23 @@
 			S.root.innerHTML = '<style>' + CSS + '</style>' +
 				'<button class="chip" hidden></button><div class="advb" hidden></div><div class="panel"></div><div class="quiz" hidden></div>' +
 				'<div class="bar"><div class="grip" title="Drag to move the captions up or down">⋮⋮</div><div class="box"><div class="line en"></div><div class="line tr"></div><div class="line slg"></div><div class="line snd" title="How it sounds — hover for fast speech"></div><div class="sndtip"></div></div></div>' +
-				'<div class="lensmenu"><div class="lmh">Language Lens</div>' +
-				'<button class="t" data-a="prev" title="Previous sentence">◀ Previous sentence<kbd>A</kbd></button>' +
-				'<button class="t" data-a="repeat" title="Repeat sentence">↻ Repeat sentence<kbd>S</kbd></button>' +
-				'<button class="t" data-a="next" title="Next sentence">▶ Next sentence<kbd>D</kbd></button>' +
-				'<button class="t" data-a="autopause" title="Pause after every sentence">Auto-pause<kbd>Q</kbd></button>' +
-				'<button class="t" data-a="save">Save sentence</button>' +
-				'<button class="t" data-a="side">Transcript</button>' +
+				'<div class="lensmenu"><div class="lmpage lmmain"><div class="lmh">Language Lens</div><div class="menu on">' +
+				trow('sidebar', 'Transcript', 'transcript') + trow('ctlShow', 'Show controls', 'ctl') + '</div>' +
+				'<div class="lmh">Captions</div><div class="menu on">' + trow('showEn', 'English', 'en') + trow('showTrans', 'Arabic translation', 'tr') + trow('showSound', 'How it sounds', 'snd') + '</div>' +
+				'<button class="t more" data-a="more" data-tip="more">More options<span>›</span></button></div>' +
+				'<div class="lmpage lmmore" hidden><button class="t" data-a="back">‹ Back</button>' +
+				'<div class="lmh">Display</div><div class="menu on">' + trow('blurCaptions', 'Blur English until I ' + HOV, 'blurEn') + trow('blurTrans', 'Blur Arabic until I ' + HOV, 'blurTr') + trow('colors', 'Colour words', 'colors') + trow('pauseOnHover', 'Pause when I open a word', 'pauseOpen') + trow('wordQuiz', 'Quiz me on the words I learn', 'quiz') + '</div>' +
+				'<div class="lmh">Tips</div><div class="menu on">' + TIPSW + '</div>' +
 				'<div class="lmmusic" hidden><div class="lmh">🎵 Music</div>' +
 				// Computers only (content/vocals.js decides): hear the singer without the music.
-				(window.LensVocals && LensVocals.supported() ? '<button class="t" data-a="vocals" title="Hear only the singer’s voice: the music is removed on your computer (test)">🎤 Vocals only<span class="vst"></span></button>' : '') +
-				'<button class="t" data-a="game" hidden>🎮 Lyrics game</button>' +
-				'<button class="t" data-a="vplist" hidden title="Songs with the music taken out ahead of time, with the best voice model (kept on this computer)">🎧 Voice-only playlist</button>' +
+				(window.LensVocals && LensVocals.supported() ? '<button class="t" data-a="vocals" data-tip="vocals" title="Hear only the singer’s voice: the music is removed on your computer (test)">🎤 Vocals only<span class="vst"></span></button>' : '') +
+				'<button class="t" data-a="game" data-tip="game" hidden>🎮 Lyrics game<span class="go">▶ Start</span></button>' +
+				'<button class="t" data-a="vplist" data-tip="vplist" hidden title="Songs with the music taken out ahead of time, with the best voice model (kept on this computer)">🎧 Voice-only playlist</button>' +
 				'<button class="t" data-a="prepList" hidden>➕ Add this playlist to it</button>' +
-				'<a class="t gen" target="_blank" rel="noopener" hidden>Check the lyrics on Genius ↗</a></div>' +
-				'<div class="lmh">Display</div><div class="menu on">' + OPTS + '</div></div>';
+				'<a class="t gen" target="_blank" rel="noopener" hidden>Check the lyrics on Genius ↗</a></div></div></div>';
 			if (MOBILE) S.host.classList.add('mob');
 			if (window.LensVocals) LensVocals.bindMenu(S.root);
+			if (window.LensTips) LensTips.attach(S.root);
 			player.appendChild(S.host);
 			S.root.querySelector('.line.snd').addEventListener('mouseenter', soundTip);
 			S.root.querySelector('.line.snd').addEventListener('mouseleave', function () { S.root.querySelector('.sndtip').classList.remove('on'); });
@@ -659,6 +660,7 @@
 			S.root.addEventListener('mouseout', onOut);
 			S.root.addEventListener('click', onClick);
 			S.root.addEventListener('change', function (e) {
+				if (e.target.hasAttribute('data-tipsw')) return window.LensTips && LensTips.setOff(!e.target.checked);
 				var k = e.target.dataset.pref;
 				if (k) setPref(k === 'colors' ? 'lensColors' : k, e.target.checked);
 			});
@@ -691,7 +693,7 @@
 		b.className = 'ytp-button sawa-lens-ytbtn';
 		b.title = 'Language Lens (A ◀ · S ↻ · D ▶ · Q auto-pause)';
 		b.setAttribute('aria-label', 'Language Lens');
-		b.innerHTML = '<span style="display:flex;align-items:center;justify-content:center;height:100%;font:700 15px/1 Arial,sans-serif;color:#fff">Aa</span>';
+		b.innerHTML = '<span style="display:flex;align-items:center;justify-content:center;height:100%"><img alt="" width="22" height="22" style="width:22px;height:22px;border-radius:5px;display:block" src="' + chrome.runtime.getURL('icons/48.png') + '"></span>';
 		b.addEventListener('click', function (e) { e.stopPropagation(); paintMusic(); S.root.querySelector('.lensmenu').classList.toggle('on'); });
 		bar.insertBefore(b, bar.firstChild);
 		var t = document.createElement('button');
@@ -784,7 +786,7 @@
 			'<div class="sub">You know about ' + g.percent + '% of the words (' + u(U.GRADE_TIP) + '). ' + u(S.gradeFrom || '') + ' ' + (g.unknownLemmas ? 'Learn these first:' : 'No new words.') + '</div><ul>' +
 			g.top.map(function (w) {
 				return '<li><div><span class="en">' + u(w.lemma) + '</span>' + (w.level ? '<span class="lv">' + U.LEVEL_NAMES[w.level - 1] + '</span>' : '') +
-					(w.ar ? '<div class="ar">' + u(w.ar) + '</div>' : '') + '</div><button class="k" data-a="know" data-l="' + u(w.lemma) + '">I know it</button></li>';
+					(w.ar ? '<div class="ar">' + u(w.ar) + '</div>' : '') + '</div><button class="k" data-a="know" data-l="' + u(w.lemma) + '">Known</button></li>';
 			}).join('') + '</ul>';
 	}
 
@@ -820,13 +822,12 @@
 		S.side = document.createElement('sawa-lens-side');
 		if (MOBILE) S.side.classList.add('mob');
 		S.sRoot = S.side.attachShadow({ mode: 'open' });
-		S.sRoot.innerHTML = '<style>' + SIDE_CSS + MUSIC_CSS + '.vprof{margin:6px 10px;font:500 13px/1.4 ' + FONT + '}.vprof summary{cursor:pointer;padding:6px 0}.vprof summary small{color:#8A8584}.vbar{display:flex;height:10px;border-radius:5px;overflow:hidden;margin:6px 0}.vbar i{display:block;height:100%}.vt{width:100%;border-collapse:collapse;font-size:12.5px}.vt td{padding:2px 4px}.vt td:nth-child(n+2){text-align:right;color:#57534E}.vd{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:6px}.vv{margin:8px 0;font-size:13px}.lmh2{font:700 11px/1 ' + FONT + ';letter-spacing:.06em;text-transform:uppercase;color:#8A8584;margin:8px 0 4px}.vtop{display:flex;flex-wrap:wrap;gap:4px}.vtop span{background:#F3F1EE;border-radius:99px;padding:3px 8px;font-size:12.5px}.vtop small{color:#8A8584}</style><div class="side">' +
+		S.sRoot.innerHTML = '<style>' + SIDE_CSS + MUSIC_CSS + (window.LensTips ? LensTips.css : '') + '.vprof{margin:6px 10px;font:500 13px/1.4 ' + FONT + '}.vprof summary{cursor:pointer;padding:6px 0}.vprof summary small{color:#8A8584}.vbar{display:flex;height:10px;border-radius:5px;overflow:hidden;margin:6px 0}.vbar i{display:block;height:100%}.vt{width:100%;border-collapse:collapse;font-size:12.5px}.vt td{padding:2px 4px}.vt td:nth-child(n+2){text-align:right;color:#57534E}.vd{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:6px}.vv{margin:8px 0;font-size:13px}.lmh2{font:700 11px/1 ' + FONT + ';letter-spacing:.06em;text-transform:uppercase;color:#8A8584;margin:8px 0 4px}.vtop{display:flex;flex-wrap:wrap;gap:4px}.vtop span{background:#F3F1EE;border-radius:99px;padding:3px 8px;font-size:12.5px}.vtop small{color:#8A8584}</style><div class="side">' +
 			'<div class="head"><div class="ttl">Language Lens <small class="g"></small></div><div class="hb">' +
 			'<button class="ib" data-a="follow" title="Keep the sentence being spoken in view">Auto-scroll</button>' +
 			'<button class="ib" data-a="colors" title="Colour words">Colours</button>' +
 			'<button class="ib" data-a="min" title="Collapse">—</button></div></div>' +
-			(MOBILE ? '<div class="ctl"><button class="cb" data-a="prev" aria-label="Previous sentence">◀</button><button class="cb" data-a="repeat" aria-label="Repeat sentence">↻ Repeat</button><button class="cb" data-a="next" aria-label="Next sentence">▶</button>' +
-				'<button class="cb" data-a="autopause">Auto-pause</button><button class="cb" data-a="save">Save sentence</button><button class="cb" data-a="opts">Aa Display ▾</button></div><div class="opts">' + OPTS + '</div>' : '') +
+			(MOBILE ? '<div class="ctl"><button class="cb" data-a="opts">Display ▾</button></div><div class="opts">' + OPTS + '</div>' : '') +
 			'<div class="music" hidden></div><div class="goal"></div><div class="vprof"></div><div class="lq"></div><div class="adv"></div>' +
 			'<div class="legend">' + LensMarks.legendHtml() + '</div>' +
 			'<div class="focus"><label for="fsel">Focus on</label><select class="fsel" id="fsel"><option value="">— none —</option></select></div>' +
@@ -836,11 +837,13 @@
 				: 'Click a sentence to play it. <kbd>A</kbd> previous · <kbd>S</kbd> repeat · <kbd>D</kbd> next · <kbd>R</kbd> loop · <kbd>X</kbd> slower · <kbd>W</kbd> shadow · <kbd>Q</kbd> auto-pause. Select words to translate, hear or save them.') + '</div></div>';
 		var meta = MOBILE && col.querySelector(':scope > ytm-slim-video-metadata-section-renderer');
 		col.insertBefore(S.side, meta ? meta.nextSibling : col.firstChild);
+		if (window.LensTips) LensTips.attach(S.sRoot);
 		S.sRoot.addEventListener('mouseover', function (e) { onOver(e, 'side'); });
 		S.sRoot.addEventListener('mouseout', onOut);
 		S.sRoot.addEventListener('click', onSideClick);
 		S.sRoot.addEventListener('mouseup', function (e) { onSelect(e, S.sRoot, 'side'); });
 		S.sRoot.addEventListener('change', function (e) {
+			if (e.target.hasAttribute('data-tipsw')) return window.LensTips && LensTips.setOff(!e.target.checked);
 			var k = e.target.dataset.pref;
 			if (k) setPref(k === 'colors' ? 'lensColors' : k, e.target.checked);
 		});
@@ -1042,6 +1045,10 @@
 		}
 		if (b && (b.dataset.a === 'fprev' || b.dataset.a === 'fnext')) {
 			jumpFocus(b.dataset.a === 'fnext' ? 1 : -1);
+			return;
+		}
+		if (b && b.dataset.a === 'tipreset') {
+			doAction('tipreset', b);
 			return;
 		}
 		if (b && b.dataset.a === 'game') {
@@ -1287,7 +1294,7 @@
 		var text = s.text.slice(0, tok.start) + '_____' + s.text.slice(tok.end);
 		U.send('distractors', { lemma: tok.lemma, n: 2 }).then(function (ds) {
 			var opts = ds.concat([tok.text.toLowerCase()]).sort(function () { return Math.random() - 0.5; });
-			var el = showQuiz('<div class="qh">Your Learning word · which word did you hear?</div><p class="qq">' + u(text).replace('_____', '<u></u>') + '</p>'
+			var el = showQuiz('<div class="qh">A word you learn · which word did you hear?</div><p class="qq">' + u(text).replace('_____', '<u></u>') + '</p>'
 				+ '<div class="qo">' + opts.map(function (o) { return '<button data-w="' + u(o) + '">' + u(o) + '</button>'; }).join('') + '</div><div class="out"></div>'
 				+ '<div class="qa"><button class="lk" data-q="again">↺ Hear it again</button><button class="lk" data-q="off">Stop these quizzes</button></div>');
 			el.onclick = function (e) {
@@ -1563,6 +1570,13 @@
 			if (S.sents[j]) play(S.sents[j].start, S.sents[j].end);
 		} else if (a === 'autopause') {
 			setPref('autoPause', !prefs.autoPause);
+		} else if (a === 'more' || a === 'back') {
+			var lm = S.root.querySelector('.lensmenu');
+			lm.querySelector('.lmmain').hidden = a === 'more';
+			lm.querySelector('.lmmore').hidden = a !== 'more';
+		} else if (a === 'tipreset') {
+			if (window.LensTips) LensTips.reset();
+			say('Tips are back');
 		} else if (a === 'menu') {
 			S.root.querySelector('.menu').classList.toggle('on');
 		} else if (a === 'vplist') {
@@ -1587,9 +1601,10 @@
 				startMs: s.start,
 				endMs: s.end
 			}).then(function () {
-				b.textContent = 'Saved ✓';
+				var g = b.querySelector('.g') || b;
+				g.textContent = b.dataset.done || 'Saved ✓';
 				setTimeout(function () {
-					b.textContent = 'Save sentence';
+					g.textContent = b.dataset.t || (b.querySelector('.g') ? '★' : 'Save sentence');
 					b.disabled = false;
 				}, 1800);
 			}, function (err) {

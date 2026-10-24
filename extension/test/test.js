@@ -52,7 +52,7 @@ function ask() {
 		<div class="prog"><i style="width:${(i / items.length) * 100}%"></i></div>
 		<div class="word">${esc(it.w)}</div>
 		<div class="answer"><button class="btn ghost" data-y="0">Don't know</button><button class="btn" data-y="1">I know it</button></div>
-		<div class="keys">Keys: <kbd>←</kbd> don't know · <kbd>→</kbd> I know it${i ? ' · <kbd>Backspace</kbd> back' : ''}</div>
+		<div class="keys">Keys: <kbd>←</kbd> don't know · <kbd>→</kbd> Known${i ? ' · <kbd>Backspace</kbd> back' : ''}</div>
 	</div>`;
 	document.querySelectorAll('[data-y]').forEach((b) => { b.onclick = () => answer(b.dataset.y === '1'); });
 }
@@ -86,7 +86,7 @@ async function finish() {
 		<p>Suggested level: <b>${LEVELS[lv - 1]}</b>. Words up to this level will count as known; new words above it get coloured.</p>
 		<div class="row" style="margin:16px 0 8px"><button class="btn" id="use">Use ${LEVELS[lv - 1]} as my level</button><button class="btn ghost" id="again">Take it again</button></div>
 		${result.unknown.length ? `<p style="margin-top:20px"><b>Common words to learn first</b> (from the top 3,000):</p><div class="chips">${result.unknown.map((w) => `<span>${esc(w)}</span>`).join('')}</div>
-		<button class="btn ghost" id="learn">Add them to my Learning list</button>` : ''}
+		<button class="btn ghost" id="learn">Add them to Learn</button>` : ''}
 		<p class="muted" id="done" style="margin-top:16px"></p>
 	</div>`;
 	$('#use').onclick = async () => {

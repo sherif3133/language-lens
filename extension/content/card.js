@@ -225,11 +225,11 @@
 			(cur.sentence ? '<div class="sent"><button class="say" data-a="say-sent" title="' + (canReplay ? 'Replay from the video' : 'Listen') + '">' + SPEAK + '</button><span>' + u(cur.sentence) + '</span></div>' : '') +
 			snd +
 			'<div class="btns">' +
-			'<button data-a="known" class="' + (known ? 'on' : '') + '">' + (known ? '✓ ' : '') + 'I know it</button>' +
-			'<button data-a="learning" class="' + (learning ? 'on' : '') + '" title="Save it to your Review cards">' + (learning ? '✓ Learning' : (cur.curious ? '＋ Save as Learning' : 'Learning')) + '</button>' +
+			'<button data-a="known" class="' + (known ? 'on' : '') + '">' + (known ? '✓ ' : '') + 'Known</button>' +
+			'<button data-a="learning" class="' + (learning ? 'on' : '') + '" title="Save it to your Review cards">' + (learning ? '✓ Learn' : (cur.curious ? '＋ Save as Learn' : 'Learn')) + '</button>' +
 			(learning || d.mark === 'known' ? '' : '<button data-a="curious" class="cur' + (cur.curious ? ' on' : '') + '" title="Just looked up: earn XP for being curious. It is NOT saved to your Review.">' + (cur.curious ? '💡 ' + (cur.curious.xp ? '+' + cur.curious.xp + ' XP' : 'Looked up ✓') : '💡 Curious') + '</button>') +
 			'</div>' +
-			(cur.curious && !learning && d.mark !== 'known' ? '<div class="msg">💡 Looked up only: not in your Review. To save it, press <b>Learning</b>.</div>' : '') +
+			(cur.curious && !learning && d.mark !== 'known' ? '<div class="msg">💡 Looked up only: not in your Review. To save it, press <b>Learn</b>.</div>' : '') +
 			(cur.msg ? '<div class="msg' + (cur.bad ? ' bad' : '') + '">' + u(cur.msg) + '</div>' : '') +
 			reviewBtn(cur) +
 			'<div class="brand">' + (cur.sentence && !cur.ctx ? '<a href="#" data-a="explain" title="What it means in this sentence (AI)">💬 Meaning here</a> · ' : '') + (!cur.pics ? '<a href="#" data-a="pics">🖼 Picture</a> · ' : '') + '<a href="https://youglish.com/pronounce/' + encodeURIComponent((d.lemma || cur.word).toLowerCase()) + '/english" target="_blank" rel="noopener">Hear it in other videos ↗</a> · ' + (window.LensFeedback ? '<a href="#" data-a="fb">💬 Feedback</a> · ' : '') + 'Language Lens · Sawa English</div>';
@@ -396,7 +396,7 @@
 			if (c.hits === null) rows = '<div class="msg"><span class="spin"></span></div>';
 			else rows = c.hits.map(function (h, i) {
 				return '<div class="enrow"><button class="say" data-a="ar-say" data-i="' + i + '" title="Listen">' + SPEAK + '</button><span class="ew" data-a="ar-open" data-i="' + i + '">' + u(h.lemma) + '</span><span class="ep">' + u(h.pos) + (h.level ? ' · ' + u(h.level) : '') + '</span><span class="sp"></span>'
-					+ (h.status === 'known' ? '<span class="ep">✓ known</span>' : (h.status === 'learning' ? '' : '<button class="lb' + (h.cur ? ' on' : '') + '" data-a="ar-cur" data-i="' + i + '" title="Earn XP for being curious (not added to reviews)">' + (h.cur ? '💡 ✓' : '💡') + '</button> ') + '<button class="lb' + (h.status === 'learning' ? ' on' : '') + '" data-a="ar-learn" data-i="' + i + '">' + (h.status === 'learning' ? '★ Learning' : '+ Learning') + '</button>') + '</div>';
+					+ (h.status === 'known' ? '<span class="ep">✓ known</span>' : (h.status === 'learning' ? '' : '<button class="lb' + (h.cur ? ' on' : '') + '" data-a="ar-cur" data-i="' + i + '" title="Earn XP for being curious (not added to reviews)">' + (h.cur ? '💡 ✓' : '💡') + '</button> ') + '<button class="lb' + (h.status === 'learning' ? ' on' : '') + '" data-a="ar-learn" data-i="' + i + '">' + (h.status === 'learning' ? '★ Learn' : '+ Learn') + '</button>') + '</div>';
 			}).join('');
 			if (c.en && c.en.word && !c.hits.some(function (h) { return h.lemma === c.en.word.toLowerCase(); })) rows += '<div class="enrow"><button class="say" data-a="ar-say-ai" title="Listen">' + SPEAK + '</button><span class="ew" data-a="ar-open-ai">' + u(c.en.word) + '</span><span class="ep">' + u(c.en.pos || '') + ' · here</span></div>';
 		}

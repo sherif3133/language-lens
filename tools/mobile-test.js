@@ -134,6 +134,9 @@ async function launch() {
 
 		// The 💬 Feedback link in the card opens the feedback box (four types, big tap targets), and Cancel brings the card back.
 		const fbl = await page.evaluate(() => { const a = document.querySelector('sawa-lens-card').shadowRoot.querySelector('.card.on a[data-a=fb]'); if (!a) return null; a.scrollIntoView({ block: 'center' }); const r = a.getClientRects()[0]; return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; }); // the link can wrap onto two lines: aim at its first line
+		const curOf = (pg) => pg.evaluate(() => { const c = document.querySelector('sawa-lens-card').shadowRoot.querySelector('.card.on'); const b = c && c.querySelector('[data-a=curious]'); const k = c && c.querySelector('[data-a=known]'); return { curious: b ? b.textContent : null, known: k ? k.textContent : null }; });
+		const cu1 = await curOf(page);
+		check('phone: a fresh word shows Known, Learn and 💡 Curious', cu1.curious && /Curious/.test(cu1.curious) && /Known/.test(cu1.known), JSON.stringify(cu1));
 		check('card has a 💬 Feedback link', !!fbl);
 		if (fbl) {
 			await tap(page, fbl);
@@ -173,7 +176,9 @@ async function launch() {
 		await wait(500);
 
 		// Repeat: plays the current sentence and stops at its end.
-		const rb = await centre(page, 'sawa-lens-side', '.ctl [data-a=repeat]');
+		await page.evaluate(() => { const i = document.querySelector('sawa-lens-side').shadowRoot.querySelector('[data-pref=ctlShow]'); i.checked = true; i.dispatchEvent(new Event('change', { bubbles: true })); }); // Show controls (off by default)
+		await wait(800);
+		const rb = await centre(page, 'sawa-lens-yt', '.side [data-a=repeat]');
 		await page.evaluate(() => { const v = document.querySelector('#movie_player video'); v.currentTime = 30; });
 		await wait(500);
 		await tap(page, rb);
@@ -194,23 +199,10 @@ async function launch() {
 		const sentStart = (pg, t) => pg.evaluate((t) => { const rows = [...document.querySelector('sawa-lens-side').shadowRoot.querySelectorAll('.s')]; return rows.length; }, t);
 		await page.evaluate(() => { const v = document.querySelector('#movie_player video'); v.currentTime = 40; v.play(); });
 		await wait(1500);
-		const cap = await centre(page, 'sawa-lens-yt', '.line.en');
-		let s0 = await ytState(page);
-		if (cap) {
-			await page.touchscreen.touchStart(cap.x + 60, cap.y); await page.touchscreen.touchMove(cap.x - 20, cap.y); await page.touchscreen.touchMove(cap.x - 60, cap.y); await page.touchscreen.touchEnd();
-		}
-		await wait(900);
-		let s1 = await ytState(page);
-		check('phone: control strip on the caption (7 buttons), shown after a touch', s1.strip === 7 && s1.shown, JSON.stringify(s1));
-		check('phone: swipe ← on the caption goes to the next sentence', s1.t > s0.t + 0.3 && !(await cardOpen(page)), s0.t.toFixed(1) + ' → ' + s1.t.toFixed(1));
-		await wait(2500);
-		const s2 = await ytState(page);
-		await page.evaluate(() => { window.__seeks = 0; window.__te = []; document.querySelector('#movie_player video').addEventListener('seeking', () => window.__seeks++); document.addEventListener('touchend', (e) => window.__te.push([Date.now(), (e.composedPath()[0] || {}).className || '']), true); });
-		const cap2 = await centre(page, 'sawa-lens-yt', '.line.en');
-		if (cap2) { await page.touchscreen.tap(cap2.x, cap2.y); await wait(120); await page.touchscreen.tap(cap2.x, cap2.y); }
-		await wait(700);
-		const s3 = await ytState(page), seeks = await page.evaluate(() => window.__seeks), te = await page.evaluate(() => window.__te.map((x, i, a) => (i ? x[0] - a[i - 1][0] : 0) + 'ms ' + x[1]).join(' | '));
-		check('phone: double-tap on the caption repeats the sentence', seeks > 0 && !s3.paused, s2.t.toFixed(1) + ' → ' + s3.t.toFixed(1) + ', seeks ' + seeks + ', touchends: ' + te);
+		const ph = await page.evaluate(() => { const r = document.querySelector('sawa-lens-yt').shadowRoot, sd = r.querySelector('.side'), sv = r.querySelector('.sv'), b = sd && sd.querySelectorAll('.ib'); return { side: sd ? getComputedStyle(sd).display : 'none-found', buttons: b ? b.length : 0, w: b && b[0] ? Math.round(b[0].getBoundingClientRect().width) : 0, star: !!sv, strip: r.querySelectorAll('.ctrl').length }; });
+		check('phone: Show controls shows the 4 side buttons (big enough to tap) and ★ Save; the old strip is gone', ph.side === 'grid' && ph.buttons === 4 && ph.w >= 34 && ph.star && ph.strip === 0, JSON.stringify(ph));
+		await page.evaluate(() => { const i = document.querySelector('sawa-lens-side').shadowRoot.querySelector('[data-pref=ctlShow]'); i.checked = false; i.dispatchEvent(new Event('change', { bubbles: true })); }); // back to the default (the pref is shared with the computer page)
+		await wait(500);
 		await page.screenshot({ path: path.join(out, '4b-phone-strip.png') });
 		if (await cardOpen(page)) await page.keyboard.press('Escape');
 		await page.close();
@@ -251,6 +243,8 @@ async function launch() {
 
 		/* ---------------- computer (no regressions) */
 		const desk = await browser.newPage();
+		desk.on('pageerror', (e) => console.log('PAGEERROR', String(e.message).slice(0, 200)));
+		desk.on('console', (m) => { if (m.type() === 'error' && /sawa|lens|Lens/.test(m.text() + (m.location().url || ''))) console.log('CONSOLE', m.text().slice(0, 200)); });
 		await desk.setViewport({ width: 1400, height: 900 });
 		const ua = (await browser.userAgent()).replace('HeadlessChrome', 'Chrome'), major = (ua.match(/Chrome\/(\d+)/) || [])[1] || '140';
 		await desk.setUserAgent({ userAgent: ua, userAgentMetadata: { brands: [{ brand: 'Google Chrome', version: major }, { brand: 'Chromium', version: major }, { brand: 'Not.A/Brand', version: '99' }], platform: 'Windows', platformVersion: '10.0.0', architecture: 'x86', model: '', mobile: false } });
@@ -268,6 +262,8 @@ async function launch() {
 		await wait(1500);
 		const dc = await cardOpen(desk);
 		check('computer: clicking a caption word opens its card (click is the default)', dc && dc.word, JSON.stringify(dc));
+		const cu2 = await desk.evaluate(() => { const c = document.querySelector('sawa-lens-card').shadowRoot.querySelector('.card.on'); const b = c && c.querySelector('[data-a=curious]'); return b ? b.textContent : null; });
+		check('computer: a fresh word shows 💡 Curious', cu2 && /Curious/.test(cu2), JSON.stringify(cu2));
 		const dt = await trIsSentence(desk);
 		check('computer: the Arabic under the caption is the whole sentence (same as the transcript row)', dt.ok, dt.info);
 		await desk.mouse.move(5, 5);
@@ -292,30 +288,25 @@ async function launch() {
 		// Word marks differ by shape: learning = fill, new = solid, hard = dotted, phrase = double underline.
 		const mk = await desk.evaluate(() => { const r = document.querySelector('sawa-lens-side').shadowRoot; const st = (sel) => { const e = r.querySelector(sel); return e ? getComputedStyle(e).textDecorationStyle : 'none-found'; }; return { next: st('.wd.next:not(.ex)'), hard: st('.wd.hard:not(.ex)'), ex: st('.wd.ex') }; });
 		check('computer: word marks differ by line style (solid / dotted / double)', (mk.next === 'solid' || mk.next === 'none-found') && (mk.hard === 'dotted' || mk.hard === 'none-found') && (mk.ex === 'double' || mk.ex === 'none-found') && Object.values(mk).some((v) => v !== 'none-found'), JSON.stringify(mk));
-		// The strip shows on hover; X = 0.75×, R = loop, W = shadow (your-turn ring after the sentence, then it goes on).
+		// 0.10.0: the Loop / slower / Shadow strip is shelved. The side buttons are OFF by default; the keys A S D always work;
+		// the ★ Save button sits next to the sentence; the menu switch "Show controls" turns the side buttons on.
 		await desk.evaluate(() => { const v = document.querySelector('#movie_player video'); v.currentTime = 30; v.play(); });
+		await wait(1500);
+		const sideState = () => desk.evaluate(() => { const r = document.querySelector('sawa-lens-yt').shadowRoot, sd = r.querySelector('.side'), sv = r.querySelector('.sv'); return { side: sd ? getComputedStyle(sd).display : 'none-found', star: !!sv, starShown: sv ? getComputedStyle(sv).display !== 'none' : false, strip: r.querySelectorAll('.ctrl').length }; });
+		const sd0 = await sideState();
+		check('computer: side buttons are off by default, ★ Save is shown, the old strip is gone', sd0.side === 'none' && sd0.star && sd0.starShown && sd0.strip === 0, JSON.stringify(sd0));
+		const t0 = (await ytState(desk)).t;
+		await desk.keyboard.press('d'); await wait(900);
+		const t1 = (await ytState(desk)).t;
+		await desk.keyboard.press('a'); await wait(900);
+		const t2 = (await ytState(desk)).t;
+		check('computer: keys D (next) and A (previous) work with the buttons hidden', t1 > t0 + 0.2 || t1 < t0 - 3, JSON.stringify([t0, t1, t2]));
+		await desk.evaluate(() => { const i = document.querySelector('sawa-lens-yt').shadowRoot.querySelector('.lensmenu input[data-pref=ctlShow]'); i.checked = true; i.dispatchEvent(new Event('change', { bubbles: true })); });
 		await wait(800);
-		const dcap = await centre(desk, 'sawa-lens-yt', '.line.en');
-		if (dcap) await desk.mouse.move(dcap.x, dcap.y);
-		await wait(500);
-		const h1 = await ytState(desk);
-		check('computer: hovering the caption shows the control strip', h1.strip === 7 && h1.shown, JSON.stringify(h1));
-		await desk.mouse.move(5, 5);
-		await desk.keyboard.press('x'); await wait(400);
-		const h2 = await ytState(desk);
-		await desk.keyboard.press('x'); await desk.keyboard.press('r'); await wait(400);
-		const h3 = await ytState(desk);
-		await desk.keyboard.press('r'); await wait(300);
-		check('computer: X = 0.75× speed, again = normal; R = loop on/off', h2.rate === 0.75 && h3.rate === 1 && h3.on.includes('loop') && !(await ytState(desk)).on.includes('loop'), JSON.stringify([h2.rate, h3.rate, h3.on]));
-		await desk.keyboard.press('w');
-		let h4 = null;
-		for (let i = 0; i < 20 && !(h4 && h4.ring); i++) { await wait(700); h4 = await ytState(desk); }
-		check('computer: W = Shadow mode: the video pauses after the sentence with a your-turn ring', h4 && h4.ring && h4.paused, JSON.stringify(h4));
-		await desk.screenshot({ path: path.join(out, '6-computer-shadow.png') });
-		let h5 = null;
-		for (let i = 0; i < 16 && !(h5 && !h5.ring && !h5.paused); i++) { await wait(700); h5 = await ytState(desk); }
-		check('computer: after the ring the next sentence plays by itself', h5 && !h5.ring && !h5.paused && h5.t > h4.t, JSON.stringify(h5));
-		await desk.keyboard.press('w');
+		const sd1 = await sideState();
+		check('computer: "Show controls" turns the side buttons on', sd1.side === "grid", JSON.stringify(sd1));
+		await desk.screenshot({ path: path.join(out, '6-computer-controls.png') });
+		await desk.evaluate(() => { const i = document.querySelector('sawa-lens-yt').shadowRoot.querySelector('.lensmenu input[data-pref=ctlShow]'); i.checked = false; i.dispatchEvent(new Event('change', { bubbles: true })); });
 	} finally {
 		await browser.close();
 	}

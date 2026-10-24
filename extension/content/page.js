@@ -413,7 +413,7 @@
 				(focus && focusInfo ? '<div class="fbar"><b>' + u(focusInfo.name) + '</b> · ' + (focusInfo.count ? focusInfo.count + ' examples' : 'none on this page') + '<div' + (focusInfo.ruleLang === 'ar' ? ' dir="rtl" lang="ar"' : '') + '>' + u(focusInfo.rule) + '</div></div>' : '') : '') +
 			'<div class="legend">' + LensMarks.legendHtml(true) + '</div><ul>' +
 			g.top.slice(0, 20).map(function (w) {
-				return '<li><div><span class="en">' + u(w.lemma) + '</span>' + (w.level ? '<span class="lv">' + U.LEVEL_NAMES[w.level - 1] + '</span>' : '') + (w.ar ? '<div class="ar">' + u(w.ar) + '</div>' : '') + '</div><button class="k" data-l="' + u(w.lemma) + '">I know it</button></li>';
+				return '<li><div><span class="en">' + u(w.lemma) + '</span>' + (w.level ? '<span class="lv">' + U.LEVEL_NAMES[w.level - 1] + '</span>' : '') + (w.ar ? '<div class="ar">' + u(w.ar) + '</div>' : '') + '</div><button class="k" data-l="' + u(w.lemma) + '">Known</button></li>';
 			}).join('') + '</ul>';
 	}
 

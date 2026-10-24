@@ -274,7 +274,7 @@
 			var m2 = G.ms[+b.dataset.k];
 			b.disabled = true; b.textContent = '…';
 			G.o.send('mark', { lemma: m2.lemma, status: 'learning', ctx: { sentence: m2.line, url: location.href, title: document.title.replace(/ - YouTube$/, ''), videoId: G.o.videoId || '', startMs: m2.startMs } })
-				.then(function () { b.textContent = '★ Learning'; }, function (err) { b.textContent = G && G.o.errText ? G.o.errText(err) : 'Error'; });
+				.then(function () { b.textContent = '★ Learn'; }, function (err) { b.textContent = G && G.o.errText ? G.o.errText(err) : 'Error'; });
 		} else if (a === 'exit') stop();
 	}
 

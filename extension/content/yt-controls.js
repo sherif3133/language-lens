@@ -10,6 +10,8 @@
    yt.js gives the api: { video(), sents(), current(), go(a), loop(j), looping(), say(t), hideCard() }. */
 (function () {
 	'use strict';
+	/* SHELF (0.10.0): the Loop / 0.75× / Shadow / 🎤 strip and the swipe gestures are built but switched off. Set true to bring them back (see ops/shelf.md). */
+	var SHELF_STRIP = false;
 	var A = null, root = null, el = null, host = null;
 	var st = { slow: false, shadow: false, mic: false, turnT: 0, stream: null, rec: null, chunks: [], audio: null, showT: 0, lastVideo: null, ownPlay: 0 };
 
@@ -38,11 +40,53 @@
 
 	var RING = '<svg viewBox="0 0 26 26" aria-hidden="true"><circle class="bg" cx="13" cy="13" r="11"/><circle class="fg" cx="13" cy="13" r="11"/></svg>';
 
+	/* The sentence buttons at the side of the English line (Show controls, off by default) and the ★ Save next to the sentence.
+	   Clicks are handled by yt.js (data-a); their tips come from content/tips.js. Keys A S D Q always work. */
+	var SIDE_CSS = '.box{position:relative}.side{display:none;position:absolute;right:100%;top:50%;transform:translateY(-50%);margin-right:10px;grid-template-columns:repeat(2,30px);gap:6px;pointer-events:auto}' +
+		':host(.ctl-on) .side{display:grid}' +
+		'.ib{all:unset;box-sizing:border-box;position:relative;cursor:pointer;width:30px;height:30px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;background:rgba(15,15,16,.7);color:#E6E3DF;font-size:14px;line-height:1}' +
+		'.ib:hover{background:rgba(15,15,16,.95);color:#fff}.ib:focus-visible{outline:2px solid #56B4E9;outline-offset:1px}.ib[disabled]{opacity:.6}' +
+		'.ib.on{color:#22C55E;box-shadow:inset 0 0 0 1.5px #22C55E}' +
+		'.sv{position:absolute;left:100%;top:0;margin-left:8px;color:#FDE68A;font-size:16px}.sv.ok{color:#22C55E}' +
+		':host(.mob) .side{right:auto;left:50%;transform:translateX(-50%);top:auto;bottom:100%;margin:0 0 4px;grid-template-columns:repeat(4,36px);gap:6px}:host(.mob) .ib{width:36px;height:36px;font-size:16px}:host(.mob) .sv{left:auto;right:0;top:auto;bottom:100%;margin:0 0 4px;width:40px;height:40px}' +
+		':host(.mob) .tipbub{max-width:170px}';
+	function ib(a, tip, glyph, label) {
+		return '<button type="button" class="ib" data-a="' + a + '" data-tip="' + tip + '" data-tip-float aria-label="' + label + '"><span class="g">' + glyph + '</span></button>';
+	}
+	function buildSide(box) {
+		var s = document.createElement('div');
+		s.className = 'side';
+		s.setAttribute('role', 'toolbar');
+		s.setAttribute('aria-label', 'Sentence controls');
+		s.innerHTML = ib('prev', 'prev', '◀', 'Previous sentence') + ib('next', 'next', '▶', 'Next sentence') + ib('repeat', 'repeat', '⟲', 'Repeat this sentence') + ib('autopause', 'ap', '⏸', 'Auto-pause after every sentence');
+		box.appendChild(s);
+		var v = document.createElement('div');
+		v.innerHTML = ib('save', 'save', '★', 'Save this sentence');
+		var star = v.firstChild;
+		star.classList.add('sv');
+		star.dataset.done = '✓';
+		box.appendChild(star);
+		if (window.LensTips) {
+			window.LensTips.attach(root);
+			setTimeout(function () { window.LensTips.hint(root, 'save'); }, 2500);
+		}
+	}
+
 	function attach(r, h, api, mobile) {
 		root = r; host = h; A = api;
-		if (root.querySelector('.ctrl')) return;
+		if (root.querySelector('.ctrl') || root.querySelector('.side')) return;
 		var box = root.querySelector('.box');
 		if (!box) return;
+		root.appendChild(Object.assign(document.createElement('style'), { textContent: SIDE_CSS + (window.LensTips ? window.LensTips.css : '') }));
+		buildSide(box);
+		if (mobile) {
+			// Taps on the caption are ours: YouTube's player would show its controls over it or seek (kept when the strip is shelved).
+			var bar0 = root.querySelector('.bar');
+			['touchstart', 'touchend', 'pointerdown', 'pointerup', 'click', 'dblclick'].forEach(function (t) {
+				host.addEventListener(t, function (e) { if (e.composedPath().indexOf(bar0) >= 0) e.stopPropagation(); });
+			});
+		}
+		if (!SHELF_STRIP) return;
 		root.appendChild(Object.assign(document.createElement('style'), { textContent: CSS }));
 		el = document.createElement('div');
 		el.className = 'ctrl';
@@ -259,6 +303,7 @@
 
 	/** R loop · X slower · W shadow. Returns true when the key was ours. */
 	function key(k) {
+		if (!SHELF_STRIP) return false;
 		if (k === 'r') act('loop');
 		else if (k === 'x') act('slow');
 		else if (k === 'w') act('shadow');

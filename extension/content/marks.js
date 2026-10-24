@@ -16,7 +16,7 @@
 	};
 	var FILL = '#FDE68A', INK = '#0F0F10';
 	var LABELS = {
-		learning: ['Learning', 'In your Review'],
+		learning: ['Learn', 'In your Review'],
 		next: ['New for you', 'Worth learning now'],
 		hard: ['Hard or rare', 'Skip it if you are busy'],
 		ex: ['Phrase', 'One meaning together']

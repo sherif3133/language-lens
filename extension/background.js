@@ -278,8 +278,8 @@ async function canUse(feature) {
 /** The Sawa English level test (CEFR level + vocabulary size); the result comes back with the next sync. */
 async function openLevelTest() {
 	const { server } = await get('server');
-	await set({ syncAfterTest: Date.now() });
-	return chrome.tabs.create({ url: server + '/placement/' });
+	void server; // 0.10.0: the 30-second vocabulary estimate (extension page), not the long placement test
+	return chrome.tabs.create({ url: chrome.runtime.getURL('level/level.html') });
 }
 
 /** Always sign in in a normal tab. Phones have no sign-in window, and inside the sign-in window (launchWebAuthFlow) the
@@ -430,9 +430,9 @@ async function mark(lemma, status, baseline, ctx) {
 	if (newLearning) {
 		const room = await learnRoom();
 		if (!room.left) {
-			const e = new Error(room.catchup ? 'Catch-up time: finish your due review cards first, then you can add new Learning words again. Tap 💡 Curious to earn XP for this one.'
+			const e = new Error(room.catchup ? 'Catch-up time: finish your due review cards first, then you can add new words to learn again. Tap 💡 Curious to earn XP for this one.'
 				: room.full ? room.waiting + ' words are already waiting to become cards. Review every day to raise your card level and add more. Tap 💡 Curious to earn XP for this one.'
-				: 'You added ' + room.cap + ' new Learning words today — your card level\'s limit. Tap 💡 Curious to earn XP for this one instead.');
+				: 'You added ' + room.cap + ' new words to learn today — your card level\'s limit. Tap 💡 Curious to earn XP for this one instead.');
 			e.code = 'learn_cap';
 			throw e;
 		}
@@ -583,6 +583,35 @@ async function saveTest({ answers }) {
 	}
 	scheduleSync(800);
 	return { estimate, bands, falseAlarms: fa, suggestedLevel: level, unknown: answers.filter((a) => a.b >= 0 && a.b <= 2 && !a.yes).map((a) => a.w) };
+}
+
+/** The quick vocabulary estimate (about 30 s): rows of sample words by frequency band + the ranks of an example text. */
+const QUICK_BANDS = [100, 300, 500, 1000, 2000, 3000, 5000, 8000];
+const QUICK_EXAMPLE = 'The first night I went to sleep on the sand a thousand miles from any human habitation I was more isolated than a shipwrecked sailor on a raft in the middle of the ocean'.split(' ');
+async function quickRows() {
+	const F = await loadFreq();
+	const rows = [];
+	for (const b of QUICK_BANDS) {
+		if (b + 50 > F.ranked.length) continue;
+		const pool = F.ranked.slice(b, b + (b < 1000 ? 150 : 500)).filter((w) => w.length >= 3 && /^[a-z]+$/.test(w));
+		const ws = [];
+		for (let k = 0; k < 6 && pool.length; k++) ws.push(pool.splice(Math.floor(Math.random() * pool.length), 1)[0]);
+		rows.push({ from: b, words: ws });
+	}
+	return { rows, example: QUICK_EXAMPLE.map((w) => ({ w, r: F.rank[w.toLowerCase()] || 99999 })) };
+}
+
+/** The student tapped the first row with new words: they know about the words above it. */
+async function saveQuick({ known }) {
+	const n = Math.max(0, Math.min(8000, known | 0));
+	const bands = [0, 1, 2, 3, 4].map((b) => Math.max(0, Math.min(1, (n - b * 1000) / 1000)));
+	const estimate = Math.min(5000, n);
+	const level = n < 300 ? 1 : n < 1000 ? 2 : n < 3000 ? 3 : n < 5000 ? 4 : 5;
+	const t = Date.now();
+	await set({ vocabTest: { date: today(), estimate, bands, falseAlarms: 0, quick: true, known: n, t } });
+	await set({ level, levelDirty: true, levelT: t });
+	scheduleSync(500);
+	return { known: n, level };
 }
 
 /** Progress towards the next goal (top 1k, 2k … words): marked known + the test's estimate for the rest. */
@@ -927,6 +956,8 @@ const handlers = {
 	goal: () => goal(),
 	reviewLink: () => reviewLink(),
 	testItems: () => testItems(),
+	quickRows: () => quickRows(),
+	saveQuick: (d) => saveQuick(d),
 	saveTest: (d) => saveTest(d),
 	openTest: () => openLevelTest(),
 	mark: ({ lemma, status, ctx }) => mark(lemma, status, false, ctx),

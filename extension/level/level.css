@@ -1,0 +1,28 @@
+.lg { margin-left: auto; display: flex; gap: 6px; }
+.lg button { font: 600 14px/1 'IBM Plex Sans', sans-serif; min-height: 36px; padding: 0 14px; border-radius: 999px; border: 1px solid #4A4847; background: transparent; color: #fff; cursor: pointer; }
+.lg button.on { background: #fff; color: #0F0F10; }
+main { padding: 24px 16px 60px; }
+.card.q { padding: 22px 18px; }
+.sub { color: #4A4847; margin: 0 0 14px; }
+.rows { display: grid; gap: 8px; margin-bottom: 14px; }
+.r { display: flex; align-items: center; gap: 10px; min-height: 56px; width: 100%; padding: 8px 12px; border: 1px solid #E6E3DF; border-radius: 12px; background: #fff; color: #0F0F10; font: inherit; text-align: start; cursor: pointer; }
+.r .k { width: 46px; flex: none; text-align: center; font-size: 12px; color: #8A8584; }
+.r .ws { flex: 1; display: grid; grid-template-columns: repeat(3, 1fr); gap: 0 8px; font-size: 14px; }
+.r.start .ws { display: block; color: #4A4847; }
+.r.known { background: #E7F5EC; border-color: #15803D; }
+.r.known .k { color: #15803D; }
+.r.edge { outline: 3px solid #0F0F10; }
+.res { background: #F6F5F3; border-radius: 12px; padding: 12px; margin: 8px 0; }
+.res b { font: 800 26px/1 Changa, sans-serif; }
+.ex { border: 1px solid #E6E3DF; border-radius: 12px; padding: 12px; line-height: 2; font-size: 16px; }
+.ex .kn { color: #15803D; }
+.ex .nw { border-bottom: 2px solid #56B4E9; }
+.tg { display: flex; align-items: center; gap: 10px; min-height: 44px; cursor: pointer; }
+.tg i { width: 36px; height: 20px; border-radius: 99px; background: #8A8584; position: relative; flex: none; }
+.tg i::after { content: ""; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%; background: #fff; transition: transform .15s; }
+.tg.on i { background: #15803D; }
+.tg.on i::after { transform: translateX(16px); }
+.skip { display: block; width: 100%; min-height: 48px; margin-top: 6px; border: 0; background: none; color: #4A4847; font: inherit; text-decoration: underline; cursor: pointer; }
+.btn.wide { width: 100%; min-height: 52px; }
+[dir=rtl] .tg i::after { left: auto; right: 2px; }
+[dir=rtl] .tg.on i::after { transform: translateX(-16px); }

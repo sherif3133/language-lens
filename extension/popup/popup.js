@@ -114,7 +114,7 @@ async function render() {
 			<div class="steps">${goal.steps.map((s) => `<span class="${s.done ? 'done' : s.goal === goal.goal ? 'cur' : ''}">top ${s.goal / 1000}k</span>`).join('')}</div>
 			<div class="gl"><span>Top <b>${n(goal.goal)}</b> words</span><span><b>${n(goal.have)}</b> known${goal.learning ? ` · ${goal.learning} learning` : ''}</span></div>
 			<div class="gbar"><i style="width:${pk}%"></i><i class="lr" style="left:${pk}%;width:${pl}%"></i></div>
-			${goal.tested ? `<p class="hint">Level test: about <b>${n(goal.estimate)}</b> words known. <a href="#" id="test">Take it again</a></p>` : `<button class="btn" id="test">Optional: find my level (about 8 min)</button>`}
+			${goal.tested ? `<p class="hint">Vocabulary level: about <b>${n(goal.estimate)}</b> words known. <a href="#" id="test">Take it again</a></p>` : `<button class="btn" id="test">Optional: set my vocabulary level (30 seconds)</button>`}
 		</div>`;
 	}
 
@@ -134,7 +134,7 @@ async function render() {
 				<div><b>${n(dy.heard)}</b><span>🎧 words heard in videos</span></div>
 				<div><b>${n(dy.curious)}</b><span>💡 curious about</span></div>
 			</div>
-			<div class="lcap"><span>★ New Learning words today: <b>${dy.used} / ${dy.cap}</b></span>${dy.level ? `<span class="pill">Card level ${dy.level}</span>` : `<select id="lcap" title="New Learning words a day">${[20, 30, 40].map((x) => `<option ${x === dy.cap ? 'selected' : ''}>${x}</option>`).join('')}</select>`}</div>
+			<div class="lcap"><span>★ New words to learn today: <b>${dy.used} / ${dy.cap}</b></span>${dy.level ? `<span class="pill">Card level ${dy.level}</span>` : `<select id="lcap" title="New words to learn a day">${[20, 30, 40].map((x) => `<option ${x === dy.cap ? 'selected' : ''}>${x}</option>`).join('')}</select>`}</div>
 			${dy.catchup ? '<p class="hint"><b>Catch-up time:</b> finish your due review cards, then new words open again.</p>' : dy.full ? `<p class="hint"><b>${dy.waiting} words</b> are waiting to become cards. Review every day to raise your card level.</p>` : ''}
 			<a class="btn rvnow" href="${esc(dy.reviewUrl || 'https://sawaenglish.com/app/#review')}" target="_blank" rel="noopener">🃏 ${dy.ready ? `${n(dy.ready)} card${dy.ready === 1 ? '' : 's'} ready → ` : ''}Review now</a>
 			<p class="hint">${point} any word you're curious about, then press <b>💡 Curious</b> for XP. It isn't added to your reviews, so you never get overwhelmed.</p>
@@ -164,7 +164,7 @@ async function render() {
 			<div class="label">Word colours</div>
 			<div class="legend mks" style="margin-top:0">${self.LensMarks.legendHtml()}</div>
 			<p class="hint">Words you know have no colour.</p>
-			<div class="seg3"><button data-cm="all" aria-pressed="${cmode === 'all'}">All 4</button><button data-cm="learning" aria-pressed="${cmode === 'learning'}">Learning only</button><button data-cm="off" aria-pressed="${cmode === 'off'}">Off</button></div>
+			<div class="seg3"><button data-cm="all" aria-pressed="${cmode === 'all'}">All 4</button><button data-cm="learning" aria-pressed="${cmode === 'learning'}">Learn only</button><button data-cm="off" aria-pressed="${cmode === 'off'}">Off</button></div>
 		</div>
 		<div class="sec">
 			<div class="label">YouTube</div>
