@@ -1180,7 +1180,7 @@
 		distractors: function (lemma) { return U.send('distractors', { lemma: lemma, n: 2 }); },
 		play: function (a, b) { play(a, b); },
 		say: say,
-		record: function (o) { U.send('quizDone', o).catch(function () {}); }
+		record: function (o) { return U.send('quizDone', o).catch(function () { return null; }); }
 	};
 	var CTRL_API = {
 		video: function () { return S.video; },

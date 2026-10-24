@@ -185,17 +185,30 @@
 
 	function answer(o, b) {
 		var w = st.words[st.i], ok = String(o).toLowerCase() === w.answer;
-		st.asked++; if (ok) st.right++;
+		if (!w.retry) { st.asked++; if (ok) st.right++; }
+		if (!ok && !w.retry && !w.requeued) { w.requeued = true; st.words.push({ lemma: w.lemma, surface: w.surface, count: w.count, ar: w.ar, sentence: w.sentence, retry: true }); } // a wrong word is asked once more at the end
+		if (!w.retry) w.ok = ok; // sent to the server: a right answer is the card's first learning step, a wrong one brings the word back today
 		if (window.LensStudy) LensStudy.quiz();
 		el.querySelectorAll('[data-q=ans]').forEach(function (x) { x.disabled = true; if (x.dataset.o.toLowerCase() === w.answer) x.style.background = '#14301F'; });
 		if (!ok && b) b.style.background = '#3A1A1A';
 		el.querySelector('#sqout').innerHTML = '<div class="sqfb ' + (ok ? 'ok' : 'no') + '"><b>' + (ok ? 'Correct ✓' : 'It was “' + t(w.answer) + '”') + '</b><div>' + t(w.sentence.text) + '</div></div><div class="sqf"><span></span><button class="sqbtn go" data-q="next">Next</button></div>';
 	}
 
+	/** Tell the server how the answers went (skipped items are not sent). Resolves with what it did, or null (old server). */
+	function sendResults() {
+		var answered = st.words.filter(function (w) { return !w.retry && (w.ok === true || w.ok === false); });
+		if (st.sent || !answered.length) return Promise.resolve(null);
+		st.sent = true;
+		return A.record({ asked: st.asked, right: st.right, words: st.words.length, results: answered.map(function (w) { return { lemma: w.lemma, ok: w.ok }; }) });
+	}
+
 	function finish() {
 		st.state = 'done';
-		A.record({ asked: st.asked, right: st.right, words: st.words.length });
-		card('<h3>Done ✓</h3><p>' + st.right + ' of ' + st.asked + ' right. Your words are in your Review cards.</p><p class="ar">انتهى. كلماتك في بطاقات المراجعة.</p><div class="sqf"><span></span><button class="sqbtn go" data-q="close">Close</button></div>');
+		card('<h3>Done ✓</h3><p>' + st.right + ' of ' + st.asked + ' right. Your words are in your Review cards.</p><p class="ar">انتهى. كلماتك في بطاقات المراجعة.</p><p id="sqres" style="color:#FDE68A"></p><div class="sqf"><span></span><button class="sqbtn go" data-q="close">Close</button></div>');
+		sendResults().then(function (r) {
+			var o = el && el.querySelector('#sqres');
+			if (o && r && r.again) o.textContent = r.again + (r.again === 1 ? ' word comes' : ' words come') + ' back in your Review today · ' + r.again + ' كلمات ستعود إليك اليوم';
+		});
 	}
 
 	function act(q, b) {
@@ -209,7 +222,7 @@
 		else if (q === 'clip') { var w = st.words[st.i]; if (w && w.sentence) A.play(w.sentence.start, w.sentence.end); }
 		else if (q === 'ans') answer(b.dataset.o, b);
 		else if (q === 'next' || q === 'skipitem') { st.i++; question(); }
-		else if (q === 'later') { st.state = 'done'; close(false); }
+		else if (q === 'later') { st.state = 'done'; sendResults(); close(false); }
 		else if (q === 'close') close(false);
 	}
 

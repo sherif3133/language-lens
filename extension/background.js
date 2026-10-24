@@ -1033,7 +1033,18 @@ const handlers = {
 	studyAdd: (d) => studyAdd(d),
 	studyToday: () => studyToday(),
 	quizWords: ({ texts }) => quizWords((texts || []).slice(0, 3000)),
-	quizDone: async ({ asked, right, words }) => { const { quizStats } = await get('quizStats'); const q = quizStats && quizStats.day === today() ? quizStats : { day: today(), videos: 0, asked: 0, right: 0, words: 0 }; q.videos++; q.asked += asked | 0; q.right += right | 0; q.words += words | 0; await set({ quizStats: q }); return q; },
+	quizDone: async ({ asked, right, words, results }) => {
+		const { quizStats } = await get('quizStats');
+		const q = quizStats && quizStats.day === today() ? quizStats : { day: today(), videos: 0, asked: 0, right: 0, words: 0 };
+		q.videos++; q.asked += asked | 0; q.right += right | 0; q.words += words | 0;
+		await set({ quizStats: q });
+		// The server: right = the card's first learning step, wrong = the word comes back today. Old servers answer 404: ignore.
+		if (Array.isArray(results) && results.length) {
+			await sync().catch(() => {}); // the words chosen for the quiz must be on the server first
+			return api('/quiz-result', { results: results.slice(0, 20).map((r) => ({ lemma: String(r.lemma || '').slice(0, 60), ok: !!r.ok })) }).catch(() => null);
+		}
+		return null;
+	},
 	images: ({ word, pos }) => api('/image?word=' + encodeURIComponent(word) + (pos ? '&pos=' + encodeURIComponent(pos) : ''), null, 'GET'),
 	aiImage: ({ word, sentence }) => api('/image/ai', { word, sentence }),
 	explain: async ({ word, sentence, lang }) => {
