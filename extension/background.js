@@ -866,6 +866,31 @@ async function videoProfile(texts, level) {
 	return { total, bands: counts.map((n, i) => ({ n, uniq: uniq[i].size })), top, cover: total ? Math.round(1000 * within / total) / 10 : 0 };
 }
 
+/** Quiz Mode: the video's most frequent words the learner does not know yet. Known words, words within their level and words
+ *  already in Learn are left out, and the list is refilled from the next most frequent words (the caller takes the first 10 / 15 / 20). */
+async function quizWords(texts) {
+	const L = await loadLens(), F = await loadFreq(), st = await userState();
+	const use = {}, surf = {};
+	for (const t of texts) {
+		for (const tok of L.analyze(String(t || ''), {})) {
+			if (tok.status === 'name' || !/^[a-z][a-z'-]+$/i.test(tok.text)) continue;
+			const lemma = tok.lemma, r = F.rank[lemma] || F.rank[tok.text.toLowerCase()] || 99999;
+			if (r <= 150 || lemma.length < 3) continue;
+			use[lemma] = (use[lemma] || 0) + 1;
+			surf[lemma] = surf[lemma] || tok.text;
+		}
+	}
+	const out = [];
+	for (const l of Object.keys(use).sort((a, b) => use[b] - use[a])) {
+		const s = L.status(l, { level: st.level, words: st.words });
+		if (s === 'known' || s === 'learning') continue;
+		const e = L.entries(l);
+		out.push({ lemma: l, surface: surf[l], count: use[l], level: L.level(l), ar: (e.find((x) => x.ar) || {}).ar || '' });
+		if (out.length >= 60) break;
+	}
+	return out;
+}
+
 /** "Send feedback": works signed in or out. The server adds the user when the token is good; the rest is added here. */
 async function sendFeedback(f) {
 	const { server, token } = await get(['server', 'token']);
@@ -961,6 +986,8 @@ const handlers = {
 	saveTest: (d) => saveTest(d),
 	openTest: () => openLevelTest(),
 	mark: ({ lemma, status, ctx }) => mark(lemma, status, false, ctx),
+	quizWords: ({ texts }) => quizWords((texts || []).slice(0, 3000)),
+	quizDone: async ({ asked, right, words }) => { const { quizStats } = await get('quizStats'); const q = quizStats && quizStats.day === today() ? quizStats : { day: today(), videos: 0, asked: 0, right: 0, words: 0 }; q.videos++; q.asked += asked | 0; q.right += right | 0; q.words += words | 0; await set({ quizStats: q }); return q; },
 	images: ({ word, pos }) => api('/image?word=' + encodeURIComponent(word) + (pos ? '&pos=' + encodeURIComponent(pos) : ''), null, 'GET'),
 	aiImage: ({ word, sentence }) => api('/image/ai', { word, sentence }),
 	explain: async ({ word, sentence, lang }) => {

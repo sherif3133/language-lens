@@ -131,7 +131,7 @@
 	function trow(pref, label, tip) { return '<label data-tip="' + tip + '"><input type="checkbox" data-pref="' + pref + '"> ' + label + '</label>'; }
 	var TIPSW = '<label class="pin"><input type="checkbox" data-tipsw> 💡 Show Tips</label><button class="t" data-a="tipreset" hidden>Bring back hidden tips</button>';
 	var MODESEL = '<label data-tip="openmode">Open word cards with <select data-sel="ytShowOn"><option value="click">a click</option><option value="hover">hovering</option></select></label>';
-	var FURTHER = trow('pauseClick', (TOUCH ? 'Pause when I tap on a word' : 'Pause when I click on a word'), 'pauseClick') + (TOUCH ? '' : trow('pauseHover', 'Pause when I hover on a word', 'pauseHover') + MODESEL) + trow('wordQuiz', 'Quiz Mode', 'quiz');
+	var FURTHER = trow('pauseClick', (TOUCH ? 'Pause when I tap on a word' : 'Pause when I click on a word'), 'pauseClick') + (TOUCH ? '' : trow('pauseHover', 'Pause when I hover on a word', 'pauseHover') + MODESEL) + trow('studyQuiz', 'Quiz Mode', 'quiz');
 	var OPTS = TIPSW + trow('ctlBasic', 'Show Basic Controls', 'ctlb') + trow('ctlRep', 'Show Repeat / Loop / Auto-pause', 'ctlr') + trow('showEn', 'English captions', 'en') + trow('showTrans', 'Arabic translation', 'tr') + trow('showSound', 'How it sounds', 'snd') +
 		trow('blurCaptions', 'Blur English until ' + HOV, 'blurEn') + trow('blurTrans', 'Blur Arabic until ' + HOV, 'blurTr') + trow('colors', 'Colour words', 'colors') + FURTHER;
 
@@ -139,8 +139,8 @@
 	var WAVE = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h2M7 8v8M11 5v14M15 8v8M19 11v2"/></svg>';
 
 	var S = { videoId: '', cues: [], lines: null, sents: [], sentToks: null, tcues: [], cueTr: null, sentTr: null, grade: null, idx: -1, sIdx: -1, host: null, root: null, side: null, sRoot: null, video: null, pausedByUs: false, raf: 0, primed: '', stopAt: 0, follow: true, scrolledAt: 0, sounds: {}, loopI: -1, savedRows: {} };
-	var prefs = { lensYT: true, showEn: true, sidebar: true, colors: true, pauseOnHover: true, sideMin: false, focus: '', showTrans: true, showSound: true, blurCaptions: false, blurTrans: false, barPos: 0.12, ctlBasic: false, ctlRep: false, pauseClick: true, pauseHover: true, autoPause: false, maskSwears: false, wordQuiz: false, songLyrics: true, lyricLang: 'en' };
-	var PREF_KEYS = ['lensYT', 'showEn', 'sidebar', 'lensColors', 'colorLearnOnly', 'ytShowOn', 'pauseOnHover', 'sideMin', 'focus', 'showTrans', 'showSound', 'blurCaptions', 'blurTrans', 'barPos', 'ctlShow', 'ctlBasic', 'ctlRep', 'pauseClick', 'pauseHover', 'tipsOff', 'autoPause', 'maskSwears', 'wordQuiz', 'songLyrics', 'explainLang'];
+	var prefs = { lensYT: true, showEn: true, sidebar: true, colors: true, pauseOnHover: true, sideMin: false, focus: '', showTrans: true, showSound: true, blurCaptions: false, blurTrans: false, barPos: 0.12, ctlBasic: false, ctlRep: false, pauseClick: true, pauseHover: true, autoPause: false, maskSwears: false, wordQuiz: false, studyQuiz: true, songLyrics: true, lyricLang: 'en' };
+	var PREF_KEYS = ['lensYT', 'showEn', 'sidebar', 'lensColors', 'colorLearnOnly', 'ytShowOn', 'pauseOnHover', 'sideMin', 'focus', 'showTrans', 'showSound', 'blurCaptions', 'blurTrans', 'barPos', 'ctlShow', 'ctlBasic', 'ctlRep', 'pauseClick', 'pauseHover', 'tipsOff', 'autoPause', 'maskSwears', 'wordQuiz', 'studyQuiz', 'songLyrics', 'explainLang'];
 	function readPrefs(o) {
 		prefs.sidebar = o.sidebar !== false;
 		prefs.ctlBasic = o.ctlBasic != null ? !!o.ctlBasic : !!o.ctlShow; // ◀ ▶ next to the caption: off until the student turns them on (0.10.0 'Show controls' carries over)
@@ -163,6 +163,7 @@
 		prefs.barPos = typeof o.barPos === 'number' ? o.barPos : 0.12;
 		prefs.autoPause = !!o.autoPause;
 		prefs.maskSwears = false; // the option was removed
+		prefs.studyQuiz = o.studyQuiz !== false; // the new Quiz Mode (0.11.0): on, as a small banner you can skip
 		prefs.wordQuiz = o.wordQuiz === true; // Quiz Mode is off until the student turns it on (0.10.1)
 		prefs.songLyrics = o.songLyrics !== false;
 		prefs.lyricLang = o.explainLang === 'ar' ? 'ar' : 'en'; // the one "Explanations" setting (popup), saved with the account
@@ -513,6 +514,7 @@
 			S.level = r[1].level;
 			S.gradeFrom = U.gradeSource(r[1]);
 			paintChip();
+			if (window.LensQuiz) LensQuiz.offer();
 			paintSide();
 			paintProfile();
 			S.idx = -1;
@@ -655,6 +657,7 @@
 			if (MOBILE) S.host.classList.add('mob');
 			if (window.LensVocals) LensVocals.bindMenu(S.root);
 			if (window.LensTips) LensTips.attach(S.root);
+			if (window.LensQuiz) LensQuiz.init(QUIZ_API);
 			player.appendChild(S.host);
 			S.root.querySelector('.line.snd').addEventListener('mouseenter', soundTip);
 			S.root.querySelector('.line.snd').addEventListener('mouseleave', function () { S.root.querySelector('.sndtip').classList.remove('on'); });
@@ -1155,6 +1158,30 @@
 
 	/** Stop at the end of each sentence: auto-pause, or Shadow mode (content/yt-controls.js). */
 	function stopEnd() { return prefs.autoPause || (window.LensControls && LensControls.shadowOn()); }
+	/** What Quiz Mode (content/quiz.js) needs from this file. */
+	var QUIZ_API = {
+		on: function () { return prefs.studyQuiz && prefs.lensYT && !S.gaming; },
+		cues: function () { return S.cues.length >= 8 && !!S.sentToks; },
+		ad: function () { return !!document.querySelector('#movie_player.ad-showing'); },
+		videoId: function () { return S.videoId; },
+		root: function () { return S.root; },
+		video: function () { return S.video; },
+		daily: function () { return U.send('daily'); },
+		words: function () { return U.send('quizWords', { texts: S.cues.map(function (c) { return c.text; }) }); },
+		mark: function (lemma, status, s) {
+			var ctx = s ? { sentence: s.text, url: 'https://www.youtube.com/watch?v=' + S.videoId + '&t=' + Math.floor(s.start / 1000), title: document.title.replace(/ - YouTube$/, ''), videoId: S.videoId, startMs: s.start } : undefined;
+			return U.send('mark', { lemma: lemma, status: status, ctx: ctx });
+		},
+		sentenceOf: function (lemma) {
+			var re = new RegExp('\\b' + lemma.replace(/[^a-z']/gi, '') + '[a-z]*\\b', 'i');
+			for (var i = 0; i < S.sents.length; i++) if (re.test(S.sents[i].text) && S.sents[i].text.length < 160) return S.sents[i];
+			return null;
+		},
+		distractors: function (lemma) { return U.send('distractors', { lemma: lemma, n: 2 }); },
+		play: function (a, b) { play(a, b); },
+		say: say,
+		record: function (o) { U.send('quizDone', o).catch(function () {}); }
+	};
 	var CTRL_API = {
 		video: function () { return S.video; },
 		sents: function () { return S.sents; },
@@ -1225,6 +1252,7 @@
 		}, function () {});
 	}
 
+	var SHELF_PAUSE_QUIZ = false;
 	function quizOpen() { var q = S.root && S.root.querySelector('.quiz'); return q && !q.hidden; }
 
 	function checkQuiz() {
@@ -1238,7 +1266,7 @@
 			}
 		}
 		// 2. A Learning word just said (at most one quiz every 3 minutes)
-		if (!prefs.wordQuiz || S.gaming || !S.sentToks || !S.sents.length) return;
+		if (!SHELF_PAUSE_QUIZ || !prefs.wordQuiz || S.gaming || !S.sentToks || !S.sents.length) return; // the old pause-the-video quiz is shelved (ops/shelf.md)
 		var ms = t * 1000, k = find(S.sents, ms, null);
 		var ended = k - 1;
 		if (k >= 0 && ms > S.sents[k].end) ended = k;
@@ -1369,6 +1397,7 @@
 	}
 
 	function tick(force) {
+		if (window.LensQuiz) LensQuiz.tick(S.video);
 		if (S.host && S.host.parentNode) useVideo(S.host.parentNode.querySelector('video'));
 		if (!S.video || !S.root) return;
 		if (document.querySelector('#movie_player.ad-showing')) {
@@ -1680,6 +1709,7 @@
 		// Captions that arrived before this ran (a quick navigation) must not be wiped: that left the video without captions (0.10.2).
 		if (S.videoId === vid && (S.primed === vid || S.cues.length)) { S.primed = vid; return; }
 		S.primed = vid;
+		if (window.LensQuiz) LensQuiz.reset();
 		S.cues = [];
 		S.sents = [];
 		S.tcues = [];

@@ -22,7 +22,7 @@
 		blurTr: ['Hide the Arabic until you tap it.', 'أخفِ الترجمة العربية حتى تضغط عليها.'],
 		colors: ['Colours show how well you know each word: yellow box = Learn (in your Review) · blue underline = new for you · dotted orange = hard or rare · pink double line = a phrase · no mark = Known or easy.', 'الألوان تبيّن مدى معرفتك بكل كلمة: مربع أصفر = تتعلّمها (في المراجعة) · خط أزرق = جديدة عليك · برتقالي منقّط = صعبة أو نادرة · وردي مزدوج = عبارة · بدون علامة = تعرفها أو سهلة.'],
 		pauseOpen: ['Stop the video while you read a word card.', 'أوقف الفيديو أثناء قراءة بطاقة الكلمة.'],
-		quiz: ['Now and then, a short question about a word you are learning.', 'من وقت لآخر، سؤال قصير عن كلمة تتعلّمها.'],
+		quiz: ['Before the video: the most common words in it that you do not know yet. Tick the ones you know. After the video: a short review of the rest. You can skip any step.', 'قبل الفيديو: أكثر الكلمات شيوعًا فيه مما لا تعرفه بعد. ضع علامة على ما تعرفه. بعد الفيديو: مراجعة قصيرة للباقي. يمكنك تخطّي أي خطوة.'],
 		vocals: ['Listen to songs without background music.', 'استمع إلى الأغاني بدون موسيقى الخلفية.'],
 		game: ['Fill in the missing words while the song plays.', 'أكمل الكلمات الناقصة أثناء تشغيل الأغنية.'],
 		vplist: ['Play a list of songs with the music turned down.', 'شغّل قائمة أغاني مع خفض صوت الموسيقى.'],
