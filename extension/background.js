@@ -78,11 +78,54 @@ async function flushDaily() {
 	await api('/daily', o).catch(async () => { const { dailyOut: n } = await get('dailyOut'); await set({ dailyOut: { read: n.read + o.read, heard: n.heard + o.heard } }); });
 }
 
+/* ------------------------------------------------------------ study time (0.12.0) */
+/** Active seconds and counts per day and source, kept on this device; the totals go to the study log about every 10 minutes. */
+const STUDY_SRC = ['youtube', 'reading'];
+let studyFlushAt = 0;
+async function studyDay() {
+	const { studyDay: d } = await get('studyDay');
+	const t = today();
+	if (d && d.day === t) return d;
+	if (d && d.day) await flushStudy(d).catch(() => {}); // a new day: send yesterday's last totals first
+	return { day: t, youtube: { sec: 0, words: 0, learn: 0, known: 0, curious: 0, quiz: 0 }, reading: { sec: 0, words: 0 }, sentSig: '' };
+}
+async function studyAdd({ src, sec, words, quiz, flush }) {
+	if (!STUDY_SRC.includes(src)) return null;
+	const d = await studyDay();
+	const x = d[src];
+	x.sec += Math.max(0, Math.min(600, sec | 0));
+	x.words += Math.max(0, Math.min(500, words | 0));
+	if (src === 'youtube') x.quiz += Math.max(0, Math.min(200, quiz | 0));
+	await set({ studyDay: d });
+	if (flush || Date.now() - studyFlushAt > 9 * 60000) await flushStudy(d).catch(() => {});
+	return null;
+}
+async function studyCount(key) {
+	const d = await studyDay();
+	d.youtube[key] = (d.youtube[key] || 0) + 1;
+	await set({ studyDay: d });
+}
+/** Send the day's totals (not increments: sending twice is safe). Old servers answer 404: we simply try again later. */
+async function flushStudy(d) {
+	d = d || await studyDay();
+	const items = STUDY_SRC.map((s) => Object.assign({ src: s, minutes: Math.round(d[s].sec / 60) }, d[s])).filter((i) => i.minutes >= 1);
+	const sig = JSON.stringify(items);
+	if (!items.length || sig === d.sentSig) return;
+	studyFlushAt = Date.now();
+	await api('/study-time', { day: d.day, items });
+	const cur = await get('studyDay');
+	if (cur.studyDay && cur.studyDay.day === d.day) { cur.studyDay.sentSig = sig; await set({ studyDay: cur.studyDay }); }
+}
+async function studyToday() {
+	const d = await studyDay();
+	return { minutes: Math.round((d.youtube.sec + d.reading.sec) / 60), youtube: Math.round(d.youtube.sec / 60), reading: Math.round(d.reading.sec / 60) };
+}
+
 /** "I'm curious about this word": XP for exploring; the word is tracked but not added to Learning or reviews. */
 async function curious(lemma) {
 	const r = await api('/curious', { lemma });
 	const d = await daily();
-	if (r.new) { d.curious++; await set({ daily: d }); }
+	if (r.new) { d.curious++; await set({ daily: d }); studyCount('curious').catch(() => {}); }
 	return Object.assign(r, { todayLocal: d.curious });
 }
 
@@ -448,7 +491,8 @@ async function mark(lemma, status, baseline, ctx) {
 	const after = L.status(lemma, { level: s.level, words: s.words });
 	if (!baseline && before !== 'known' && after === 'known') await bumpLocal('words', 1);
 	if (!baseline && before === 'known' && after !== 'known' && status !== '') await bumpLocal('words', -1);
-	if (newLearning) { const d = await daily(); d.learning++; await set({ daily: d }); }
+	if (newLearning) { const d = await daily(); d.learning++; await set({ daily: d }); if (ctx && ctx.videoId) studyCount('learn').catch(() => {}); }
+	if (!baseline && before !== 'known' && after === 'known' && ctx && ctx.videoId) studyCount('known').catch(() => {});
 	scheduleSync();
 	return after;
 }
@@ -933,7 +977,7 @@ const handlers = {
 	soundLines: ({ texts }) => soundLines((texts || []).slice(0, 2000)),
 	proof: ({ text, grammar }) => proofText(String(text || '').slice(0, 2000), !!grammar),
 	state: async () => {
-		const s = await get(['token', 'me', 'level', 'progress', 'local', 'sites', 'pauseOnHover', 'glossLang', 'explainLang', 'colorPages', 'sidebar', 'focus', 'showIPA', 'showTrans', 'showEn', 'showSound', 'lensYT', 'blurCaptions', 'blurTrans', 'maskSwears', 'wordQuiz', 'exprOn']);
+		const s = await get(['token', 'me', 'level', 'progress', 'local', 'sites', 'readTime', 'pauseOnHover', 'glossLang', 'explainLang', 'colorPages', 'sidebar', 'focus', 'showIPA', 'showTrans', 'showEn', 'showSound', 'lensYT', 'blurCaptions', 'blurTrans', 'maskSwears', 'wordQuiz', 'exprOn']);
 		if (s.token && !s.me) {
 			try {
 				s.me = await api('/me');
@@ -944,7 +988,7 @@ const handlers = {
 			}
 		}
 		const local = s.local.day === today() ? s.local : { words: 0, sentences: 0 };
-		return { signedIn: !!s.token, me: s.me, level: s.level, progress: s.progress, local, sites: s.sites, pauseOnHover: s.pauseOnHover, glossLang: s.glossLang, explainLang: s.explainLang, colorPages: s.colorPages, sidebar: s.sidebar, focus: s.focus, focusList: focusList(), showIPA: s.showIPA, showTrans: s.showTrans, showEn: s.showEn, showSound: s.showSound, lensYT: s.lensYT, blurCaptions: s.blurCaptions, blurTrans: s.blurTrans, maskSwears: s.maskSwears, wordQuiz: s.wordQuiz !== false, exprOn: s.exprOn !== false };
+		return { signedIn: !!s.token, readTime: s.readTime === true, me: s.me, level: s.level, progress: s.progress, local, sites: s.sites, pauseOnHover: s.pauseOnHover, glossLang: s.glossLang, explainLang: s.explainLang, colorPages: s.colorPages, sidebar: s.sidebar, focus: s.focus, focusList: focusList(), showIPA: s.showIPA, showTrans: s.showTrans, showEn: s.showEn, showSound: s.showSound, lensYT: s.lensYT, blurCaptions: s.blurCaptions, blurTrans: s.blurTrans, maskSwears: s.maskSwears, wordQuiz: s.wordQuiz !== false, exprOn: s.exprOn !== false };
 	},
 	login: () => login(),
 	loginTab: (d) => loginTab(d),
@@ -986,6 +1030,8 @@ const handlers = {
 	saveTest: (d) => saveTest(d),
 	openTest: () => openLevelTest(),
 	mark: ({ lemma, status, ctx }) => mark(lemma, status, false, ctx),
+	studyAdd: (d) => studyAdd(d),
+	studyToday: () => studyToday(),
 	quizWords: ({ texts }) => quizWords((texts || []).slice(0, 3000)),
 	quizDone: async ({ asked, right, words }) => { const { quizStats } = await get('quizStats'); const q = quizStats && quizStats.day === today() ? quizStats : { day: today(), videos: 0, asked: 0, right: 0, words: 0 }; q.videos++; q.asked += asked | 0; q.right += right | 0; q.words += words | 0; await set({ quizStats: q }); return q; },
 	images: ({ word, pos }) => api('/image?word=' + encodeURIComponent(word) + (pos ? '&pos=' + encodeURIComponent(pos) : ''), null, 'GET'),

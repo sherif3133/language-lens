@@ -186,6 +186,7 @@
 	function answer(o, b) {
 		var w = st.words[st.i], ok = String(o).toLowerCase() === w.answer;
 		st.asked++; if (ok) st.right++;
+		if (window.LensStudy) LensStudy.quiz();
 		el.querySelectorAll('[data-q=ans]').forEach(function (x) { x.disabled = true; if (x.dataset.o.toLowerCase() === w.answer) x.style.background = '#14301F'; });
 		if (!ok && b) b.style.background = '#3A1A1A';
 		el.querySelector('#sqout').innerHTML = '<div class="sqfb ' + (ok ? 'ok' : 'no') + '"><b>' + (ok ? 'Correct ✓' : 'It was “' + t(w.answer) + '”') + '</b><div>' + t(w.sentence.text) + '</div></div><div class="sqf"><span></span><button class="sqbtn go" data-q="next">Next</button></div>';

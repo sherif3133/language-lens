@@ -457,6 +457,7 @@
 	 */
 	function show(o) {
 		ensure();
+		if (window.LensStudy) LensStudy.word();
 		clearTimeout(hideT);
 		if (cur && cur.word === o.word && cur.sentence === o.sentence) return;
 		if (cur && cur.onHide && cur.onHide !== o.onHide) cur.onHide();

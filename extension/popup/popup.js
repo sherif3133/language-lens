@@ -102,6 +102,7 @@ async function render() {
 	const computer = !matchMedia('(hover: none)').matches && !/Android|iPhone|iPad|Mobile/i.test(navigator.userAgent);
 	const more = (await chrome.storage.local.get('popupMore')).popupMore === true;
 	const point = computer ? 'Hover' : 'Tap';
+	const sto = await send('studyToday').catch(() => ({ minutes: 0 }));
 	const dy = await send('daily').catch(() => ({ read: 0, heard: 0, curious: 0, learning: 0, used: 0, cap: 30 }));
 	const groups = {};
 	(st.focusList || []).forEach((f) => { (groups[f.group] = groups[f.group] || []).push(f); });
@@ -126,6 +127,7 @@ async function render() {
 		${goalHtml}
 		<div class="sec">
 			<div class="label">Today</div>
+			<p class="hint" style="margin:0 0 8px">⏱ Study time today: <b>${sto.minutes || 0} min</b> (counted in your study log)</p>
 			<div class="stats">
 				<div><b>${todayWords}</b><span>words learned</span></div>
 				<div><b>${todaySent}</b><span>sentences saved</span></div>
@@ -172,7 +174,7 @@ async function render() {
 			<select id="focus" class="fsel"><option value="">— none —</option>${Object.keys(groups).map((g) => `<optgroup label="${g}">${groups[g].map((f) => `<option value="${f.key}" ${st.focus === f.key ? 'selected' : ''}>${esc(f.name)}</option>`).join('')}</optgroup>`).join('')}</select>
 			<p class="hint">Highlights a grammar point or a sound everywhere, so you notice it.</p>
 			${computer ? `<div style="margin-top:12px"><div class="label">Show meanings on websites <span class="info" title="${esc(SHOW_TIP)}" aria-label="${esc(SHOW_TIP)}" tabindex="0">ⓘ</span></div><select id="hmode" class="fsel"><option value="hover" ${hmode === 'hover' ? 'selected' : ''}>When I hover over a word</option><option value="click" ${hmode === 'click' ? 'selected' : ''}>When I click a word</option><option value="alt" ${hmode === 'alt' ? 'selected' : ''}>When I hover and hold Alt</option><option value="select" ${hmode === 'select' ? 'selected' : ''}>Only when I select text</option></select><p class="hint">Select or double-click a word for its meaning; select more words to translate or save them.</p></div>` : ''}
-			<div class="label" style="margin-top:16px">Websites</div><div>${toggle('proof', 'Check my writing on websites', 'Red wavy line = spelling, blue = grammar. ' + (computer ? 'Click' : 'Tap') + ' it to see the fix.', proofOn)}</div>
+			<div class="label" style="margin-top:16px">Websites</div><div>${toggle('readtime', 'Count my reading time', 'Minutes only, while the page is open and you scroll or tap. Never the page or its address. Added to your study log.', st.readTime === true)}</div><div style="margin-top:12px">${toggle('proof', 'Check my writing on websites', 'Red wavy line = spelling, blue = grammar. ' + (computer ? 'Click' : 'Tap') + ' it to see the fix.', proofOn)}</div>
 			<div style="margin-top:12px">${toggle('hidearyt', 'Hide Arabic videos on YouTube', 'Your Home, Up next and Shorts fill with English; Arabic Shorts are skipped. Search still shows everything.', arS.hideArabicYT === true)}</div>
 			<div style="margin-top:12px">${toggle('arhover', 'Arabic → English', point + ' an Arabic word for its English. Select Arabic text to read it in English.', arS.arHover !== false)}</div>
 			<div style="margin-top:12px">${toggle('arenglish', 'English under Arabic posts', 'Adds an English line under Arabic posts and comments, so you keep reading English. Uses AI.', arS.arEnglish === true)}</div>
@@ -227,6 +229,7 @@ async function render() {
 	pref('expr', 'exprOn');
 	pref('pause', 'pauseOnHover');
 	$('#focus').onchange = (e) => send('setPref', { key: 'focus', value: e.target.value });
+	const rt = $('#readtime'); if (rt) rt.onchange = () => chrome.storage.local.set({ readTime: rt.checked });
 	const pf = $('#proof'); if (pf) pf.onchange = () => chrome.storage.local.set({ proofOn: pf.checked });
 	const lc = $('#lcap'); if (lc) lc.onchange = () => send('setLearnCap', { n: +lc.value });
 	const hy = $('#hidearyt'); if (hy) hy.onchange = () => chrome.storage.local.set({ hideArabicYT: hy.checked });

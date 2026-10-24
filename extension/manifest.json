@@ -2,7 +2,7 @@
 	"manifest_version": 3,
 	"name": "Language Lens – Sawa English",
 	"short_name": "Language Lens",
-	"version": "0.11.0",
+	"version": "0.12.0",
 	"description": "Learn English from YouTube and any website, on computer or phone: meanings on hover or tap, pronunciation and review cards.",
 	"minimum_chrome_version": "116",
 	"permissions": [
@@ -61,6 +61,7 @@
 				"content/vocals.js",
 				"content/music.js",
 				"content/game.js",
+				"content/studytime.js",
 				"content/tips.js",
 				"content/quiz.js",
 				"content/yt-controls.js",
@@ -84,6 +85,7 @@
 				"content/marks.js",
 				"content/feedback.js",
 				"content/card.js",
+				"content/studytime.js",
 				"content/page.js"
 			],
 			"run_at": "document_idle",
