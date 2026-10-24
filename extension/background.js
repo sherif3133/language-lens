@@ -282,9 +282,10 @@ async function openLevelTest() {
 	return chrome.tabs.create({ url: server + '/placement/' });
 }
 
-/** Phones (Firefox for Android, Safari on iPhone, Lemur) have no sign-in window: sign in in a normal tab instead. */
+/** Always sign in in a normal tab. Phones have no sign-in window, and inside the sign-in window (launchWebAuthFlow) the
+ *  "Continue with Google" pop-up is blocked, so the button did nothing (0.9.5). */
 function tabLogin() {
-	return !(chrome.identity && chrome.identity.launchWebAuthFlow) || /Android|iPhone|iPad|Mobile/i.test(navigator.userAgent);
+	return true;
 }
 
 /** One sign-in at a time: a second click joins the one already running. */
