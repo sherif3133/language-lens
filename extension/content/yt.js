@@ -32,7 +32,7 @@
 		'.tr{font:500 clamp(14px,1.8vw,21px)/1.5 ' + AR + ';direction:rtl;color:#E6E3DF}' +
 		':host(.blur-en) .line.en{filter:blur(7px)}:host(.blur-en) .line.en:hover{filter:none}' +
 		':host(.blur-tr) .line.tr{filter:blur(6px);pointer-events:auto;cursor:pointer}:host(.blur-tr) .line.tr:hover,:host(.blur-tr) .line.tr.peek{filter:none}' +
-		':host(.no-en) .line.en{display:none}:host(.no-tr) .line.tr{display:none}.line.snd{font-size:.7em;color:#FDE68A;letter-spacing:.02em;cursor:help;pointer-events:auto}.line.snd:empty{display:none}.no-snd .line.snd{display:none}.box{position:relative}.sndtip{position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%);width:min(520px,90vw);background:#fff;color:#0F0F10;border-radius:12px;padding:10px 14px;font:500 14px/1.45 ' + FONT + ';text-align:left;display:none;box-shadow:0 8px 24px rgba(0,0,0,.3);pointer-events:auto}.sndtip.on{display:block}.sndtip ul{margin:6px 0 0;padding-left:18px}.lensmenu{position:absolute;right:12px;bottom:60px;width:270px;background:rgba(15,15,16,.94);color:#fff;border-radius:12px;padding:10px;display:none;flex-direction:column;gap:6px;pointer-events:auto;font:500 13px/1.3 ' + FONT + '}.lensmenu.on{display:flex}.lensmenu .lmpage{display:flex;flex-direction:column;gap:6px}.lensmenu .lmpage[hidden]{display:none}.lensmenu .menu label[data-tip]{padding-right:0}.lensmenu .more span{opacity:.6}.lensmenu .go{background:#22C55E;color:#04210F;border-radius:8px;padding:5px 10px;font-weight:700}.lensmenu .menu label>.tipi{order:3}.lensmenu{max-height:calc(100% - 72px);overflow-y:auto;overscroll-behavior:contain}.lensmenu .lmmusic{display:flex;flex-direction:column;gap:6px}.lensmenu .lmmusic[hidden],.lensmenu a.gen[hidden]{display:none}.lensmenu a.t{text-decoration:none;box-sizing:border-box}.lensmenu .t{display:flex;justify-content:space-between;align-items:center;width:100%;border-radius:8px;text-align:left}.lensmenu .lmh{font:700 11px/1 ' + FONT + ';letter-spacing:.06em;text-transform:uppercase;color:#FDE68A;margin-top:4px}.lensmenu .menu{position:static;display:block;background:transparent;color:#fff;padding:0;min-width:0}.lensmenu .menu label{display:flex;gap:10px;align-items:center;justify-content:space-between;padding:6px 2px;min-height:36px;cursor:pointer}.lensmenu input[type=checkbox]{-webkit-appearance:none;appearance:none;order:2;margin:0 0 0 auto;flex:none;width:36px;height:20px;border-radius:99px;background:#8A8584;position:relative;cursor:pointer;transition:background .15s}.lensmenu input[type=checkbox]::after{content:"";position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:#fff;transition:transform .15s;box-shadow:0 1px 2px rgba(0,0,0,.3)}.lensmenu input[type=checkbox]:checked{background:#22C55E}.lensmenu input[type=checkbox]:checked::after{transform:translateX(16px)}.lensmenu input[type=checkbox]:focus-visible{outline:2px solid #FDE68A;outline-offset:2px}' +
+		':host(.no-en) .line.en{display:none}:host(.no-tr) .line.tr{display:none}.line.snd{font-size:.7em;color:#FDE68A;letter-spacing:.02em;cursor:help;pointer-events:auto}.line.snd:empty{display:none}:host(.no-snd) .line.snd{display:none}.box{position:relative}.sndtip{position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%);width:min(520px,90vw);background:#fff;color:#0F0F10;border-radius:12px;padding:10px 14px;font:500 14px/1.45 ' + FONT + ';text-align:left;display:none;box-shadow:0 8px 24px rgba(0,0,0,.3);pointer-events:auto}.sndtip.on{display:block}.sndtip ul{margin:6px 0 0;padding-left:18px}.lensmenu{position:absolute;right:12px;bottom:60px;width:270px;background:rgba(15,15,16,.94);color:#fff;border-radius:12px;padding:10px;display:none;flex-direction:column;gap:6px;pointer-events:auto;font:500 13px/1.3 ' + FONT + '}.lensmenu.on{display:flex}.lensmenu .lmpage{display:flex;flex-direction:column;gap:6px}.lensmenu .lmpage[hidden]{display:none}.lensmenu .menu label[data-tip]{padding-right:0}.lensmenu .more span{opacity:.6}.lensmenu label.pin{background:#202531;border-radius:8px;padding:6px 8px;font-weight:600}.lensmenu select{background:#0e1016;color:#fff;border:1px solid #444;border-radius:6px;padding:4px 6px;font:inherit;margin-left:6px;max-width:130px}.opts label.pin{font-weight:600}.lensmenu .go{background:#22C55E;color:#04210F;border-radius:8px;padding:5px 10px;font-weight:700}.lensmenu .menu label>.tipi{order:3}.lensmenu{max-height:calc(100% - 72px);overflow-y:auto;overscroll-behavior:contain}.lensmenu .lmmusic{display:flex;flex-direction:column;gap:6px}.lensmenu .lmmusic[hidden],.lensmenu a.gen[hidden]{display:none}.lensmenu a.t{text-decoration:none;box-sizing:border-box}.lensmenu .t{display:flex;justify-content:space-between;align-items:center;width:100%;border-radius:8px;text-align:left}.lensmenu .lmh{font:700 11px/1 ' + FONT + ';letter-spacing:.06em;text-transform:uppercase;color:#FDE68A;margin-top:4px}.lensmenu .menu{position:static;display:block;background:transparent;color:#fff;padding:0;min-width:0}.lensmenu .menu label{display:flex;gap:10px;align-items:center;justify-content:space-between;padding:6px 2px;min-height:36px;cursor:pointer}.lensmenu input[type=checkbox]{-webkit-appearance:none;appearance:none;order:2;margin:0 0 0 auto;flex:none;width:36px;height:20px;border-radius:99px;background:#8A8584;position:relative;cursor:pointer;transition:background .15s}.lensmenu input[type=checkbox]::after{content:"";position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:#fff;transition:transform .15s;box-shadow:0 1px 2px rgba(0,0,0,.3)}.lensmenu input[type=checkbox]:checked{background:#22C55E}.lensmenu input[type=checkbox]:checked::after{transform:translateX(16px)}.lensmenu input[type=checkbox]:focus-visible{outline:2px solid #FDE68A;outline-offset:2px}' +
 		'.wd{cursor:pointer;border-radius:4px;padding:0 1px}' +
 		'.wd:hover{background:#fff;color:#0F0F10;text-decoration:none}' +
 		LensMarks.css('dark', 3) +
@@ -129,19 +129,25 @@
 
 	var HOV = TOUCH ? 'tap' : 'hover';
 	function trow(pref, label, tip) { return '<label data-tip="' + tip + '"><input type="checkbox" data-pref="' + pref + '"> ' + label + '</label>'; }
-	var TIPSW = '<label><input type="checkbox" data-tipsw> Show tips (the <b>i</b> buttons)</label><button class="t" data-a="tipreset">Bring back hidden tips</button>';
-	var OPTS = trow('ctlShow', 'Show controls', 'ctl') + trow('showEn', 'English captions', 'en') + trow('showTrans', 'Arabic translation', 'tr') + trow('showSound', 'How it sounds', 'snd') +
-		trow('blurCaptions', 'Blur English until ' + HOV, 'blurEn') + trow('blurTrans', 'Blur Arabic until ' + HOV, 'blurTr') + trow('colors', 'Colour words', 'colors') + trow('pauseOnHover', 'Pause when I open a word', 'pauseOpen') + trow('wordQuiz', 'Quiz me on the words I learn', 'quiz') + TIPSW;
+	var TIPSW = '<label class="pin"><input type="checkbox" data-tipsw> 💡 Show Tips</label>';
+	var TIPRESET = '<button class="t" data-a="tipreset">Bring back hidden tips</button>';
+	var MODESEL = '<label data-tip="openmode">Open word cards with <select data-sel="ytShowOn"><option value="click">a click</option><option value="hover">hovering</option></select></label>';
+	var FURTHER = trow('pauseClick', (TOUCH ? 'Pause when I tap on a word' : 'Pause when I click on a word'), 'pauseClick') + (TOUCH ? '' : trow('pauseHover', 'Pause when I hover on a word', 'pauseHover') + MODESEL) + trow('wordQuiz', 'Quiz Mode', 'quiz');
+	var OPTS = TIPSW + trow('ctlBasic', 'Show Basic Controls', 'ctlb') + trow('ctlRep', 'Show Repeat / Loop / Auto-pause', 'ctlr') + trow('showEn', 'English captions', 'en') + trow('showTrans', 'Arabic translation', 'tr') + trow('showSound', 'How it sounds', 'snd') +
+		trow('blurCaptions', 'Blur English until ' + HOV, 'blurEn') + trow('blurTrans', 'Blur Arabic until ' + HOV, 'blurTr') + trow('colors', 'Colour words', 'colors') + FURTHER + TIPRESET;
 
 	var REPEAT = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17 2l3 3-3 3M4 11V9a4 4 0 0 1 4-4h12M7 22l-3-3 3-3M20 13v2a4 4 0 0 1-4 4H4"/></svg>';
 	var WAVE = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h2M7 8v8M11 5v14M15 8v8M19 11v2"/></svg>';
 
 	var S = { videoId: '', cues: [], lines: null, sents: [], sentToks: null, tcues: [], cueTr: null, sentTr: null, grade: null, idx: -1, sIdx: -1, host: null, root: null, side: null, sRoot: null, video: null, pausedByUs: false, raf: 0, primed: '', stopAt: 0, follow: true, scrolledAt: 0, sounds: {}, loopI: -1, savedRows: {} };
-	var prefs = { lensYT: true, showEn: true, sidebar: true, colors: true, pauseOnHover: true, sideMin: false, focus: '', showTrans: true, showSound: true, blurCaptions: false, blurTrans: false, barPos: 0.12, ctlShow: false, autoPause: false, maskSwears: false, wordQuiz: true, songLyrics: true, lyricLang: 'en' };
-	var PREF_KEYS = ['lensYT', 'showEn', 'sidebar', 'lensColors', 'colorLearnOnly', 'ytShowOn', 'pauseOnHover', 'sideMin', 'focus', 'showTrans', 'showSound', 'blurCaptions', 'blurTrans', 'barPos', 'ctlShow', 'tipsOff', 'autoPause', 'maskSwears', 'wordQuiz', 'songLyrics', 'explainLang'];
+	var prefs = { lensYT: true, showEn: true, sidebar: true, colors: true, pauseOnHover: true, sideMin: false, focus: '', showTrans: true, showSound: true, blurCaptions: false, blurTrans: false, barPos: 0.12, ctlBasic: false, ctlRep: false, pauseClick: true, pauseHover: true, autoPause: false, maskSwears: false, wordQuiz: false, songLyrics: true, lyricLang: 'en' };
+	var PREF_KEYS = ['lensYT', 'showEn', 'sidebar', 'lensColors', 'colorLearnOnly', 'ytShowOn', 'pauseOnHover', 'sideMin', 'focus', 'showTrans', 'showSound', 'blurCaptions', 'blurTrans', 'barPos', 'ctlShow', 'ctlBasic', 'ctlRep', 'pauseClick', 'pauseHover', 'tipsOff', 'autoPause', 'maskSwears', 'wordQuiz', 'songLyrics', 'explainLang'];
 	function readPrefs(o) {
 		prefs.sidebar = o.sidebar !== false;
-		prefs.ctlShow = !!o.ctlShow; // the ◀ ⟲ ▶ ⏸ buttons next to the caption: off until the student turns them on
+		prefs.ctlBasic = o.ctlBasic != null ? !!o.ctlBasic : !!o.ctlShow; // ◀ ▶ next to the caption: off until the student turns them on (0.10.0 'Show controls' carries over)
+		prefs.ctlRep = !!o.ctlRep; // the Repeat / Loop / Auto-pause line
+		prefs.pauseClick = o.pauseClick != null ? !!o.pauseClick : o.pauseOnHover !== false;
+		prefs.pauseHover = o.pauseHover != null ? !!o.pauseHover : o.pauseOnHover !== false;
 		prefs.tipsOff = !!o.tipsOff;
 		prefs.colors = o.lensColors !== false;
 		prefs.learnOnly = !!o.colorLearnOnly; // "Learning only": no new/hard marks
@@ -158,7 +164,7 @@
 		prefs.barPos = typeof o.barPos === 'number' ? o.barPos : 0.12;
 		prefs.autoPause = !!o.autoPause;
 		prefs.maskSwears = false; // the option was removed
-		prefs.wordQuiz = o.wordQuiz !== false;
+		prefs.wordQuiz = o.wordQuiz === true; // Quiz Mode is off until the student turns it on (0.10.1)
 		prefs.songLyrics = o.songLyrics !== false;
 		prefs.lyricLang = o.explainLang === 'ar' ? 'ar' : 'en'; // the one "Explanations" setting (popup), saved with the account
 	}
@@ -561,7 +567,9 @@
 			bar.style.setProperty('--pos', Math.round(prefs.barPos * 1000) / 10 + '%');
 			S.root.querySelectorAll('[data-pref]').forEach(function (i) { i.checked = !!prefs[i.dataset.pref]; });
 			S.root.querySelectorAll('[data-tipsw]').forEach(function (i) { i.checked = !prefs.tipsOff; });
-			S.host.classList.toggle('ctl-on', prefs.ctlShow);
+			S.host.classList.toggle('ctl-basic', prefs.ctlBasic);
+			S.host.classList.toggle('ctl-rep', prefs.ctlRep);
+			S.root.querySelectorAll('[data-sel=ytShowOn]').forEach(function (i) { i.value = prefs.ytClick ? 'click' : 'hover'; });
 			var ap = S.root.querySelector('[data-a=autopause]');
 			if (ap) ap.classList.toggle('on', prefs.autoPause);
 		}
@@ -634,19 +642,16 @@
 			S.root.innerHTML = '<style>' + CSS + '</style>' +
 				'<button class="chip" hidden></button><div class="advb" hidden></div><div class="panel"></div><div class="quiz" hidden></div>' +
 				'<div class="bar"><div class="grip" title="Drag to move the captions up or down">⋮⋮</div><div class="box"><div class="line en"></div><div class="line tr"></div><div class="line slg"></div><div class="line snd" title="How it sounds — hover for fast speech"></div><div class="sndtip"></div></div></div>' +
-				'<div class="lensmenu"><div class="lmpage lmmain"><div class="lmh">Language Lens</div><div class="menu on">' +
-				trow('sidebar', 'Transcript', 'transcript') + trow('ctlShow', 'Show controls', 'ctl') + '</div>' +
-				'<div class="lmh">Captions</div><div class="menu on">' + trow('showEn', 'English', 'en') + trow('showTrans', 'Arabic translation', 'tr') + trow('showSound', 'How it sounds', 'snd') + '</div>' +
-				'<button class="t more" data-a="more" data-tip="more">More options<span>›</span></button></div>' +
+				'<div class="lensmenu"><div class="lmpage lmmain"><div class="lmh">Language Lens</div><div class="menu on">' + TIPSW +
+				trow('sidebar', 'Transcript', 'transcript') + trow('ctlBasic', 'Show Basic Controls', 'ctlb') + trow('ctlRep', 'Show Repeat / Loop / Auto-pause', 'ctlr') + '</div>' +
+				'<div class="lmh">Captions</div><div class="menu on">' + trow('showEn', 'English', 'en') + trow('showTrans', 'Arabic translation', 'tr') + trow('showSound', 'How it sounds', 'snd') + trow('blurCaptions', 'Blur English until I ' + HOV, 'blurEn') + trow('blurTrans', 'Blur Arabic until I ' + HOV, 'blurTr') + trow('colors', 'Colour words', 'colors') + '</div>' +
+				'<button class="t more" data-a="more" data-tip="more">Further Controls<span>›</span></button></div>' +
 				'<div class="lmpage lmmore" hidden><button class="t" data-a="back">‹ Back</button>' +
-				'<div class="lmh">Display</div><div class="menu on">' + trow('blurCaptions', 'Blur English until I ' + HOV, 'blurEn') + trow('blurTrans', 'Blur Arabic until I ' + HOV, 'blurTr') + trow('colors', 'Colour words', 'colors') + trow('pauseOnHover', 'Pause when I open a word', 'pauseOpen') + trow('wordQuiz', 'Quiz me on the words I learn', 'quiz') + '</div>' +
-				'<div class="lmh">Tips</div><div class="menu on">' + TIPSW + '</div>' +
+				'<div class="lmh">Further Controls</div><div class="menu on">' + FURTHER + '</div>' + TIPRESET +
+				// 0.10.1: the Voice-only playlist and "Add these songs" are on the shelf (ops/shelf.md): the buttons are not drawn.
 				'<div class="lmmusic" hidden><div class="lmh">🎵 Music</div>' +
-				// Computers only (content/vocals.js decides): hear the singer without the music.
-				(window.LensVocals && LensVocals.supported() ? '<button class="t" data-a="vocals" data-tip="vocals" title="Hear only the singer’s voice: the music is removed on your computer (test)">🎤 Vocals only<span class="vst"></span></button>' : '') +
+				(window.LensVocals && LensVocals.supported() ? '<button class="t" data-a="vocals" data-tip="vocals" title="Listen to songs without background music">🎤 Vocals only<span class="vst"></span></button>' : '') +
 				'<button class="t" data-a="game" data-tip="game" hidden>🎮 Lyrics game<span class="go">▶ Start</span></button>' +
-				'<button class="t" data-a="vplist" data-tip="vplist" hidden title="Songs with the music taken out ahead of time, with the best voice model (kept on this computer)">🎧 Voice-only playlist</button>' +
-				'<button class="t" data-a="prepList" hidden>➕ Add this playlist to it</button>' +
 				'<a class="t gen" target="_blank" rel="noopener" hidden>Check the lyrics on Genius ↗</a></div></div></div>';
 			if (MOBILE) S.host.classList.add('mob');
 			if (window.LensVocals) LensVocals.bindMenu(S.root);
@@ -661,10 +666,12 @@
 			S.root.addEventListener('click', onClick);
 			S.root.addEventListener('change', function (e) {
 				if (e.target.hasAttribute('data-tipsw')) return window.LensTips && LensTips.setOff(!e.target.checked);
+				if (e.target.dataset.sel) return setPref(e.target.dataset.sel, e.target.value);
 				var k = e.target.dataset.pref;
 				if (k) setPref(k === 'colors' ? 'lensColors' : k, e.target.checked);
 			});
 			S.root.addEventListener('mouseup', function (e) { onSelect(e, S.root, 'bar'); });
+			if (!TOUCH) S.root.addEventListener('contextmenu', function (e) { wordMenu(e, 'bar'); });
 			setupDrag(player);
 			if (window.LensControls) LensControls.attach(S.root, S.host, CTRL_API, TOUCH);
 			useVideo(player.querySelector('video'));
@@ -838,12 +845,14 @@
 		var meta = MOBILE && col.querySelector(':scope > ytm-slim-video-metadata-section-renderer');
 		col.insertBefore(S.side, meta ? meta.nextSibling : col.firstChild);
 		if (window.LensTips) LensTips.attach(S.sRoot);
+		if (!TOUCH) S.sRoot.addEventListener('contextmenu', function (e) { wordMenu(e, 'side'); });
 		S.sRoot.addEventListener('mouseover', function (e) { onOver(e, 'side'); });
 		S.sRoot.addEventListener('mouseout', onOut);
 		S.sRoot.addEventListener('click', onSideClick);
 		S.sRoot.addEventListener('mouseup', function (e) { onSelect(e, S.sRoot, 'side'); });
 		S.sRoot.addEventListener('change', function (e) {
 			if (e.target.hasAttribute('data-tipsw')) return window.LensTips && LensTips.setOff(!e.target.checked);
+			if (e.target.dataset.sel) return setPref(e.target.dataset.sel, e.target.value);
 			var k = e.target.dataset.pref;
 			if (k) setPref(k === 'colors' ? 'lensColors' : k, e.target.checked);
 		});
@@ -1305,7 +1314,7 @@
 					if (!ok) b.classList.add('w');
 					el.querySelector('.out').innerHTML = '<div class="fb ' + (ok ? 'ok' : 'no') + '"><b>' + (ok ? 'Correct ✓' : 'It was “' + u(tok.text) + '”') + '</b><p>' + u(s.text) + '</p></div><div class="qa"><span></span><button class="go" data-q="cont">Continue ▶</button></div>';
 				} else if (b.dataset.q === 'again') { S.stopAt = s.end; S.video.currentTime = Math.max(0, s.start / 1000 - 0.05); S.video.play(); }
-				else if (b.dataset.q === 'off') { setPref('wordQuiz', false); closeQuiz(true); say('Word quizzes are off. Turn them on again in Display ▾.'); }
+				else if (b.dataset.q === 'off') { setPref('wordQuiz', false); closeQuiz(true); say('Word quizzes are off. Turn them on again in Further Controls.'); }
 				else if (b.dataset.q === 'cont') closeQuiz(true);
 			};
 		}, function () { S.video.play(); });
@@ -1345,6 +1354,7 @@
 		clearTimeout(S.loopT);
 		S.loopI = -1;
 		markLoop();
+		if (S.root) S.root.querySelectorAll('[data-a=loop]').forEach(function (b) { b.classList.remove('on'); });
 	}
 	function markLoop() {
 		if (!S.sRoot) return;
@@ -1352,6 +1362,7 @@
 			var on = +r.dataset.i === S.loopI, btn = r.querySelector('[data-a=once]'), note = r.querySelector('.loopnote');
 			r.classList.toggle('looping', on);
 			if (btn) btn.classList.toggle('on', on);
+			if (S.root) S.root.querySelectorAll('[data-a=loop]').forEach(function (b) { b.classList.toggle('on', S.loopI >= 0); });
 			if (on && !note) r.querySelector('.body').insertAdjacentHTML('beforeend', '<div class="loopnote">🔁 Looping: say it after the speaker. Tap 🔁 again to stop.</div>');
 			if (!on && note) note.remove();
 		});
@@ -1450,11 +1461,38 @@
 		}
 		if (Card.selectOpen && Card.selectOpen()) return;
 		clearTimeout(overT);
-		overT = setTimeout(function () { openWord(w, where); }, 350); // a mouse just passing over doesn't open it
+		overT = setTimeout(function () { openWord(w, where, 'hover'); }, 350); // a mouse just passing over doesn't open it
+	}
+
+	/** Right-click a word (computer): a small menu that sets it to Learn or Known, depending on what it is now. */
+	function wordMenu(e, where) {
+		var w = e.target.closest && e.target.closest('.wd');
+		if (!w) return;
+		var toks = where === 'side' ? (function () { var r = w.closest('.s'); return r && S.sentToks ? S.sentToks[+r.dataset.i] : null; })() : (S.lines ? S.lines[S.idx] : null);
+		var tk = toks && toks[+w.dataset.k];
+		if (!tk || !tk.lemma) return;
+		e.preventDefault(); e.stopPropagation();
+		var root = where === 'side' ? S.sRoot : S.root, old = root.querySelector('.wctx');
+		if (old) old.remove();
+		var st = tk.status, m = document.createElement('div');
+		m.className = 'wctx';
+		m.style.cssText = 'position:fixed;left:' + Math.min(e.clientX, window.innerWidth - 230) + 'px;top:' + Math.min(e.clientY, window.innerHeight - 110) + 'px;z-index:2147483000;background:#17191F;color:#fff;border:1px solid #444;border-radius:10px;padding:5px;box-shadow:0 8px 24px rgba(0,0,0,.5);font:500 14px/1.3 ' + FONT + ';pointer-events:auto;min-width:200px';
+		var rows = [];
+		if (st !== 'learning') rows.push(['learning', '★ Mark “' + tk.lemma + '” as Learn']);
+		if (st !== 'known') rows.push(['known', '✓ Mark “' + tk.lemma + '” as Known']);
+		m.innerHTML = rows.map(function (r) { return '<div data-s="' + r[0] + '" style="padding:10px 12px;border-radius:7px;cursor:pointer">' + U.esc(r[1]) + '</div>'; }).join('');
+		m.addEventListener('click', function (ev) {
+			var b = ev.target.closest('[data-s]'); if (!b) return;
+			ev.stopPropagation(); m.remove();
+			U.send('mark', { lemma: tk.lemma, status: b.dataset.s }).then(function () { say(b.dataset.s === 'known' ? '“' + tk.lemma + '” is Known' : '“' + tk.lemma + '” is in Learn'); }, function (err) { say(U.errText(err)); });
+		});
+		root.appendChild(m);
+		var off = function (ev) { if (!ev.composedPath().includes(m)) { m.remove(); document.removeEventListener('pointerdown', off, true); } };
+		setTimeout(function () { document.addEventListener('pointerdown', off, true); }, 0);
 	}
 
 	/** The word card for a caption or transcript word, with its sentence as context. */
-	function openWord(w, where) {
+	function openWord(w, where, how) {
 		var src;
 		if (where === 'side') {
 			var row = w.closest('.s'), s = row && S.sents[+row.dataset.i];
@@ -1466,7 +1504,7 @@
 			// The full sentence around this caption line is the better context.
 			var si = find(S.sents, cue.start + 1, null), sent = S.sents[si];
 			src = sent && sent.text.indexOf(w.textContent) >= 0 ? { text: sent.text, start: sent.start, end: sent.end } : { text: cue.text, start: cue.start, end: cue.end };
-			if (prefs.pauseOnHover && S.video && !S.video.paused) {
+			if ((how === 'hover' ? prefs.pauseHover : prefs.pauseClick) && S.video && !S.video.paused) {
 				S.video.pause();
 				S.pausedByUs = true;
 			}
@@ -1568,6 +1606,8 @@
 			if (S.sents[n]) play(S.sents[n].start, stopEnd() ? S.sents[n].end : 0);
 		} else if (a === 'repeat') {
 			if (S.sents[j]) play(S.sents[j].start, S.sents[j].end);
+		} else if (a === 'loop') {
+			CTRL_API.loop(j);
 		} else if (a === 'autopause') {
 			setPref('autoPause', !prefs.autoPause);
 		} else if (a === 'more' || a === 'back') {

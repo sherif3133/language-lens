@@ -176,9 +176,9 @@ async function launch() {
 		await wait(500);
 
 		// Repeat: plays the current sentence and stops at its end.
-		await page.evaluate(() => { const i = document.querySelector('sawa-lens-side').shadowRoot.querySelector('[data-pref=ctlShow]'); i.checked = true; i.dispatchEvent(new Event('change', { bubbles: true })); }); // Show controls (off by default)
+		await page.evaluate(() => { const r = document.querySelector('sawa-lens-side').shadowRoot; for (const k of ['ctlBasic', 'ctlRep']) { const i = r.querySelector('[data-pref=' + k + ']'); i.checked = true; i.dispatchEvent(new Event('change', { bubbles: true })); } }); // both control switches (off by default)
 		await wait(800);
-		const rb = await centre(page, 'sawa-lens-yt', '.side [data-a=repeat]');
+		const rb = await centre(page, 'sawa-lens-yt', '.rl [data-a=repeat]');
 		await page.evaluate(() => { const v = document.querySelector('#movie_player video'); v.currentTime = 30; });
 		await wait(500);
 		await tap(page, rb);
@@ -199,9 +199,9 @@ async function launch() {
 		const sentStart = (pg, t) => pg.evaluate((t) => { const rows = [...document.querySelector('sawa-lens-side').shadowRoot.querySelectorAll('.s')]; return rows.length; }, t);
 		await page.evaluate(() => { const v = document.querySelector('#movie_player video'); v.currentTime = 40; v.play(); });
 		await wait(1500);
-		const ph = await page.evaluate(() => { const r = document.querySelector('sawa-lens-yt').shadowRoot, sd = r.querySelector('.side'), sv = r.querySelector('.sv'), b = sd && sd.querySelectorAll('.ib'); return { side: sd ? getComputedStyle(sd).display : 'none-found', buttons: b ? b.length : 0, w: b && b[0] ? Math.round(b[0].getBoundingClientRect().width) : 0, star: !!sv, strip: r.querySelectorAll('.ctrl').length }; });
-		check('phone: Show controls shows the 4 side buttons (big enough to tap) and ★ Save; the old strip is gone', ph.side === 'grid' && ph.buttons === 4 && ph.w >= 34 && ph.star && ph.strip === 0, JSON.stringify(ph));
-		await page.evaluate(() => { const i = document.querySelector('sawa-lens-side').shadowRoot.querySelector('[data-pref=ctlShow]'); i.checked = false; i.dispatchEvent(new Event('change', { bubbles: true })); }); // back to the default (the pref is shared with the computer page)
+		const ph = await page.evaluate(() => { const r = document.querySelector('sawa-lens-yt').shadowRoot, g = (q) => { const e = r.querySelector(q); return e ? getComputedStyle(e).display : 'none-found'; }, pv = r.querySelector('.pv'); return { pv: g('.pv'), nx: g('.nx'), rl: g('.rl'), star: !!r.querySelector('.sv'), w: pv ? Math.round(pv.getBoundingClientRect().width) : 0, strip: r.querySelectorAll('.ctrl').length }; });
+		check('phone: both switches show ◀ ▶ and the Repeat / Loop / Auto-pause line (big enough to tap) and ★ Save; the old strip is gone', ph.pv !== 'none' && ph.nx !== 'none' && ph.rl === 'flex' && ph.w >= 34 && ph.star && ph.strip === 0, JSON.stringify(ph));
+		await page.evaluate(() => { const r = document.querySelector('sawa-lens-side').shadowRoot; for (const k of ['ctlBasic', 'ctlRep']) { const i = r.querySelector('[data-pref=' + k + ']'); i.checked = false; i.dispatchEvent(new Event('change', { bubbles: true })); } }); // back to the default (the pref is shared with the computer page)
 		await wait(500);
 		await page.screenshot({ path: path.join(out, '4b-phone-strip.png') });
 		if (await cardOpen(page)) await page.keyboard.press('Escape');
@@ -292,21 +292,39 @@ async function launch() {
 		// the ★ Save button sits next to the sentence; the menu switch "Show controls" turns the side buttons on.
 		await desk.evaluate(() => { const v = document.querySelector('#movie_player video'); v.currentTime = 30; v.play(); });
 		await wait(1500);
-		const sideState = () => desk.evaluate(() => { const r = document.querySelector('sawa-lens-yt').shadowRoot, sd = r.querySelector('.side'), sv = r.querySelector('.sv'); return { side: sd ? getComputedStyle(sd).display : 'none-found', star: !!sv, starShown: sv ? getComputedStyle(sv).display !== 'none' : false, strip: r.querySelectorAll('.ctrl').length }; });
+		const sideState = () => desk.evaluate(() => { const r = document.querySelector('sawa-lens-yt').shadowRoot, g = (q) => { const e = r.querySelector(q); return e ? getComputedStyle(e).display : 'none-found'; }; return { pv: g('.pv'), nx: g('.nx'), rl: g('.rl'), star: !!r.querySelector('.sv'), starShown: g('.sv') !== 'none', strip: r.querySelectorAll('.ctrl').length }; });
 		const sd0 = await sideState();
-		check('computer: side buttons are off by default, ★ Save is shown, the old strip is gone', sd0.side === 'none' && sd0.star && sd0.starShown && sd0.strip === 0, JSON.stringify(sd0));
+		check('computer: controls are off by default, ★ Save is shown, the old strip is gone', sd0.pv === 'none' && sd0.nx === 'none' && sd0.rl === 'none' && sd0.star && sd0.starShown && sd0.strip === 0, JSON.stringify(sd0));
 		const t0 = (await ytState(desk)).t;
 		await desk.keyboard.press('d'); await wait(900);
 		const t1 = (await ytState(desk)).t;
 		await desk.keyboard.press('a'); await wait(900);
 		const t2 = (await ytState(desk)).t;
 		check('computer: keys D (next) and A (previous) work with the buttons hidden', t1 > t0 + 0.2 || t1 < t0 - 3, JSON.stringify([t0, t1, t2]));
-		await desk.evaluate(() => { const i = document.querySelector('sawa-lens-yt').shadowRoot.querySelector('.lensmenu input[data-pref=ctlShow]'); i.checked = true; i.dispatchEvent(new Event('change', { bubbles: true })); });
+		await desk.evaluate(() => { const i = document.querySelector('sawa-lens-yt').shadowRoot.querySelector('.lensmenu input[data-pref=ctlBasic]'); i.checked = true; i.dispatchEvent(new Event('change', { bubbles: true })); });
+		await desk.evaluate(() => { const i = document.querySelector('sawa-lens-yt').shadowRoot.querySelector('.lensmenu input[data-pref=ctlRep]'); i.checked = true; i.dispatchEvent(new Event('change', { bubbles: true })); });
 		await wait(800);
 		const sd1 = await sideState();
-		check('computer: "Show controls" turns the side buttons on', sd1.side === "grid", JSON.stringify(sd1));
+		check('computer: Basic Controls show ◀ ▶ and the Repeat line shows Repeat / Loop / Auto-pause', sd1.pv !== 'none' && sd1.nx !== 'none' && sd1.rl === 'flex', JSON.stringify(sd1));
 		await desk.screenshot({ path: path.join(out, '6-computer-controls.png') });
-		await desk.evaluate(() => { const i = document.querySelector('sawa-lens-yt').shadowRoot.querySelector('.lensmenu input[data-pref=ctlShow]'); i.checked = false; i.dispatchEvent(new Event('change', { bubbles: true })); });
+		await desk.evaluate(() => { const i = document.querySelector('sawa-lens-yt').shadowRoot.querySelector('.lensmenu input[data-pref=ctlBasic]'); i.checked = false; i.dispatchEvent(new Event('change', { bubbles: true })); });
+		await desk.evaluate(() => { const i = document.querySelector('sawa-lens-yt').shadowRoot.querySelector('.lensmenu input[data-pref=ctlRep]'); i.checked = false; i.dispatchEvent(new Event('change', { bubbles: true })); });
+		// How it sounds off: the line must really disappear (0.10.0 bug).
+		await desk.evaluate(() => { const i = document.querySelector('sawa-lens-yt').shadowRoot.querySelector('.lensmenu input[data-pref=showSound]'); i.checked = false; i.dispatchEvent(new Event('change', { bubbles: true })); });
+		await wait(600);
+		const snd = await desk.evaluate(() => { const l = document.querySelector('sawa-lens-yt').shadowRoot.querySelector('.line.snd'); return l ? getComputedStyle(l).display : 'none-found'; });
+		check('computer: How it sounds off hides the sounds line', snd === 'none', snd);
+		await desk.evaluate(() => { const i = document.querySelector('sawa-lens-yt').shadowRoot.querySelector('.lensmenu input[data-pref=showSound]'); i.checked = true; i.dispatchEvent(new Event('change', { bubbles: true })); });
+		// Right-click a word: a Learn / Known menu.
+		await desk.evaluate(() => { const v = document.querySelector('#movie_player video'); v.currentTime = 31; v.play(); });
+		await wait(1500);
+		await desk.evaluate(() => document.querySelector('#movie_player video').pause());
+		await wait(300);
+		const rcw = await centre(desk, 'sawa-lens-yt', '.line.en .wd');
+		if (rcw) { await desk.mouse.click(rcw.x, rcw.y, { button: 'right' }); await wait(400); }
+		const rcm = await desk.evaluate(() => { const m = document.querySelector('sawa-lens-yt').shadowRoot.querySelector('.wctx'); return m ? m.textContent : null; });
+		check('computer: right-click a word shows Mark as Learn / Known', rcm && /Mark/.test(rcm), JSON.stringify(rcm));
+		await desk.keyboard.press('Escape');
 	} finally {
 		await browser.close();
 	}

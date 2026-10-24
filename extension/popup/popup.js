@@ -145,7 +145,7 @@ async function render() {
 			<p class="hint">${esc(LEVEL_HINT[st.level - 1])}: words up to this level count as known unless you mark them.</p>
 		</div>
 		<div class="sec">
-			${isYT ? toggle('pause', computer ? 'Pause when I open a word' : 'Pause when I tap a word', 'On YouTube captions.', st.pauseOnHover)
+			${isYT ? '<p class="hint">YouTube settings are in the player menu: click the Language Lens icon on the video.</p>'
 		: origin ? `<div class="row"><div style="min-width:0"><div class="t">On this site</div><div class="site">${esc(origin.replace(/^https?:\/\//, ''))}</div></div>
 				<label class="switch"><input type="checkbox" id="site" ${enabled ? 'checked' : ''}><span></span></label></div>
 				<p class="hint">${enabled ? (computer ? 'Hover any word for its meaning. Select words to translate, hear or save them.' : 'Tap any word for its meaning. Press and hold to select words to translate, hear or save them.') : 'Paused on this site. Switch on to use Language Lens here again.'}</p>`
@@ -166,29 +166,7 @@ async function render() {
 			<p class="hint">Words you know have no colour.</p>
 			<div class="seg3"><button data-cm="all" aria-pressed="${cmode === 'all'}">All 4</button><button data-cm="learning" aria-pressed="${cmode === 'learning'}">Learn only</button><button data-cm="off" aria-pressed="${cmode === 'off'}">Off</button></div>
 		</div>
-		<div class="sec">
-			<div class="label">YouTube</div>
-			${toggle('sidebar', 'Transcript next to the video', computer ? 'Full sentences with timestamps. Click one to play it.' : 'Under the video: full sentences. Tap one to play it.', st.sidebar !== false)}
-			${computer ? `<div style="margin-bottom:12px"><div class="label">Show meanings on YouTube <span class="info" title="${esc(SHOW_TIP)}" aria-label="${esc(SHOW_TIP)}" tabindex="0">ⓘ</span></div><select id="ytshow" class="fsel"><option value="click" ${ytOn === 'click' ? 'selected' : ''}>When I click a word</option><option value="hover" ${ytOn === 'hover' ? 'selected' : ''}>When I hover over a word</option></select></div>` : ''}
-			${toggle('lensYT', 'Language Lens on YouTube', 'Also on the player bar: the switch next to Aa.', st.lensYT !== false)}
-			${toggle('showEn', 'English captions (1st line)', point + ' any word for its meaning.', st.showEn !== false)}
-			${toggle('showTrans', 'Arabic translation (2nd line)', 'YouTube\'s auto-translation, under the captions.', st.showTrans !== false)}
-			${toggle('showSound', 'How it sounds (3rd line)', 'How fast speech sounds, e.g. “wanna”.', st.showSound !== false)}
-			${computer ? '<p class="hint">Hotkeys: <kbd>A</kbd> previous · <kbd>S</kbd> repeat · <kbd>D</kbd> next · <kbd>R</kbd> loop · <kbd>X</kbd> slower · <kbd>W</kbd> shadow · <kbd>Q</kbd> auto-pause. Drag the ⋮⋮ grip to move the captions.</p>' : ''}
-		</div>
 		<details class="more" id="more" ${more ? 'open' : ''}><summary>More settings</summary>
-		<div class="sec">
-			<div class="label">Practice</div>
-			${toggle('blurCaptions', computer ? 'Blur captions until hover' : 'Blur captions until tap', 'Listen first, then check.', !!st.blurCaptions)}
-			${toggle('blurTrans', 'Blur the translation', computer ? 'Hover over it to read it.' : 'Tap it to read it.', !!st.blurTrans)}
-			${toggle('showIPA', 'IPA and "sounds like"', 'Under each word, with sounds Arabic speakers find hard.', st.showIPA !== false)}
-		</div>
-		<div class="sec">
-			<div class="label">🎵 Music</div>
-			${toggle('songlyrics', 'Lyrics for songs', 'On YouTube songs, the transcript shows the lyrics (from the video, or LRCLIB) with a link to Genius. Click 💡 on a line to have it explained.', vo.songLyrics !== false)}
-			${computer ? (vo.vocalsSlow ? '<p class="hint">🎤 Vocals only is off: this computer was too slow for it.</p>' : '<p class="hint">🎤 Vocals only (test): on a song, open Aa in the player → 🎤 Vocals only. It works on that video only, at normal speed (1×).</p>') : ''}
-			${computer && !vo.vocalsSlow ? '<div class="row"><div><div class="t">🎧 Voice-only playlist</div><div class="d">Add songs or YouTube playlists: the music is taken out in the background with the best voice model, and they play with the voice only, at once.</div></div><button class="btn sm ghost" id="prepared">Open</button></div>' : ''}
-		</div>
 		<div class="sec">
 			<div class="label">Focus</div>
 			<select id="focus" class="fsel"><option value="">— none —</option>${Object.keys(groups).map((g) => `<optgroup label="${g}">${groups[g].map((f) => `<option value="${f.key}" ${st.focus === f.key ? 'selected' : ''}>${esc(f.name)}</option>`).join('')}</optgroup>`).join('')}</select>

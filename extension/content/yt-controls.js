@@ -40,32 +40,29 @@
 
 	var RING = '<svg viewBox="0 0 26 26" aria-hidden="true"><circle class="bg" cx="13" cy="13" r="11"/><circle class="fg" cx="13" cy="13" r="11"/></svg>';
 
-	/* The sentence buttons at the side of the English line (Show controls, off by default) and the ★ Save next to the sentence.
-	   Clicks are handled by yt.js (data-a); their tips come from content/tips.js. Keys A S D Q always work. */
-	var SIDE_CSS = '.box{position:relative}.side{display:none;position:absolute;right:100%;top:50%;transform:translateY(-50%);margin-right:10px;grid-template-columns:repeat(2,30px);gap:6px;pointer-events:auto}' +
-		':host(.ctl-on) .side{display:grid}' +
-		'.ib{all:unset;box-sizing:border-box;position:relative;cursor:pointer;width:30px;height:30px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;background:rgba(15,15,16,.7);color:#E6E3DF;font-size:14px;line-height:1}' +
-		'.ib:hover{background:rgba(15,15,16,.95);color:#fff}.ib:focus-visible{outline:2px solid #56B4E9;outline-offset:1px}.ib[disabled]{opacity:.6}' +
-		'.ib.on{color:#22C55E;box-shadow:inset 0 0 0 1.5px #22C55E}' +
-		'.sv{position:absolute;left:100%;top:0;margin-left:8px;color:#FDE68A;font-size:16px}.sv.ok{color:#22C55E}' +
-		':host(.mob) .side{right:auto;left:50%;transform:translateX(-50%);top:auto;bottom:100%;margin:0 0 4px;grid-template-columns:repeat(4,36px);gap:6px}:host(.mob) .ib{width:36px;height:36px;font-size:16px}:host(.mob) .sv{left:auto;right:0;top:auto;bottom:100%;margin:0 0 4px;width:40px;height:40px}' +
-		':host(.mob) .tipbub{max-width:170px}';
-	function ib(a, tip, glyph, label) {
-		return '<button type="button" class="ib" data-a="' + a + '" data-tip="' + tip + '" data-tip-float aria-label="' + label + '"><span class="g">' + glyph + '</span></button>';
+	/* Caption buttons (0.10.1). Two switches in the menu:
+	   Show Basic Controls: ◀ left of the English line, ▶ right before the ★.
+	   Show Repeat / Loop / Auto-pause: a small line under the captions.
+	   ★ Save is always there. Keys A S D Q work with everything off. Clicks are handled by yt.js (data-a); tips by content/tips.js. */
+	var SIDE_CSS = '.box{position:relative}' +
+		'.ib{all:unset;box-sizing:border-box;position:relative;cursor:pointer;width:30px;height:30px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;flex:none;background:rgba(15,15,16,.7);color:#E6E3DF;font-size:14px;line-height:1}' +
+		'.ib:hover{background:rgba(15,15,16,.95);color:#fff}.ib:focus-visible{outline:2px solid #56B4E9;outline-offset:1px}.ib[disabled]{opacity:.6}.ib.on{color:#22C55E;box-shadow:inset 0 0 0 1.5px #22C55E}' +
+		'.pv{position:absolute;right:100%;top:0;margin-right:8px;display:none}.rt{position:absolute;left:100%;top:0;margin-left:8px;display:flex;gap:6px}.rt .nx{display:none}' +
+		':host(.ctl-basic) .pv{display:inline-flex}:host(.ctl-basic) .rt .nx{display:inline-flex}' +
+		'.sv{color:#FDE68A;font-size:16px}.sv.ok{color:#22C55E}' +
+		'.rl{display:none;justify-content:center;gap:6px;margin-top:2px}.rl .ib{width:auto;height:30px;padding:0 12px;border-radius:999px;gap:6px;font-size:13px;font:600 13px/1 inherit}:host(.ctl-rep) .rl{display:flex}' +
+		':host(.mob) .pv{right:auto;left:0;top:auto;bottom:100%;margin:0 0 4px}:host(.mob) .rt{left:auto;right:0;top:auto;bottom:100%;margin:0 0 4px}' +
+		':host(.mob) .ib{width:40px;height:40px;font-size:16px}:host(.mob) .rl .ib{width:auto;height:40px;padding:0 14px}:host(.mob) .tipbub{max-width:170px}';
+	function ib(a, tip, glyph, label, cls) {
+		return '<button type="button" class="ib' + (cls ? ' ' + cls : '') + '" data-a="' + a + '" data-tip="' + tip + '" data-tip-float aria-label="' + label + '"><span class="g">' + glyph + '</span></button>';
 	}
 	function buildSide(box) {
-		var s = document.createElement('div');
-		s.className = 'side';
-		s.setAttribute('role', 'toolbar');
-		s.setAttribute('aria-label', 'Sentence controls');
-		s.innerHTML = ib('prev', 'prev', '◀', 'Previous sentence') + ib('next', 'next', '▶', 'Next sentence') + ib('repeat', 'repeat', '⟲', 'Repeat this sentence') + ib('autopause', 'ap', '⏸', 'Auto-pause after every sentence');
-		box.appendChild(s);
-		var v = document.createElement('div');
-		v.innerHTML = ib('save', 'save', '★', 'Save this sentence');
-		var star = v.firstChild;
-		star.classList.add('sv');
+		box.insertAdjacentHTML('beforeend',
+			ib('prev', 'prev', '◀', 'Previous sentence', 'pv') +
+			'<div class="rt">' + ib('next', 'next', '▶', 'Next sentence', 'nx') + ib('save', 'save', '★', 'Save this sentence', 'sv') + '</div>' +
+			'<div class="rl">' + ib('repeat', 'repeat', '⟲ <small>Repeat</small>', 'Repeat this sentence') + ib('loop', 'loop', '🔁 <small>Loop</small>', 'Loop this sentence') + ib('autopause', 'ap', '⏸ <small>Auto-pause</small>', 'Auto-pause after every sentence') + '</div>');
+		var star = box.querySelector('.sv');
 		star.dataset.done = '✓';
-		box.appendChild(star);
 		if (window.LensTips) {
 			window.LensTips.attach(root);
 			setTimeout(function () { window.LensTips.hint(root, 'save'); }, 2500);
