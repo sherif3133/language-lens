@@ -61,6 +61,7 @@
 			el.classList.toggle('tiphid', !!gone);
 			if (gone) el.classList.remove('tipopen');
 		});
+		root.querySelectorAll('[data-a=tipreset]').forEach(function (b) { b.hidden = !!st.off || !Object.keys(st.hidden).length; }); // only when tips are on and one is hidden
 		root.querySelectorAll('.tipbox').forEach(function (b) { b.classList.toggle('tiphid', !!(st.off || st.hidden[b.dataset.tipFor])); });
 	}
 
@@ -125,7 +126,7 @@
 		'.tipdn{all:unset;cursor:pointer;display:block;min-height:34px;padding:4px 0;color:#7CC4FF;font-size:12px}.tipdn .ta{color:#7CC4FF;font-size:12px;margin:0}.tipdn:hover{text-decoration:underline}' +
 		'.tipbub{position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);display:none;width:max-content;max-width:230px;background:#0E1016;border:1px solid #FDE68A;border-radius:8px;padding:6px 10px;font:400 12px/1.4 "IBM Plex Sans","Segoe UI",system-ui,sans-serif;color:#fff;text-align:left;z-index:5;white-space:normal}' +
 		'[data-tip-float]:hover>.tipbub,[data-tip-float]:focus-visible>.tipbub,[data-tip-float].tipopen>.tipbub{display:block}[data-tip-float].tiphid>.tipbub{display:none!important}' +
-		'.tipbox.tiphid,.tipi.tiphid,[data-tip].tiphid>.tipi{display:none!important}';
+		'button[hidden]{display:none!important}.tipbox.tiphid,.tipi.tiphid,[data-tip].tiphid>.tipi{display:none!important}';
 
 	load();
 	window.LensTips = {

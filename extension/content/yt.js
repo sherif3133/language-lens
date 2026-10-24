@@ -129,12 +129,11 @@
 
 	var HOV = TOUCH ? 'tap' : 'hover';
 	function trow(pref, label, tip) { return '<label data-tip="' + tip + '"><input type="checkbox" data-pref="' + pref + '"> ' + label + '</label>'; }
-	var TIPSW = '<label class="pin"><input type="checkbox" data-tipsw> 💡 Show Tips</label>';
-	var TIPRESET = '<button class="t" data-a="tipreset">Bring back hidden tips</button>';
+	var TIPSW = '<label class="pin"><input type="checkbox" data-tipsw> 💡 Show Tips</label><button class="t" data-a="tipreset" hidden>Bring back hidden tips</button>';
 	var MODESEL = '<label data-tip="openmode">Open word cards with <select data-sel="ytShowOn"><option value="click">a click</option><option value="hover">hovering</option></select></label>';
 	var FURTHER = trow('pauseClick', (TOUCH ? 'Pause when I tap on a word' : 'Pause when I click on a word'), 'pauseClick') + (TOUCH ? '' : trow('pauseHover', 'Pause when I hover on a word', 'pauseHover') + MODESEL) + trow('wordQuiz', 'Quiz Mode', 'quiz');
 	var OPTS = TIPSW + trow('ctlBasic', 'Show Basic Controls', 'ctlb') + trow('ctlRep', 'Show Repeat / Loop / Auto-pause', 'ctlr') + trow('showEn', 'English captions', 'en') + trow('showTrans', 'Arabic translation', 'tr') + trow('showSound', 'How it sounds', 'snd') +
-		trow('blurCaptions', 'Blur English until ' + HOV, 'blurEn') + trow('blurTrans', 'Blur Arabic until ' + HOV, 'blurTr') + trow('colors', 'Colour words', 'colors') + FURTHER + TIPRESET;
+		trow('blurCaptions', 'Blur English until ' + HOV, 'blurEn') + trow('blurTrans', 'Blur Arabic until ' + HOV, 'blurTr') + trow('colors', 'Colour words', 'colors') + FURTHER;
 
 	var REPEAT = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17 2l3 3-3 3M4 11V9a4 4 0 0 1 4-4h12M7 22l-3-3 3-3M20 13v2a4 4 0 0 1-4 4H4"/></svg>';
 	var WAVE = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h2M7 8v8M11 5v14M15 8v8M19 11v2"/></svg>';
@@ -647,7 +646,7 @@
 				'<div class="lmh">Captions</div><div class="menu on">' + trow('showEn', 'English', 'en') + trow('showTrans', 'Arabic translation', 'tr') + trow('showSound', 'How it sounds', 'snd') + trow('blurCaptions', 'Blur English until I ' + HOV, 'blurEn') + trow('blurTrans', 'Blur Arabic until I ' + HOV, 'blurTr') + trow('colors', 'Colour words', 'colors') + '</div>' +
 				'<button class="t more" data-a="more" data-tip="more">Further Controls<span>›</span></button></div>' +
 				'<div class="lmpage lmmore" hidden><button class="t" data-a="back">‹ Back</button>' +
-				'<div class="lmh">Further Controls</div><div class="menu on">' + FURTHER + '</div>' + TIPRESET +
+				'<div class="lmh">Further Controls</div><div class="menu on">' + FURTHER + '</div>' +
 				// 0.10.1: the Voice-only playlist and "Add these songs" are on the shelf (ops/shelf.md): the buttons are not drawn.
 				'<div class="lmmusic" hidden><div class="lmh">🎵 Music</div>' +
 				(window.LensVocals && LensVocals.supported() ? '<button class="t" data-a="vocals" data-tip="vocals" title="Listen to songs without background music">🎤 Vocals only<span class="vst"></span></button>' : '') +
@@ -799,6 +798,7 @@
 
 	function paintLine(i) {
 		var en = S.root.querySelector('.line.en'), tr = S.root.querySelector('.line.tr');
+		if (S.host) S.host.classList.toggle('has-cap', i >= 0 && !!S.cues[i]); // the ★ and the buttons show only next to a caption
 		if (i < 0 || !S.cues[i]) {
 			en.innerHTML = '';
 			tr.textContent = '';
@@ -1660,7 +1660,7 @@
 	/* ------------------------------------------------------------ navigation */
 	/** Ask the player for captions until they arrive (it ignores us while loading or showing an ad). */
 	function primeUntilReady(vid, n) {
-		if (vid !== currentVideoId() || S.videoId === vid || n > 15) return;
+		if (vid !== currentVideoId() || (S.videoId === vid && S.cues.length) || n > 15) return;
 		if (document.querySelector('#movie_player.ad-showing')) return setTimeout(function () { primeUntilReady(vid, n); }, 2000);
 		window.postMessage({ source: 'sawa-lens-ui', type: 'prime' }, location.origin);
 		setTimeout(function () { primeUntilReady(vid, n + 1); }, n < 3 ? 1500 : 3000);
@@ -1677,7 +1677,8 @@
 			S.sents = [];
 			return;
 		}
-		if (S.primed === vid && S.videoId === vid) return;
+		// Captions that arrived before this ran (a quick navigation) must not be wiped: that left the video without captions (0.10.2).
+		if (S.videoId === vid && (S.primed === vid || S.cues.length)) { S.primed = vid; return; }
 		S.primed = vid;
 		S.cues = [];
 		S.sents = [];

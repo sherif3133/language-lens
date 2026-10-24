@@ -47,10 +47,10 @@
 	var SIDE_CSS = '.box{position:relative}' +
 		'.ib{all:unset;box-sizing:border-box;position:relative;cursor:pointer;width:30px;height:30px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;flex:none;background:rgba(15,15,16,.7);color:#E6E3DF;font-size:14px;line-height:1}' +
 		'.ib:hover{background:rgba(15,15,16,.95);color:#fff}.ib:focus-visible{outline:2px solid #56B4E9;outline-offset:1px}.ib[disabled]{opacity:.6}.ib.on{color:#22C55E;box-shadow:inset 0 0 0 1.5px #22C55E}' +
-		'.pv{position:absolute;right:100%;top:0;margin-right:8px;display:none}.rt{position:absolute;left:100%;top:0;margin-left:8px;display:flex;gap:6px}.rt .nx{display:none}' +
-		':host(.ctl-basic) .pv{display:inline-flex}:host(.ctl-basic) .rt .nx{display:inline-flex}' +
+		'.pv{position:absolute;right:100%;top:0;margin-right:8px;display:none}.rt{position:absolute;left:100%;top:0;margin-left:8px;display:none;gap:6px}.rt .nx{display:none}' +
+		':host(.has-cap) .rt{display:flex}:host(.ctl-basic.has-cap) .pv{display:inline-flex}:host(.ctl-basic) .rt .nx{display:inline-flex}' +
 		'.sv{color:#FDE68A;font-size:16px}.sv.ok{color:#22C55E}' +
-		'.rl{display:none;justify-content:center;gap:6px;margin-top:2px}.rl .ib{width:auto;height:30px;padding:0 12px;border-radius:999px;gap:6px;font-size:13px;font:600 13px/1 inherit}:host(.ctl-rep) .rl{display:flex}' +
+		'.rl{display:none;justify-content:center;gap:6px;margin-top:2px}.rl .ib{width:auto;height:30px;padding:0 12px;border-radius:999px;gap:6px;font-size:13px;font:600 13px/1 inherit}:host(.ctl-rep.has-cap) .rl{display:flex}' +
 		':host(.mob) .pv{right:auto;left:0;top:auto;bottom:100%;margin:0 0 4px}:host(.mob) .rt{left:auto;right:0;top:auto;bottom:100%;margin:0 0 4px}' +
 		':host(.mob) .ib{width:40px;height:40px;font-size:16px}:host(.mob) .rl .ib{width:auto;height:40px;padding:0 14px}:host(.mob) .tipbub{max-width:170px}';
 	function ib(a, tip, glyph, label, cls) {

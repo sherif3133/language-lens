@@ -244,7 +244,7 @@ async function launch() {
 		/* ---------------- computer (no regressions) */
 		const desk = await browser.newPage();
 		desk.on('pageerror', (e) => console.log('PAGEERROR', String(e.message).slice(0, 200)));
-		desk.on('console', (m) => { if (m.type() === 'error' && /sawa|lens|Lens/.test(m.text() + (m.location().url || ''))) console.log('CONSOLE', m.text().slice(0, 200)); });
+		desk.on('console', (m) => { if (m.type() === 'error' && /extension|sawa|lens|Lens/.test(m.text() + (m.location().url || ''))) console.log('CONSOLE', m.text().slice(0, 300), (m.location().url || '').slice(-40), m.location().lineNumber); });
 		await desk.setViewport({ width: 1400, height: 900 });
 		const ua = (await browser.userAgent()).replace('HeadlessChrome', 'Chrome'), major = (ua.match(/Chrome\/(\d+)/) || [])[1] || '140';
 		await desk.setUserAgent({ userAgent: ua, userAgentMetadata: { brands: [{ brand: 'Google Chrome', version: major }, { brand: 'Chromium', version: major }, { brand: 'Not.A/Brand', version: '99' }], platform: 'Windows', platformVersion: '10.0.0', architecture: 'x86', model: '', mobile: false } });
